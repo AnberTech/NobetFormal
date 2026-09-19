@@ -255,9 +255,9 @@
         <div class="flex items-center gap-1.5 ml-auto">
           
           <!-- HIZLI ÜRET (BEKLETMEYEN ANINDA MOTOR) -->
-          <button onclick="distributeInstantRoster()" class="lockable-ui px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs rounded-lg transition flex items-center gap-1.5 shadow-2xs" title="Beklemeden ilk geçerli listeyi 50 milisaniyede anında üretir">
+          <button id="btnInstant" onclick="distributeInstantRoster()" class="lockable-ui px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs rounded-lg transition flex items-center gap-1.5 shadow-2xs" title="Beklemeden ilk geçerli listeyi 50 milisaniyede anında üretir">
             <i class="fa-solid fa-bolt text-amber-500"></i>
-            <span>Hızlı Üret</span>
+            <span id="btnInstantText">Hızlı Üret</span>
           </button>
 
           <!-- OPTİMİZASYON SÜRESİ SEÇİCİ -->
@@ -1088,14 +1088,19 @@
       renderOnly();
     }
 
+    // BUTON İSİMLERİNİ DİNAMİK GÜNCELLEME (Hızlı ve Süreli İçin)
     function updateButtons() {
-      const btnText = document.getElementById('btnDistributeText');
+      const btnInstantText = document.getElementById('btnInstantText');
+      const btnDistText = document.getElementById('btnDistributeText');
       const btnClear = document.getElementById('btnClearGenerated');
+
       if (isGenerated) {
-        if (btnText) btnText.innerText = "Yeniden Optimize Et";
+        if (btnInstantText) btnInstantText.innerText = "Yeniden Hızlı Üret";
+        if (btnDistText) btnDistText.innerText = "Yeniden Optimize Et";
         if (btnClear) btnClear.classList.remove('hidden');
       } else {
-        if (btnText) btnText.innerText = "Nöbetleri Üret";
+        if (btnInstantText) btnInstantText.innerText = "Hızlı Üret";
+        if (btnDistText) btnDistText.innerText = "Nöbetleri Üret";
         if (btnClear) btnClear.classList.add('hidden');
       }
     }
@@ -1145,8 +1150,26 @@
       };
     }
 
+    function setUILocked(locked) {
+      const lockables = document.querySelectorAll('.lockable-ui');
+      lockables.forEach(el => {
+        el.disabled = locked;
+        if (locked) {
+          el.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+        } else {
+          el.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+        }
+      });
+
+      const tableWrapper = document.getElementById('tableOuterWrapper');
+      if (tableWrapper) {
+        if (locked) tableWrapper.classList.add('pointer-events-none', 'opacity-60');
+        else tableWrapper.classList.remove('pointer-events-none', 'opacity-60');
+      }
+    }
+
     // =========================================================================
-    // 1. MOD: HIZLI VE BEKLETMEYEN ÜRETİM (50ms İÇİNDE ANINDA ÇIKTI)
+    // 1. MOD: HIZLI VE BEKLETMEYEN ÜRETİM (ANINDA ÇIKTI)
     // =========================================================================
     function distributeInstantRoster() {
       if (isOptimizing) return;
@@ -1186,22 +1209,6 @@
     // =========================================================================
     // 2. MOD: SÜRE AYARLI DERİN ASENKRON ÇÖZÜCÜ (ZIPLAYAN TOPLU)
     // =========================================================================
-    function setUILocked(locked) {
-      const lockables = document.querySelectorAll('.lockable-ui');
-      lockables.forEach(el => {
-        el.disabled = locked;
-        if (locked) {
-          el.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
-        } else {
-          el.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
-        }
-      });
-
-      const tableWrapper = document.getElementById('tableOuterWrapper');
-      if (locked) tableWrapper.classList.add('pointer-events-none', 'opacity-60');
-      else tableWrapper.classList.remove('pointer-events-none', 'opacity-60');
-    }
-
     function startTimedOptimization() {
       if (isOptimizing) return;
       if (doctors.length === 0) return alert("Lütfen önce hekim ekleyin.");
@@ -1684,7 +1691,6 @@
       }, 50);
     }
 
-    // SheetJS ile Gerçek İkili .XLSX İndirme
     function exportToStyledExcel() {
       const curMonth = getSelectedPeriodString();
       const curService = document.getElementById('selectedService').value;
