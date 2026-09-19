@@ -44,14 +44,13 @@
         </div>
         <div>
           <h1 class="text-base font-bold text-slate-900 leading-tight">Akıllı Nöbet & Mesai Optimizasyonu</h1>
-          <p class="text-[11px] text-slate-500">Yıl / Ay Dropdown Seçimli • Kesin Sıfır Gün Korumalı Motor</p>
+          <p class="text-[11px] text-slate-500">Nöbet Sayısı Göstergeli • Maks. +8 Aşım Sınırı • Sıfır Gün Yasağı</p>
         </div>
       </div>
 
       <!-- Ay, Yıl, Servis ve Parametreler -->
       <div class="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
         
-        <!-- Güvenilir Yıl ve Ay Seçici (Dropdown Picker) -->
         <div class="flex items-center gap-1.5">
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase">Yıl</label>
@@ -81,11 +80,20 @@
           </div>
         </div>
         
-        <!-- Servis Seçici -->
         <div class="border-l pl-3">
           <label class="block text-[10px] font-bold text-indigo-600 uppercase">Servis / Birim</label>
           <input type="text" id="selectedService" list="serviceOptions" value="Acil Servis" placeholder="Servis seçin" class="bg-white border border-indigo-300 rounded px-2 py-0.5 text-xs font-bold text-indigo-900 w-28" onchange="onFilterChanged()">
           <datalist id="serviceOptions"></datalist>
+        </div>
+
+        <div class="border-l pl-3">
+          <label class="block text-[10px] font-bold text-amber-700 uppercase" title="Ayın son gün nöbeti sonraki aya izin sarkıtıyorsa saatini seçebilirsiniz">Ay Sonu Nöbeti</label>
+          <select id="lastDayShiftRule" class="bg-white border border-amber-300 rounded px-1.5 py-0.5 text-xs font-bold text-amber-900" onchange="render()">
+            <option value="auto">Standart (Otomatik)</option>
+            <option value="16" selected>16 Saat (Sarkan İzin)</option>
+            <option value="24">24 Saat (Tam Ek Mesai)</option>
+            <option value="8">8 Saat</option>
+          </select>
         </div>
 
         <div class="border-l pl-3">
@@ -150,15 +158,13 @@
     <!-- Bildirim Bildirisi -->
     <div id="saveToast" class="hidden fixed top-4 right-4 bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-xl z-50 text-xs font-bold flex items-center gap-2">
       <i class="fa-solid fa-circle-check text-sm"></i>
-      <span>Değişiklikler ve arşiv başarıyla kaydedildi!</span>
+      <span>Değişiklikler başarıyla kaydedildi!</span>
     </div>
 
     <!-- Tablo Alanı -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto max-h-[76vh] relative">
       <div id="tableContainer">
-        <table id="rosterTable" class="w-full border-collapse">
-          <!-- JS Dinamik Üretir -->
-        </table>
+        <table id="rosterTable" class="w-full border-collapse"></table>
       </div>
     </div>
 
@@ -166,7 +172,7 @@
     <div id="warningPanel" class="hidden bg-amber-50 border-l-4 border-amber-500 p-3 rounded-lg shadow-sm no-print space-y-1">
       <div class="flex items-center gap-2 font-bold text-amber-900 text-xs">
         <i class="fa-solid fa-triangle-exclamation text-amber-600 text-sm"></i>
-        <span>Matematiksel Fizibilite ve Dağıtım Raporu:</span>
+        <span>Matematiksel Dağıtım ve Kural Raporu:</span>
       </div>
       <ul id="warningList" class="list-disc list-inside text-[11px] text-amber-800 space-y-0.5"></ul>
     </div>
@@ -194,17 +200,17 @@
       </div>
       
       <div class="bg-blue-50 border border-blue-200 rounded-lg p-2.5 text-[11px] text-blue-800 space-y-1">
-        <p><strong>Desteklenen Formatlar (İster Excel'den kopyalayın, ister yazın):</strong></p>
+        <p><strong>Desteklenen Formatlar:</strong></p>
         <div class="font-mono text-[10px] space-y-0.5 text-blue-900">
-          <div>• Dr. Ahmet Yılmaz [TAB] 120 <span class="text-blue-500">(Excel'den doğrudan 2 sütun kopyalama)</span></div>
+          <div>• Dr. Ahmet Yılmaz [TAB] 120 (Excel'den 2 sütun kopyalama)</div>
           <div>• Dr. Ayşe Kaya - 96</div>
           <div>• Dr. Mehmet Demir, 80</div>
           <div>• Dr. Ali Veli: 112</div>
-          <div>• Dr. Fatma Şen <span class="text-blue-500">(Saat yazılmazsa varsayılan 80s atanır)</span></div>
+          <div>• Dr. Fatma Şen (Varsayılan 80s atanır)</div>
         </div>
       </div>
 
-      <textarea id="bulkNames" rows="10" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono" placeholder="Dr. Ahmet Yılmaz&#9;120&#10;Dr. Ayşe Kaya - 96&#10;Dr. Mehmet Demir, 80&#10;Dr. Ali Can: 104..."></textarea>
+      <textarea id="bulkNames" rows="10" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono" placeholder="Dr. Ahmet Yılmaz&#9;120&#10;Dr. Ayşe Kaya - 96&#10;Dr. Mehmet Demir, 80..."></textarea>
       
       <div class="flex justify-end gap-2 pt-1">
         <button onclick="closePasteModal()" class="px-3 py-1.5 border rounded-lg text-xs font-medium text-slate-600">İptal</button>
@@ -232,12 +238,8 @@
 
     window.onload = () => {
       const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
-
-      // Yıl ve Ay seçimlerini varsayılan olarak bugüne ayarla
-      document.getElementById('selectYear').value = currentYear;
-      document.getElementById('selectMonth').value = currentMonth;
+      document.getElementById('selectYear').value = now.getFullYear();
+      document.getElementById('selectMonth').value = String(now.getMonth() + 1).padStart(2, '0');
       
       refreshServiceOptions();
       refreshDoctorAutocompletePool();
@@ -245,9 +247,7 @@
     };
 
     function getSelectedPeriodString() {
-      const yr = document.getElementById('selectYear').value;
-      const mo = document.getElementById('selectMonth').value;
-      return `${yr}-${mo}`;
+      return `${document.getElementById('selectYear').value}-${document.getElementById('selectMonth').value}`;
     }
 
     function onFilterChanged() {
@@ -357,6 +357,7 @@
         serviceName: srvName,
         minDaily: document.getElementById('minDailyShifts').value,
         maxLimit: document.getElementById('maxShiftLimit').value,
+        lastDayRule: document.getElementById('lastDayShiftRule').value,
         timestamp: Date.now()
       };
       localStorage.setItem(getStorageKey(monthStr, srvName), JSON.stringify(payload));
@@ -378,6 +379,7 @@
           grid = parsed.grid || {};
           if (parsed.minDaily) document.getElementById('minDailyShifts').value = parsed.minDaily;
           if (parsed.maxLimit) document.getElementById('maxShiftLimit').value = parsed.maxLimit;
+          if (parsed.lastDayRule) document.getElementById('lastDayShiftRule').value = parsed.lastDayRule;
           isGenerated = true;
           updateButtons();
         } catch (e) {
@@ -597,7 +599,14 @@
       render();
     }
 
-    function getOvertimeEarned(dayMeta) {
+    function getOvertimeEarned(dayMeta, dayNum) {
+      if (dayNum === daysInMonth) {
+        const rule = document.getElementById('lastDayShiftRule').value;
+        if (rule !== 'auto') {
+          return parseInt(rule);
+        }
+      }
+      
       if (dayMeta.isHoliday || dayMeta.dayOfWeek === 6) return 24;
       if (dayMeta.dayOfWeek === 5 || dayMeta.dayOfWeek === 0) return 16;
       return 8;
@@ -650,21 +659,24 @@
         }
       });
 
-      // 1. Ağır günleri dağıt
-      let heavyDays = [];
+      let dayPriority = [];
       for (let d = 1; d <= daysInMonth; d++) {
-        const val = getOvertimeEarned(daysMeta[d - 1]);
-        if (val >= 16) heavyDays.push({ day: d, otVal: val });
+        dayPriority.push({ day: d, weight: getOvertimeEarned(daysMeta[d - 1], d) });
       }
-      heavyDays.sort(() => Math.random() - 0.5);
+      dayPriority.sort((a, b) => b.weight - a.weight);
 
-      heavyDays.forEach(item => {
+      dayPriority.forEach(item => {
         const d = item.day;
-        const otVal = item.otVal;
+        const otVal = item.weight;
         let assigned = doctors.filter(doc => grid[doc.id][d] === 'N_FIXED' || grid[doc.id][d] === 'N_AUTO').map(doc => doc.id);
 
         while (assigned.length < minDailyRequired) {
-          let candidates = getValidCandidates(d, assigned, maxLimit, otVal, true);
+          let candidates = getStrictCandidates(d, assigned, maxLimit, otVal, true);
+
+          if (candidates.length === 0) {
+            candidates = getStrictCandidates(d, assigned, maxLimit, otVal, false);
+          }
+
           if (candidates.length === 0) break;
 
           candidates.sort((a, b) => {
@@ -679,52 +691,35 @@
         }
       });
 
-      // 2. Taban nöbetçi garantisi (sıfır gün kalmaması için)
-      for (let d = 1; d <= daysInMonth; d++) {
-        const otVal = getOvertimeEarned(daysMeta[d - 1]);
-        let assigned = doctors.filter(doc => grid[doc.id][d] === 'N_FIXED' || grid[doc.id][d] === 'N_AUTO').map(doc => doc.id);
+      for (let pass = 0; pass < 8; pass++) {
+        let improved = false;
+        let needyDocs = doctors.filter(d => calculateDocStats(d).earnedOvertime < d.targetOvertime);
+        if (needyDocs.length === 0) break;
 
-        while (assigned.length < minDailyRequired) {
-          let candidates = getValidCandidates(d, assigned, maxLimit, otVal, true);
-          if (candidates.length === 0) candidates = getValidCandidates(d, assigned, maxLimit, otVal, false);
-          if (candidates.length === 0) break;
+        needyDocs.sort((a, b) => (b.targetOvertime - calculateDocStats(b).earnedOvertime) - (a.targetOvertime - calculateDocStats(a).earnedOvertime));
 
-          candidates.sort((a, b) => {
-            const needA = a.targetOvertime - calculateDocStats(a).earnedOvertime + (Math.random() * 2 - 1);
-            const needB = b.targetOvertime - calculateDocStats(b).earnedOvertime + (Math.random() * 2 - 1);
-            return needB - needA;
-          });
-
-          const chosen = candidates[0];
-          assigned.push(chosen.id);
-          grid[chosen.id][d] = 'N_AUTO';
-        }
-      }
-
-      // 3. Eksik saatleri yukarı en yakın saate tamamlama (Roof Match)
-      for (let pass = 0; pass < 5; pass++) {
-        let hasChanges = false;
-        doctors.forEach(doc => {
+        for (let doc of needyDocs) {
           let curStats = calculateDocStats(doc);
-          if (curStats.earnedOvertime < doc.targetOvertime && countDoctorShifts(doc) < maxLimit) {
-            let possibleDays = [];
-            for (let d = 1; d <= daysInMonth; d++) {
-              const otVal = getOvertimeEarned(daysMeta[d - 1]);
-              let assigned = doctors.filter(dc => grid[dc.id][d] === 'N_FIXED' || grid[dc.id][d] === 'N_AUTO').map(dc => dc.id);
-              if (getValidCandidates(d, assigned, maxLimit, otVal, false).some(c => c.id === doc.id)) {
-                possibleDays.push({ day: d, assignedCount: assigned.length, otVal });
-              }
-            }
+          if (curStats.earnedOvertime >= doc.targetOvertime) continue;
+          if (countDoctorShifts(doc) >= maxLimit) continue;
 
-            if (possibleDays.length > 0) {
-              possibleDays.sort((a, b) => a.assignedCount - b.assignedCount);
-              const bestDay = possibleDays[0].day;
-              grid[doc.id][bestDay] = 'N_AUTO';
-              hasChanges = true;
+          let validDays = [];
+          for (let d = 1; d <= daysInMonth; d++) {
+            const otVal = getOvertimeEarned(daysMeta[d - 1], d);
+            let assigned = doctors.filter(dc => grid[dc.id][d] === 'N_FIXED' || grid[dc.id][d] === 'N_AUTO').map(dc => dc.id);
+            
+            if (getStrictCandidates(d, assigned, maxLimit, otVal, true).some(c => c.id === doc.id)) {
+              validDays.push({ day: d, count: assigned.length, otVal });
             }
           }
-        });
-        if (!hasChanges) break;
+
+          if (validDays.length > 0) {
+            validDays.sort((a, b) => a.count - b.count);
+            grid[doc.id][validDays[0].day] = 'N_AUTO';
+            improved = true;
+          }
+        }
+        if (!improved) break;
       }
 
       isGenerated = true;
@@ -734,7 +729,7 @@
       saveCurrentMonth();
     }
 
-    function getValidCandidates(d, assignedToday, maxLimit, otVal, checkOvertimeLimit) {
+    function getStrictCandidates(d, assignedToday, maxLimit, otVal, enforceCeiling) {
       return doctors.filter(doc => {
         if (assignedToday.includes(doc.id)) return false;
         if (grid[doc.id][d] === 'OFF' || grid[doc.id][d] === 'N_FIXED' || grid[doc.id][d] === 'N_AUTO') return false;
@@ -751,9 +746,15 @@
 
         if (countDoctorShifts(doc) >= maxLimit) return false;
 
-        if (checkOvertimeLimit) {
-          const curStats = calculateDocStats(doc);
-          if (curStats.earnedOvertime >= doc.targetOvertime) return false;
+        const curStats = calculateDocStats(doc);
+
+        if (enforceCeiling) {
+          if (curStats.earnedOvertime + otVal > doc.targetOvertime + 8) {
+            return false;
+          }
+          if (curStats.earnedOvertime >= doc.targetOvertime) {
+            return false;
+          }
         }
 
         return true;
@@ -773,7 +774,7 @@
           if (s === 'N_FIXED' || s === 'N_AUTO') count++;
         });
         if (count < minDailyRequired) {
-          warnings.push(`<strong>Ayın ${d}. Günü:</strong> Klinikte ${count} nöbetçi var (Minimum ${minDailyRequired} olmalıydı). O gün tüm hekimler yasal dinlenmede veya izinli olduğundan taban sayıya ulaşılamadı.`);
+          warnings.push(`<strong>Ayın ${d}. Günü:</strong> Klinikte ${count} nöbetçi var (Minimum ${minDailyRequired} olmalıydı). O gün tüm hekimler dinlenmede veya izinli olduğundan taban sayıya ulaşılamadı.`);
         }
       }
 
@@ -784,10 +785,12 @@
 
         if (missing > 0) {
           if (shiftCount >= maxLimit) {
-            warnings.push(`<strong>${doc.name || 'İsimsiz Hekim'}</strong>: Hedef ${doc.targetOvertime}s iken maksimum nöbet sınırına (${maxLimit} nöbet) ulaşıldığı için en fazla <strong>${stats.earnedOvertime}s</strong> üretilebildi (${missing}s eksik kaldı). Bu kişi için üst panelden nöbet tavanını 1 artırabilirsiniz.`);
+            warnings.push(`<strong>${doc.name || 'İsimsiz Hekim'}</strong>: Hedef ${doc.targetOvertime}s iken maksimum nöbet sınırına (${maxLimit} nöbet) ulaşıldığı için en fazla <strong>${stats.earnedOvertime}s</strong> üretilebildi (${missing}s eksik kaldı). Nöbet tavanını artırmanız gerekebilir.`);
           } else {
             warnings.push(`<strong>${doc.name || 'İsimsiz Hekim'}</strong>: Hedef ${doc.targetOvertime}s iken ${shiftCount} nöbet atanabildi (${missing}s eksik). Gün aşırı dinlenme veya izinli günlerin sıklığı sebebiyle boş gün bulunamadı.`);
           }
+        } else if (stats.earnedOvertime > doc.targetOvertime + 8) {
+          warnings.push(`<strong>${doc.name || 'İsimsiz Hekim'}</strong>: Kliniğin boş kalmaması amacıyla bu hekime +${stats.earnedOvertime - doc.targetOvertime}s fazla yazılmak zorunda kalındı.`);
         }
       });
 
@@ -818,7 +821,7 @@
         }
 
         if (status === 'N_FIXED' || status === 'N_AUTO') {
-          earnedOvertime += getOvertimeEarned(meta);
+          earnedOvertime += getOvertimeEarned(meta, d);
         }
       }
 
@@ -859,11 +862,13 @@
       html += `<th class="p-2 border bg-blue-50 text-blue-900 min-w-[55px]">Standart</th>`;
       html += `<th class="p-2 border bg-amber-100 text-amber-900 min-w-[65px]">Ek Mesai</th>`;
       html += `<th class="p-2 border bg-emerald-50 text-emerald-900 min-w-[55px]">Toplam</th>`;
+      html += `<th class="p-2 border bg-purple-50 text-purple-900 min-w-[55px]" title="Doktorun bu ay tuttuğu toplam 24 saatlik nöbet sayısı">N. Sayısı</th>`;
       html += `<th class="p-1 border bg-slate-100 w-8 no-print"></th>`;
       html += `</tr></thead><tbody>`;
 
       doctors.forEach(doc => {
         const stats = calculateDocStats(doc);
+        const shiftCount = countDoctorShifts(doc);
         html += `<tr>`;
         
         html += `<td class="p-1 border text-left bg-white">
@@ -901,6 +906,9 @@
         html += `<td class="p-1 border bg-amber-50/60 font-bold text-amber-700">${stats.earnedOvertime}s ${diffBadge}</td>`;
         html += `<td class="p-1 border bg-emerald-50/40 font-black text-emerald-700">${stats.totalHours}s</td>`;
         
+        // Yeni Nöbet Sayısı Sütunu
+        html += `<td class="p-1 border bg-purple-50/50 font-bold text-purple-800 text-center">${shiftCount}</td>`;
+        
         html += `<td class="p-1 border bg-white text-center no-print">
           <button onclick="deleteDoctor('${doc.id}')" class="text-slate-300 hover:text-red-500 font-bold px-1">&times;</button>
         </td>`;
@@ -921,7 +929,7 @@
         const countClass = isDeficient ? 'text-red-600 bg-red-100 font-black' : 'text-blue-700 font-bold';
         html += `<td class="p-1 border ${countClass}">${count}</td>`;
       }
-      html += `<td colspan="3" class="border"></td><td class="no-print border"></td></tr></tfoot>`;
+      html += `<td colspan="4" class="border"></td><td class="no-print border"></td></tr></tfoot>`;
 
       table.innerHTML = html;
       applyZoom();
