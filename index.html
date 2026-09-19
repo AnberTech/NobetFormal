@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <title>AnberTech - Formal Nöbet Çözücü V1.0</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Tarayıcı Sekme Logosu (Favicon) -->
+  <link rel="icon" type="image/png" href="anberTech.png">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Gerçek ve Renkli .xlsx İndirme Kütüphanesi -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -92,11 +96,12 @@
     <!-- Üst Kontrol Bloğu -->
     <header class="bg-white rounded-xl shadow-sm border border-slate-200 p-2.5 space-y-2.5 no-print">
       
-      <!-- 1. Satır: Sadece Marka Satırı -->
+      <!-- 1. Satır: Sadece Marka Satırı (anberTech.png Logo Entegre Edildi) -->
       <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
         <div class="flex items-center gap-2">
-          <div class="w-7 h-7 bg-blue-600 text-white rounded-lg flex items-center justify-center font-black text-sm shadow-sm shadow-blue-200">
-            A
+          <!-- Logo Alanı: anberTech.png bulunur, yüklenmezse A harfi görünür -->
+          <div class="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-slate-50 border border-slate-200/80 shadow-2xs shrink-0">
+            <img src="anberTech.png" alt="AnberTech Logo" class="w-full h-full object-contain" onerror="this.parentElement.innerHTML='<div class=\'w-7 h-7 bg-blue-600 text-white rounded-lg flex items-center justify-center font-black text-sm\'>A</div>'">
           </div>
           <div class="leading-none">
             <span class="text-xs font-black text-slate-900 tracking-tight">AnberTech</span>
@@ -135,7 +140,7 @@
 
         <!-- Sağ: Seed, Zoom, Arşiv, Kaydet, Dışa Aktarma -->
         <div class="flex items-center gap-1.5 ml-auto">
-          <!-- Tıklanabilir ve Düzenlenebilir Seed Butonu -->
+          <!-- Düzenlenebilir Seed Butonu -->
           <div class="flex items-center bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5" title="Tohum kodunu değiştirmek için tıklayın">
             <span class="text-[10px] font-mono text-slate-500 mr-1 font-bold">Seed:</span>
             <input type="number" id="seedInput" value="1337" class="w-14 bg-transparent font-mono font-bold text-[10px] text-slate-800 text-center focus:outline-none" onchange="onSeedManuallyChanged(this.value)">
@@ -464,7 +469,6 @@
     let isGenerated = false;
     let isOptimizing = false;
 
-    // 1. İYİLEŞTİRME: SESSİZ VERİ KAYBI KORUMASI (DIRTY STATE)
     let isDirty = false;
     let activePreviousFilter = { year: '2026', month: '09', service: 'Acil Servis' };
 
@@ -511,7 +515,6 @@
     function onFilterChanged(changedType) {
       if (isDirty) {
         if (!confirm("Kaydedilmemiş değişiklikleriniz var! Başka bir aya veya servise geçerseniz mevcut liste kaybolacaktır. Devam edilsin mi?")) {
-          // Eski değere geri döndür
           if (changedType === 'year') document.getElementById('selectYear').value = activePreviousFilter.year;
           if (changedType === 'month') document.getElementById('selectMonth').value = activePreviousFilter.month;
           if (changedType === 'service') document.getElementById('selectedService').value = activePreviousFilter.service;
@@ -588,7 +591,6 @@
       if (!wrapper || !table) return;
 
       const availableWidth = wrapper.clientWidth - 16;
-      // Güvenli doğal genişlik (31 gün x 32px + isim 115px + sağ sütunlar)
       const actualWidth = Math.max(table.scrollWidth || 0, 1380);
 
       if (actualWidth > 0 && availableWidth > 0) {
@@ -688,7 +690,6 @@
       };
     }
 
-    // 3. İYİLEŞTİRME: SICAK DÖNGÜ ÖNBELLEKLEME (CACHE)
     let prevTailShiftsCache = {};
     let cachedLastDayRuleVal = 16;
 
@@ -746,7 +747,6 @@
       if (badge) badge.innerText = list.length;
     }
 
-    // 2. İYİLEŞTİRME: KOTA PATLAMA GÜVENCESİ (TRY/CATCH + FIFO BUDAMA)
     function saveCurrentMonth() {
       const monthStr = getSelectedPeriodString();
       const srvName = document.getElementById('selectedService').value;
@@ -784,7 +784,6 @@
         try {
           localStorage.setItem(getArchiveStorageKey(monthStr, srvName), JSON.stringify(archiveList));
         } catch (eQuota) {
-          // Kota doluysa en eski 15 taneyi buda ve tekrar dene
           archiveList = archiveList.slice(0, 15);
           localStorage.setItem(getArchiveStorageKey(monthStr, srvName), JSON.stringify(archiveList));
         }
@@ -1261,13 +1260,12 @@
       }
     }
 
-    // 6. İYİLEŞTİRME: TOHUM (SEED) DEĞİŞTİRME & ÇALIŞTIRMA
     function onSeedManuallyChanged(val) {
       const parsed = parseInt(val);
       if (!isNaN(parsed) && parsed > 0) {
         currentSeed = parsed;
         markDirty();
-        showToast(`Tohum ${currentSeed} olarak ayarlandı. Üret butonuna basarak bu tohumu çalıştırabilirsiniz.`);
+        showToast(`Tohum ${currentSeed} olarak ayarlandı.`);
       }
     }
 
@@ -1353,7 +1351,6 @@
         }
       });
 
-      // 5. İYİLEŞTİRME: BEST-VALID VE BEST-ANY DUAL HAVUZ
       let globalBestValidSolution = null;
       let globalBestValidCost = Infinity;
       let globalBestValidSeed = 0;
@@ -1387,21 +1384,18 @@
             refineRosterLocally(trialGrid, maxLimit, rng);
             let cost = evaluateQualityCost(trialGrid);
 
-            // Her halükarda en az sapmalı listeyi kaydet
             if (cost < globalBestAnyCost) {
               globalBestAnyCost = cost;
               globalBestAnySolution = trialGrid;
               globalBestAnySeed = trialSeed;
             }
 
-            // Tam geçerli ise valid havuzuna yaz
             let validation = validateRoster(trialGrid, maxLimit);
             if (validation.valid && cost < globalBestValidCost) {
               globalBestValidCost = cost;
               globalBestValidSolution = trialGrid;
               globalBestValidSeed = trialSeed;
 
-              // Kusursuz sıfır sapmalı liste bulunduysa erken bitir
               if (cost === 0) break;
             }
           }
@@ -1454,7 +1448,6 @@
       step();
     }
 
-    // 4. İYİLEŞTİRME: KARARLI SIRALAMA (STABLE COMPARATOR & SCHWARTZIAN TRANSFORM)
     function constructFeasibleRoster(workGrid, maxLimit, rng, isFallback = false) {
       let unfilledDays = [];
       for (let d = 1; d <= daysInMonth; d++) {
@@ -1462,7 +1455,6 @@
         if (!hasShift) unfilledDays.push(d);
       }
 
-      // Günleri aday sayısına göre kararlı sırala (Aday sayısını 1 kez önceden ölç)
       const dayMetrics = unfilledDays.map(d => {
         const ot = getOvertimeEarned(daysMeta[d - 1], d);
         const count = getEligibleCandidates(d, [], maxLimit, ot, true, workGrid).length;
@@ -1479,7 +1471,6 @@
         }
         if (candidates.length === 0) return false;
 
-        // Aday skorunu jitter ile bir kez hesaplayıp deterministik sırala
         const scoredCandidates = candidates.map(c => ({
           doc: c,
           score: scoreCandidateChoice(c, d, otVal, workGrid) + (rng() * 0.4 - 0.2)
@@ -1489,7 +1480,6 @@
         workGrid[scoredCandidates[0].doc.id][d] = 'N_AUTO';
       }
 
-      // Hedef tamamlama adımı
       let sortedDocs = [...doctors].sort((a, b) => {
         let diffA = a.targetOvertime - calculateDocStats(a, workGrid).earnedOvertime;
         let diffB = b.targetOvertime - calculateDocStats(b, workGrid).earnedOvertime;
@@ -1832,7 +1822,6 @@
       }, 50);
     }
 
-    // SheetJS ile Donmuş Başlıklı & Stilli Excel İndirme
     function exportToStyledExcel() {
       const curMonth = getSelectedPeriodString();
       const curService = document.getElementById('selectedService').value;
@@ -1898,7 +1887,6 @@
       colWidths.push({ wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 10 });
       ws['!cols'] = colWidths;
 
-      // Üst 2 başlık satırını ve sol isim sütununu dondur
       ws['!freeze'] = { xSplit: 2, ySplit: 2, topLeftCell: 'C3' };
 
       for (let R = 2; R < 2 + doctors.length; ++R) {
