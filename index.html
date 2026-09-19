@@ -8,28 +8,42 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    .cell-fixed-n { background-color: #b91c1c !important; color: white !important; font-weight: 800; border: 2px solid #7f1d1d !important; }
+    /* Sabit Hücre Renkleri ve Katı Genişlikler */
+    .day-col {
+      width: 32px !important;
+      min-width: 32px !important;
+      max-width: 32px !important;
+      box-sizing: border-box !important;
+    }
+
+    .cell-fixed-n { background-color: #b91c1c !important; color: white !important; font-weight: 800; border: 2px solid #7f1d1d !important; position: relative; }
     .cell-auto-n { background-color: #ef4444 !important; color: white !important; font-weight: bold; }
     .cell-ni { background-color: #fef08a !important; color: #854d0e !important; font-weight: 700; }
-    .cell-off { background-color: #1e293b !important; color: #f8fafc !important; font-weight: bold; }
+    .cell-off { background-color: #1e293b !important; color: #f8fafc !important; font-weight: bold; position: relative; }
     .cell-m { background-color: #ffffff; color: #64748b; }
     .cell-hs { background-color: #f1f5f9; color: #94a3b8; }
     .cell-holiday { background-color: #fee2e2; color: #991b1b; }
-    th, td { text-align: center; vertical-align: middle; white-space: nowrap; }
+    
+    th, td { text-align: center; vertical-align: middle; white-space: nowrap; overflow: hidden; }
     
     #tableContainer {
       transform-origin: top left;
-      transition: transform 0.15s ease-out;
+      transition: transform 0.05s ease-out;
     }
 
+    /* PDF ve Yazdırmada Renkleri Kesinlikle Koru */
     @media print {
-      body { background: white !important; padding: 0 !important; font-size: 9px !important; }
-      header, .no-print, #tableControls, #pasteModal { display: none !important; }
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      body { background: white !important; padding: 0 !important; font-size: 8px !important; }
+      header, .no-print, #warningPanel, #pasteModal { display: none !important; }
+      #tableOuterWrapper { max-height: none !important; overflow: visible !important; border: none !important; }
       #tableContainer { transform: scale(1) !important; width: 100% !important; }
-      .max-h-\[76vh\] { max-height: none !important; overflow: visible !important; }
-      table { width: 100% !important; border: 1px solid #000 !important; }
-      th, td { border: 1px solid #ccc !important; padding: 2px !important; }
-      @page { size: landscape; margin: 5mm; }
+      table { width: 100% !important; border-collapse: collapse !important; border: 1px solid #94a3b8 !important; }
+      th, td { border: 1px solid #cbd5e1 !important; padding: 2px !important; font-size: 8px !important; }
+      @page { size: landscape; margin: 4mm; }
     }
   </style>
 </head>
@@ -53,6 +67,7 @@
         </div>
 
         <div class="flex items-center gap-1.5">
+          <!-- Zoom Araçları -->
           <div class="flex items-center bg-slate-50 border border-slate-200 rounded-lg p-0.5 text-slate-600 mr-1">
             <button onclick="changeZoom(-0.05)" class="w-6 h-6 hover:bg-white rounded flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold transition">-</button>
             <span id="zoomLabel" class="font-bold text-[10px] min-w-[32px] text-center">--%</span>
@@ -60,17 +75,17 @@
             <button onclick="autoFitZoom()" class="px-2 py-0.5 hover:bg-white rounded text-[10px] font-bold text-blue-600 transition" title="Ekrana Tam Sığdır">Sığdır</button>
           </div>
 
-          <button onclick="shareLink()" class="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5">
+          <button onclick="shareLink()" class="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Bağlantıyı Kopyala">
             <i class="fa-solid fa-share-nodes text-slate-500"></i>
             <span class="hidden sm:inline">Paylaş</span>
           </button>
 
-          <button onclick="window.print()" class="px-2.5 py-1.5 bg-slate-50 hover:bg-rose-50 hover:text-rose-600 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5">
+          <button onclick="window.print()" class="px-2.5 py-1.5 bg-slate-50 hover:bg-rose-50 hover:text-rose-600 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Renkli PDF Çıktısı Al">
             <i class="fa-solid fa-file-pdf text-rose-500"></i>
             <span class="hidden sm:inline">PDF</span>
           </button>
           
-          <button onclick="exportToExcel()" class="px-2.5 py-1.5 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5">
+          <button onclick="exportToStyledExcel()" class="px-2.5 py-1.5 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Renkli Excel Olarak İndir">
             <i class="fa-solid fa-file-excel text-emerald-600"></i>
             <span class="hidden sm:inline">Excel</span>
           </button>
@@ -114,7 +129,7 @@
 
           <div class="flex items-center gap-1 bg-amber-50/60 border border-amber-200 rounded-lg px-2 py-1" title="Ay sonu nöbet saati katsayısı">
             <span class="text-[10px] font-bold text-amber-800">Ay Sonu:</span>
-            <select id="lastDayShiftRule" class="bg-transparent font-bold text-amber-900 text-xs focus:outline-none cursor-pointer" onchange="render()">
+            <select id="lastDayShiftRule" class="bg-transparent font-bold text-amber-900 text-xs focus:outline-none cursor-pointer" onchange="renderOnly()">
               <option value="auto">Oto</option>
               <option value="16" selected>16s</option>
               <option value="24">24s</option>
@@ -136,15 +151,15 @@
         </div>
 
         <div class="flex items-center gap-1.5 ml-auto">
-          <button onclick="addDoctorRow()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1">
+          <button onclick="addDoctorRow()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1" title="Tek hekim ekle">
             <i class="fa-solid fa-user-plus text-slate-500"></i> Hekim Ekle
           </button>
 
-          <button onclick="openPasteModal()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1">
+          <button onclick="openPasteModal()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1" title="Excel'den toplu isim ve saat yapıştır">
             <i class="fa-solid fa-clipboard-list text-slate-500"></i> Toplu İsim
           </button>
 
-          <button onclick="copyPreviousMonthStaff()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1">
+          <button onclick="copyPreviousMonthStaff()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1" title="Önceki aydan kadroyu kopyala">
             <i class="fa-solid fa-users text-slate-500"></i> Aktar
           </button>
 
@@ -152,13 +167,12 @@
             <i class="fa-solid fa-floppy-disk text-xs"></i> Kaydet
           </button>
 
-          <!-- NÖBETLERİ ÜRET BUTONU -->
           <button id="btnDistribute" onclick="distributeRoster()" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-xs rounded-lg shadow-md shadow-blue-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-blue-400/30">
             <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
             <span>Nöbetleri Üret</span>
           </button>
 
-          <button onclick="clearOnlyGenerated()" id="btnClearGenerated" class="hidden px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-medium rounded-lg transition">
+          <button onclick="clearOnlyGenerated()" id="btnClearGenerated" class="hidden px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-medium rounded-lg transition" title="Sadece algoritmanın atadığı nöbetleri geri al">
             <i class="fa-solid fa-rotate-left"></i>
           </button>
         </div>
@@ -167,16 +181,16 @@
 
     </header>
 
-    <!-- Bildirim Rozetleri -->
+    <!-- Bildirim Rozeti -->
     <div id="saveToast" class="hidden fixed top-4 right-4 bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-xl z-50 text-xs font-bold flex items-center gap-2">
       <i class="fa-solid fa-circle-check text-sm"></i>
       <span id="toastMessage">Değişiklikler başarıyla kaydedildi!</span>
     </div>
 
-    <!-- Tablo Alanı -->
+    <!-- Tablo Alanı (Sabit Layout & Sıfır Titreme) -->
     <div id="tableOuterWrapper" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto max-h-[76vh] relative">
       <div id="tableContainer">
-        <table id="rosterTable" class="w-full border-collapse"></table>
+        <table id="rosterTable" class="w-full border-collapse" style="table-layout: fixed;"></table>
       </div>
     </div>
 
@@ -259,9 +273,7 @@
       loadActiveRoster();
 
       window.addEventListener('resize', () => {
-        if (!isUserZoomed) {
-          autoFitZoom();
-        }
+        if (!isUserZoomed) autoFitZoom();
       });
     };
 
@@ -295,186 +307,8 @@
 
     function applyZoom() {
       const container = document.getElementById('tableContainer');
-      container.style.transform = `scale(${currentZoom})`;
-      container.style.width = `${100 / currentZoom}%`;
-      document.getElementById('zoomLabel').innerText = `${Math.round(currentZoom * 100)}%`;
-    }
-
-    function getSelectedPeriodString() {
-      return `${document.getElementById('selectYear').value}-${document.getElementById('selectMonth').value}`;
-    }
-
-    function onFilterChanged() {
-      loadActiveRoster();
-    }
-
-    function getStorageKey(monthStr, serviceName) {
-      const srvClean = (serviceName || 'Genel').trim().toLowerCase().replace(/\s+/g, '_');
-      return `nobet_roster_${monthStr}_${srvClean}`;
-    }
-
-    function refreshServiceOptions() {
-      const savedServices = JSON.parse(localStorage.getItem('nobet_known_services') || '["Acil Servis", "Dahiliye", "Çocuk Cerrahisi", "Genel Cerrahi"]');
-      const datalist = document.getElementById('serviceOptions');
-      datalist.innerHTML = '';
-      savedServices.forEach(srv => {
-        const opt = document.createElement('option');
-        opt.value = srv;
-        datalist.appendChild(opt);
-      });
-    }
-
-    function registerServiceName(srv) {
-      if (!srv) return;
-      let saved = JSON.parse(localStorage.getItem('nobet_known_services') || '["Acil Servis", "Dahiliye", "Çocuk Cerrahisi", "Genel Cerrahi"]');
-      if (!saved.includes(srv.trim())) {
-        saved.push(srv.trim());
-        localStorage.setItem('nobet_known_services', JSON.stringify(saved));
-        refreshServiceOptions();
-      }
-    }
-
-    function refreshDoctorAutocompletePool() {
-      const savedPool = JSON.parse(localStorage.getItem('nobet_doctor_pool') || '[]');
-      const datalist = document.getElementById('doctorAutocompletePool');
-      datalist.innerHTML = '';
-      savedPool.forEach(name => {
-        const opt = document.createElement('option');
-        opt.value = name;
-        datalist.appendChild(opt);
-      });
-    }
-
-    function registerDoctorsToPool(nameList) {
-      let pool = JSON.parse(localStorage.getItem('nobet_doctor_pool') || '[]');
-      let updated = false;
-      nameList.forEach(n => {
-        const trimName = n.trim();
-        if (trimName && !pool.includes(trimName)) {
-          pool.push(trimName);
-          updated = true;
-        }
-      });
-      if (updated) {
-        pool.sort();
-        localStorage.setItem('nobet_doctor_pool', JSON.stringify(pool));
-        refreshDoctorAutocompletePool();
-      }
-    }
-
-    function getPreviousMonthString(curMonthStr) {
-      const [y, m] = curMonthStr.split('-').map(Number);
-      const prevDate = new Date(y, m - 2, 1);
-      const py = prevDate.getFullYear();
-      const pm = String(prevDate.getMonth() + 1).padStart(2, '0');
-      return `${py}-${pm}`;
-    }
-
-    function getPreviousMonthTailShifts(docName) {
-      const curMonth = getSelectedPeriodString();
-      const curService = document.getElementById('selectedService').value;
-      const prevMonth = getPreviousMonthString(curMonth);
-      const raw = localStorage.getItem(getStorageKey(prevMonth, curService));
-      if (!raw) return { lastDayShift: false, secondLastDayShift: false };
-
-      try {
-        const parsed = JSON.parse(raw);
-        const prevDoc = parsed.doctors.find(d => d.name.trim().toLowerCase() === docName.trim().toLowerCase());
-        if (!prevDoc) return { lastDayShift: false, secondLastDayShift: false };
-
-        const [py, pm] = prevMonth.split('-').map(Number);
-        const prevTotalDays = new Date(py, pm, 0).getDate();
-        const prevGrid = parsed.grid[prevDoc.id] || {};
-
-        const lastSt = prevGrid[prevTotalDays];
-        const secLastSt = prevGrid[prevTotalDays - 1];
-
-        return {
-          lastDayShift: (lastSt === 'N_FIXED' || lastSt === 'N_AUTO'),
-          secondLastDayShift: (secLastSt === 'N_FIXED' || secLastSt === 'N_AUTO')
-        };
-      } catch (e) {
-        return { lastDayShift: false, secondLastDayShift: false };
-      }
-    }
-
-    function showToast(msg) {
-      const toast = document.getElementById('saveToast');
-      document.getElementById('toastMessage').innerText = msg;
-      toast.classList.remove('hidden');
-      setTimeout(() => toast.classList.add('hidden'), 2500);
-    }
-
-    function shareLink() {
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(window.location.href);
-        showToast("Bağlantı panoya kopyalandı!");
-      } else {
-        alert("Bağlantı: " + window.location.href);
-      }
-    }
-
-    function saveCurrentMonth() {
-      const monthStr = getSelectedPeriodString();
-      const srvName = document.getElementById('selectedService').value;
-      
-      registerServiceName(srvName);
-      registerDoctorsToPool(doctors.map(d => d.name));
-
-      const payload = {
-        doctors,
-        grid,
-        serviceName: srvName,
-        maxLimit: document.getElementById('maxShiftLimit').value,
-        lastDayRule: document.getElementById('lastDayShiftRule').value,
-        timestamp: Date.now()
-      };
-      localStorage.setItem(getStorageKey(monthStr, srvName), JSON.stringify(payload));
-      showToast("Değişiklikler başarıyla kaydedildi!");
-    }
-
-    function loadActiveRoster() {
-      const monthStr = getSelectedPeriodString();
-      const srvName = document.getElementById('selectedService').value;
-      const raw = localStorage.getItem(getStorageKey(monthStr, srvName));
-
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-          doctors = parsed.doctors || [];
-          grid = parsed.grid || {};
-          if (parsed.maxLimit) document.getElementById('maxShiftLimit').value = parsed.maxLimit;
-          if (parsed.lastDayRule) document.getElementById('lastDayShiftRule').value = parsed.lastDayRule;
-          isGenerated = true;
-          updateButtons();
-        } catch (e) {
-          initDefaultDoctors(10);
-        }
-      } else {
-        const prevMonth = getPreviousMonthString(monthStr);
-        const prevRaw = localStorage.getItem(getStorageKey(prevMonth, srvName));
-        if (prevRaw) {
-          try {
-            const prevData = JSON.parse(prevRaw);
-            doctors = prevData.doctors.map(d => ({ id: 'd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), name: d.name, targetOvertime: d.targetOvertime }));
-            grid = {};
-            doctors.forEach(d => grid[d.id] = {});
-          } catch(e) { initDefaultDoctors(10); }
-        } else {
-          initDefaultDoctors(10);
-        }
-        isGenerated = false;
-        updateButtons();
-      }
-      initCalendar();
-    }
-
-    function copyPreviousMonthStaff() {
-      const curMonth = getSelectedPeriodString();
-      const curService = document.getElementById('selectedService').value;
-      const prevMonth = getPreviousMonthString(curMonth);
-      const prevRaw = localStorage.getItem(getStorageKey(prevMonth, curService));
-      if (!prevRaw) return alert(`${curService} servisine ait önceki ayda (${prevMonth}) kayıtlı arşiv bulunamadı.`);
+      container.style.transform = `scale(${currentZoom})`;       container.style.width = `${100 / currentZoom}%`;
+      document.getElementById('zoomLabel').innerText = `${Math.round(currentZoom * 100)}\%`;     }      function getSelectedPeriodString() {       return `${document.getElementById('selectYear').value}-${document.getElementById('selectMonth').value}`;     }      function onFilterChanged() {       isUserZoomed = false;       loadActiveRoster();     }      function getStorageKey(monthStr, serviceName) {       const srvClean = (serviceName \vert{}\vert{} 'Genel').trim().toLowerCase().replace(/\s+/g, '_');       return `nobet_roster_${monthStr}_${srvClean}`;     }      function refreshServiceOptions() {       const savedServices = JSON.parse(localStorage.getItem('nobet_known_services') \vert{}\vert{} '["Acil Servis", "Dahiliye", "Çocuk Cerrahisi", "Genel Cerrahi"]');       const datalist = document.getElementById('serviceOptions');       datalist.innerHTML = '';       savedServices.forEach(srv => {         const opt = document.createElement('option');         opt.value = srv;         datalist.appendChild(opt);       });     }      function registerServiceName(srv) {       if (!srv) return;       let saved = JSON.parse(localStorage.getItem('nobet_known_services') \vert{}\vert{} '["Acil Servis", "Dahiliye", "Çocuk Cerrahisi", "Genel Cerrahi"]');       if (!saved.includes(srv.trim())) {         saved.push(srv.trim());         localStorage.setItem('nobet_known_services', JSON.stringify(saved));         refreshServiceOptions();       }     }      function refreshDoctorAutocompletePool() {       const savedPool = JSON.parse(localStorage.getItem('nobet_doctor_pool') \vert{}\vert{} '[]');       const datalist = document.getElementById('doctorAutocompletePool');       datalist.innerHTML = '';       savedPool.forEach(name => {         const opt = document.createElement('option');         opt.value = name;         datalist.appendChild(opt);       });     }      function registerDoctorsToPool(nameList) {       let pool = JSON.parse(localStorage.getItem('nobet_doctor_pool') \vert{}\vert{} '[]');       let updated = false;       nameList.forEach(n => {         const trimName = n.trim();         if (trimName && !pool.includes(trimName)) {           pool.push(trimName);           updated = true;         }       });       if (updated) {         pool.sort();         localStorage.setItem('nobet_doctor_pool', JSON.stringify(pool));         refreshDoctorAutocompletePool();       }     }      function getPreviousMonthString(curMonthStr) {       const [y, m] = curMonthStr.split('-').map(Number);       const prevDate = new Date(y, m - 2, 1);       const py = prevDate.getFullYear();       const pm = String(prevDate.getMonth() + 1).padStart(2, '0');       return `${py}-${pm}`;     }      function getPreviousMonthTailShifts(docName) {       const curMonth = getSelectedPeriodString();       const curService = document.getElementById('selectedService').value;       const prevMonth = getPreviousMonthString(curMonth);       const raw = localStorage.getItem(getStorageKey(prevMonth, curService));       if (!raw) return { lastDayShift: false, secondLastDayShift: false };        try {         const parsed = JSON.parse(raw);         const prevDoc = parsed.doctors.find(d => d.name.trim().toLowerCase() === docName.trim().toLowerCase());         if (!prevDoc) return { lastDayShift: false, secondLastDayShift: false };          const [py, pm] = prevMonth.split('-').map(Number);         const prevTotalDays = new Date(py, pm, 0).getDate();         const prevGrid = parsed.grid[prevDoc.id] \vert{}\vert{} {};          const lastSt = prevGrid[prevTotalDays];         const secLastSt = prevGrid[prevTotalDays - 1];          return {           lastDayShift: (lastSt === 'N_FIXED' \vert{}\vert{} lastSt === 'N_AUTO'),           secondLastDayShift: (secLastSt === 'N_FIXED' \vert{}\vert{} secLastSt === 'N_AUTO')         };       } catch (e) {         return { lastDayShift: false, secondLastDayShift: false };       }     }      function showToast(msg) {       const toast = document.getElementById('saveToast');       document.getElementById('toastMessage').innerText = msg;       toast.classList.remove('hidden');       setTimeout(() => toast.classList.add('hidden'), 2500);     }      function shareLink() {       if (navigator.clipboard) {         navigator.clipboard.writeText(window.location.href);         showToast("Bağlantı panoya kopyalandı!");       } else {         alert("Bağlantı: " + window.location.href);       }     }      function saveCurrentMonth() {       const monthStr = getSelectedPeriodString();       const srvName = document.getElementById('selectedService').value;              registerServiceName(srvName);       registerDoctorsToPool(doctors.map(d => d.name));        const payload = {         doctors,         grid,         serviceName: srvName,         maxLimit: document.getElementById('maxShiftLimit').value,         lastDayRule: document.getElementById('lastDayShiftRule').value,         timestamp: Date.now()       };       localStorage.setItem(getStorageKey(monthStr, srvName), JSON.stringify(payload));       showToast("Değişiklikler başarıyla kaydedildi!");     }      function loadActiveRoster() {       const monthStr = getSelectedPeriodString();       const srvName = document.getElementById('selectedService').value;       const raw = localStorage.getItem(getStorageKey(monthStr, srvName));        if (raw) {         try {           const parsed = JSON.parse(raw);           doctors = parsed.doctors \vert{}\vert{} [];           grid = parsed.grid \vert{}\vert{} {};           if (parsed.maxLimit) document.getElementById('maxShiftLimit').value = parsed.maxLimit;           if (parsed.lastDayRule) document.getElementById('lastDayShiftRule').value = parsed.lastDayRule;           isGenerated = true;           updateButtons();         } catch (e) {           initDefaultDoctors(10);         }       } else {         const prevMonth = getPreviousMonthString(monthStr);         const prevRaw = localStorage.getItem(getStorageKey(prevMonth, srvName));         if (prevRaw) {           try {             const prevData = JSON.parse(prevRaw);             doctors = prevData.doctors.map(d => ({ id: 'd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), name: d.name, targetOvertime: d.targetOvertime }));             grid = {};             doctors.forEach(d => grid[d.id] = {});           } catch(e) { initDefaultDoctors(10); }         } else {           initDefaultDoctors(10);         }         isGenerated = false;         updateButtons();       }       initCalendar();     }      function copyPreviousMonthStaff() {       const curMonth = getSelectedPeriodString();       const curService = document.getElementById('selectedService').value;       const prevMonth = getPreviousMonthString(curMonth);       const prevRaw = localStorage.getItem(getStorageKey(prevMonth, curService));       if (!prevRaw) return alert(`${curService} servisine ait önceki ayda (${prevMonth}) kayıtlı arşiv bulunamadı.`);
 
       if (confirm(`Önceki ayın (${prevMonth})${curService} kadrosu bu aya aktarılsın mı?`)) {
         const prevData = JSON.parse(prevRaw);
@@ -520,8 +354,7 @@
         daysMeta.push({ day: d, dayOfWeek, isWeekend, isHoliday: hol.holiday, holidayName: hol.name });
       }
 
-      document.getElementById('statWorkdays').innerText = `${workdays}`;
-      document.getElementById('statStandardHours').innerText = `${workdays * 8}s`;
+      document.getElementById('statWorkdays').innerText = `${workdays}`;       document.getElementById('statStandardHours').innerText = `${workdays * 8}s`;
 
       doctors.forEach(doc => {
         if (!grid[doc.id]) grid[doc.id] = {};
@@ -529,7 +362,7 @@
           if (!grid[doc.id][d]) grid[doc.id][d] = '';
         }
       });
-      render();
+      renderWithAutoFit();
     }
 
     function addDoctorRow() {
@@ -537,13 +370,13 @@
       doctors.push({ id, name: ``, targetOvertime: 80 });
       grid[id] = {};
       for (let d = 1; d <= daysInMonth; d++) grid[id][d] = '';
-      render();
+      renderOnly();
     }
 
     function deleteDoctor(docId) {
       doctors = doctors.filter(d => d.id !== docId);
       delete grid[docId];
-      render();
+      renderOnly();
     }
 
     function updateDoctorName(docId, val) {
@@ -632,6 +465,7 @@
       return '';
     }
 
+    // Tıklamada SIFIR TİTREME (Zoom tetiklenmez, sadece hücreler güncellenir)
     function toggleDay(docId, day) {
       const cur = grid[docId][day] || '';
 
@@ -643,13 +477,13 @@
         grid[docId][day] = '';
       }
 
-      render();
+      renderOnly();
     }
 
     function updateTarget(docId, val) {
       const doc = doctors.find(d => d.id === docId);
       if (doc) doc.targetOvertime = parseInt(val) || 0;
-      render();
+      renderOnly();
     }
 
     function getOvertimeEarned(dayMeta, dayNum) {
@@ -674,7 +508,7 @@
       isGenerated = false;
       document.getElementById('warningPanel').classList.add('hidden');
       updateButtons();
-      render();
+      renderOnly();
     }
 
     function updateButtons() {
@@ -701,8 +535,7 @@
     }
 
     // =========================================================================
-    // YENİ ÇÖZÜCÜ: HEDEF SAAT ODAKLI DİNAMİK OPTİMİZASYON MOTORU
-    // (Simetri esnek, Mesai saati katı, Sıfır gün kesinlikle yasak)
+    // YÜKSEK PERFORMANSLI DİNAMİK OPTİMİZASYON MOTORU
     // =========================================================================
     function distributeRoster() {
       if (doctors.length === 0) return alert("Lütfen önce hekim ekleyin.");
@@ -716,19 +549,14 @@
         }
       });
 
-      // 2. AŞAMA 1: SIFIR GÜN YASAĞI (Her gün en az 1 nöbetçi garanti altına alınır)
+      // 2. AŞAMA 1: SIFIR GÜN YASAĞI (Her gün en az 1 nöbetçi garanti edilir)
       for (let d = 1; d <= daysInMonth; d++) {
         const otVal = getOvertimeEarned(daysMeta[d - 1], d);
         let assigned = doctors.filter(doc => grid[doc.id][d] === 'N_FIXED' || grid[doc.id][d] === 'N_AUTO').map(doc => doc.id);
 
         if (assigned.length === 0) {
-          // Önce hedef saati henüz dolmamış adayları ara
           let candidates = getEligibleCandidates(d, assigned, maxLimit, otVal, true);
-          
-          // Eğer hedef saati kuralına uyan yoksa kliniği kurtarmak için hedef toleransını esnet
-          if (candidates.length === 0) {
-            candidates = getEligibleCandidates(d, assigned, maxLimit, otVal, false);
-          }
+          if (candidates.length === 0) candidates = getEligibleCandidates(d, assigned, maxLimit, otVal, false);
 
           if (candidates.length > 0) {
             candidates.sort((a, b) => {
@@ -736,34 +564,30 @@
               const needB = b.targetOvertime - calculateDocStats(b).earnedOvertime;
               return needB - needA;
             });
-            const chosen = candidates[0];
-            grid[chosen.id][d] = 'N_AUTO';
+            grid[candidates[0].id][d] = 'N_AUTO';
           }
         }
       }
 
-      // 3. AŞAMA 2: HEDEF SAATLERİ DOLDURMA (Simetriye bakılmaksızın saati eksik olanlara gün atanır)
-      // Doktorları hedefi en yüksek olandan en düşüğe doğru sırala
+      // 3. AŞAMA 2: HEDEF SAATLERİ DOLDURMA (Açgözlü değil, hedef aralığına göre nokta atışı)
       let sortedDocs = [...doctors].sort((a, b) => b.targetOvertime - a.targetOvertime);
 
       for (let doc of sortedDocs) {
         let attempts = 0;
-        while (attempts < 20) {
+        while (attempts < 25) {
           attempts++;
           let curStats = calculateDocStats(doc);
           let missingHours = doc.targetOvertime - curStats.earnedOvertime;
           
-          // Hedefe ulaşıldıysa bu doktoru tamamla
           if (missingHours <= 0) break;
           if (countDoctorShifts(doc) >= maxLimit) break;
 
-          // Bu hekimin nöbet tutabileceği tüm uygun günleri getir
           let feasibleDays = [];
           for (let d = 1; d <= daysInMonth; d++) {
             const otVal = getOvertimeEarned(daysMeta[d - 1], d);
             let assigned = doctors.filter(dc => grid[dc.id][d] === 'N_FIXED' || grid[dc.id][d] === 'N_AUTO').map(dc => dc.id);
 
-            // Kural: Hedef + 8'i asla aşamaz
+            // Kural: Hedef + 8'i aşamaz
             if (curStats.earnedOvertime + otVal <= doc.targetOvertime + 8) {
               if (getEligibleCandidates(d, assigned, maxLimit, otVal, false).some(c => c.id === doc.id)) {
                 feasibleDays.push({ day: d, otVal, assignedCount: assigned.length });
@@ -771,52 +595,41 @@
             }
           }
 
-          if (feasibleDays.length === 0) break; // Boş gün bulunamadı
+          if (feasibleDays.length === 0) break;
 
-          // Eksik saate en yakın olan ve kliniği aşırı yığmayan günü seç
+          // Eksik saate en yakın olanı ve klinikte en az nöbetçi olan günü öncelikle seç
           feasibleDays.sort((a, b) => {
-            // Önce eksik saate en yakın getirisi olanı tercih et
             const diffA = Math.abs(missingHours - a.otVal);
             const diffB = Math.abs(missingHours - b.otVal);
             if (diffA !== diffB) return diffA - diffB;
-            // Eşitse nöbetçi sayısı daha az olan günü seç
             return a.assignedCount - b.assignedCount;
           });
 
-          const bestDay = feasibleDays[0].day;
-          grid[doc.id][bestDay] = 'N_AUTO';
+          grid[doc.id][feasibleDays[0].day] = 'N_AUTO';
         }
       }
 
-      // 4. AŞAMA 3: İKİLİ DEĞİŞ-TOKUŞ (SWAP & REPAIR) DÖNGÜSÜ
-      // Eğer hala saati eksik kalan varsa, saati fazla olan hekimlerle gün takası yapılır
-      for (let iter = 0; iter < 10; iter++) {
+      // 4. AŞAMA 3: TAKAS & ONARIM (SWAP ENGINE)
+      for (let iter = 0; iter < 12; iter++) {
         let deficientDoc = doctors.find(d => (d.targetOvertime - calculateDocStats(d).earnedOvertime) > 0 && countDoctorShifts(d) < maxLimit);
         if (!deficientDoc) break;
 
-        let needed = deficientDoc.targetOvertime - calculateDocStats(deficientDoc).earnedOvertime;
         let swapped = false;
-
         for (let d = 1; d <= daysInMonth; d++) {
           const otVal = getOvertimeEarned(daysMeta[d - 1], d);
           if (grid[deficientDoc.id][d] !== '') continue;
 
-          // Bu gün otomatik nöbeti olan birini bul
           let candidateToGive = doctors.find(dOther => grid[dOther.id][d] === 'N_AUTO');
           if (candidateToGive) {
-            // Nöbeti deficientDoc alabilir mi?
             let assigned = doctors.filter(dc => grid[dc.id][d] === 'N_FIXED' || grid[dc.id][d] === 'N_AUTO').map(dc => dc.id);
             if (getEligibleCandidates(d, assigned.filter(id => id !== candidateToGive.id), maxLimit, otVal, false).some(c => c.id === deficientDoc.id)) {
-              // Takas yap
               grid[candidateToGive.id][d] = '';
               grid[deficientDoc.id][d] = 'N_AUTO';
               
-              // Veren doktorun saati aşırı düşmediyse koru
               if (calculateDocStats(candidateToGive).earnedOvertime >= candidateToGive.targetOvertime) {
                 swapped = true;
                 break;
               } else {
-                // Geri al
                 grid[deficientDoc.id][d] = '';
                 grid[candidateToGive.id][d] = 'N_AUTO';
               }
@@ -829,7 +642,7 @@
       isGenerated = true;
       updateButtons();
       checkFeasibility(maxLimit);
-      render();
+      renderOnly();
       saveCurrentMonth();
     }
 
@@ -838,23 +651,19 @@
         if (assignedToday.includes(doc.id)) return false;
         if (grid[doc.id][d] === 'OFF' || grid[doc.id][d] === 'N_FIXED' || grid[doc.id][d] === 'N_AUTO') return false;
 
-        // Önceki ay devri kontrolü
         const prevTail = getPreviousMonthTailShifts(doc.name);
         if (d === 1 && (prevTail.lastDayShift || prevTail.secondLastDayShift)) return false;
         if (d === 2 && prevTail.lastDayShift) return false;
 
-        // Gün aşırı yasağı: Dün ve evvelsi gün olamaz
         if (d > 1 && (grid[doc.id][d - 1] === 'N_FIXED' || grid[doc.id][d - 1] === 'N_AUTO')) return false;
         if (d > 2 && (grid[doc.id][d - 2] === 'N_FIXED' || grid[doc.id][d - 2] === 'N_AUTO')) return false;
 
-        // İleriki günler kontrolü: Yarın ve sonraki gün olamaz
         if (d + 1 <= daysInMonth && (grid[doc.id][d + 1] === 'N_FIXED' || grid[doc.id][d + 1] === 'N_AUTO')) return false;
         if (d + 2 <= daysInMonth && (grid[doc.id][d + 2] === 'N_FIXED' || grid[doc.id][d + 2] === 'N_AUTO')) return false;
 
         if (countDoctorShifts(doc) >= maxLimit) return false;
 
         const curStats = calculateDocStats(doc);
-
         if (checkTargetCap) {
           if (curStats.earnedOvertime + otVal > doc.targetOvertime + 8) return false;
           if (curStats.earnedOvertime >= doc.targetOvertime) return false;
@@ -935,7 +744,8 @@
       };
     }
 
-    function render() {
+    // YALNIZCA HTML RENDER (Zoom hesaplamaz, ekranda titreme yapmaz)
+    function renderOnly() {
       const table = document.getElementById('rosterTable');
       if (doctors.length === 0) {
         table.innerHTML = `<tr><td class="p-8 text-slate-400">Liste boş. "Hekim Ekle" veya "Toplu İsim" butonuna tıklayın.</td></tr>`;
@@ -945,25 +755,25 @@
       const dayNames = ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'];
 
       let html = `<thead class="bg-slate-50 sticky top-0 z-20 border-b"><tr>`;
-      html += `<th class="p-2 border text-left bg-slate-100 min-w-[150px]">Hekim Adı</th>`;
-      html += `<th class="p-1 border bg-amber-50 text-amber-900 min-w-[55px]">Hedef</th>`;
+      html += `<th class="p-2 border text-left bg-slate-100 min-w-[140px] max-w-[140px]">Hekim Adı</th>`;
+      html += `<th class="p-1 border bg-amber-50 text-amber-900 w-12 min-w-[48px] max-w-[48px]">Hedef</th>`;
 
       for (let d = 1; d <= daysInMonth; d++) {
         const meta = daysMeta[d - 1];
         let colClass = meta.isWeekend ? 'bg-slate-100 text-slate-500' : 'bg-white';
         if (meta.isHoliday) colClass = 'bg-red-100 text-red-700 font-bold';
 
-        html += `<th class="p-1 border min-w-[26px] ${colClass}" title="${meta.holidayName || ''}">
-          <div>${d}</div>
-          <div class="text-[8px] uppercase">${dayNames[meta.dayOfWeek]}</div>
+        html += `<th class="p-1 border day-col ${colClass}" title="${meta.holidayName || ''}">
+          <div class="leading-none text-[11px] font-bold">${d}</div>
+          <div class="text-[8px] uppercase font-medium mt-0.5">${dayNames[meta.dayOfWeek]}</div>
         </th>`;
       }
 
-      html += `<th class="p-2 border bg-blue-50 text-blue-900 min-w-[55px]">Standart</th>`;
-      html += `<th class="p-2 border bg-amber-100 text-amber-900 min-w-[65px]">Ek Mesai</th>`;
-      html += `<th class="p-2 border bg-emerald-50 text-emerald-900 min-w-[55px]">Toplam</th>`;
-      html += `<th class="p-2 border bg-purple-50 text-purple-900 min-w-[55px]" title="Doktorun bu ay tuttuğu toplam nöbet sayısı">N. Sayısı</th>`;
-      html += `<th class="p-1 border bg-slate-100 w-8 no-print"></th>`;
+      html += `<th class="p-2 border bg-blue-50 text-blue-900 w-12 min-w-[48px]">Standart</th>`;
+      html += `<th class="p-2 border bg-amber-100 text-amber-900 w-14 min-w-[56px]">Ek Mesai</th>`;
+      html += `<th class="p-2 border bg-emerald-50 text-emerald-900 w-12 min-w-[48px]">Toplam</th>`;
+      html += `<th class="p-2 border bg-purple-50 text-purple-900 w-12 min-w-[48px]" title="Toplam Nöbet Sayısı">N. Sayısı</th>`;
+      html += `<th class="p-1 border bg-slate-100 w-6 min-w-[24px] no-print"></th>`;
       html += `</tr></thead><tbody>`;
 
       doctors.forEach(doc => {
@@ -971,12 +781,12 @@
         const shiftCount = countDoctorShifts(doc);
         html += `<tr>`;
         
-        html += `<td class="p-1 border text-left bg-white">
+        html += `<td class="p-1 border text-left bg-white min-w-[140px] max-w-[140px]">
           <input type="text" list="doctorAutocompletePool" value="${doc.name}" class="w-full bg-transparent border-0 focus:ring-1 focus:ring-blue-500 rounded px-1.5 py-0.5 font-medium text-slate-800 text-xs" oninput="updateDoctorName('${doc.id}', this.value)" placeholder="İsim Girin">
         </td>`;
 
-        html += `<td class="p-1 border bg-amber-50/30">
-          <input type="number" step="8" value="${doc.targetOvertime}" class="w-12 text-center font-bold bg-white border border-slate-300 rounded text-xs py-0.5" onchange="updateTarget('${doc.id}', this.value)">
+        html += `<td class="p-1 border bg-amber-50/30 w-12 min-w-[48px]">
+          <input type="number" step="8" value="${doc.targetOvertime}" class="w-11 text-center font-bold bg-white border border-slate-300 rounded text-xs py-0.5" onchange="updateTarget('${doc.id}', this.value)">
         </td>`;
 
         for (let d = 1; d <= daysInMonth; d++) {
@@ -987,62 +797,104 @@
 
           if (meta.isHoliday) { cellClass = 'cell-holiday'; label = 'T'; }
 
-          if (st === 'N_FIXED') { cellClass = 'cell-fixed-n'; label = '🔒 N'; }
+          let badgeIcon = '';
+          if (st === 'N_FIXED') { 
+            cellClass = 'cell-fixed-n'; 
+            label = 'N'; 
+            badgeIcon = '<i class="fa-solid fa-lock absolute top-0.5 right-0.5 text-[7px] opacity-75"></i>';
+          }
           else if (st === 'N_AUTO') { cellClass = 'cell-auto-n'; label = 'N'; }
           else if (st === 'N_IZNI') { cellClass = 'cell-ni'; label = 'N-İzni'; }
-          else if (st === 'OFF') { cellClass = 'cell-off'; label = '🔒 X'; }
+          else if (st === 'OFF') { 
+            cellClass = 'cell-off'; 
+            label = 'X'; 
+            badgeIcon = '<i class="fa-solid fa-lock absolute top-0.5 right-0.5 text-[7px] opacity-75"></i>';
+          }
 
-          html += `<td class="p-1 border cursor-pointer select-none text-[11px] ${cellClass}" onclick="toggleDay('${doc.id}', ${d})">${label}</td>`;
+          html += `<td class="p-1 border cursor-pointer select-none text-[11px] day-col ${cellClass}" onclick="toggleDay('${doc.id}', ${d})">
+            ${label}${badgeIcon}
+          </td>`;
         }
 
         let diffBadge = '';
         if (stats.earnedOvertime >= doc.targetOvertime) {
-          diffBadge = `<span class="text-emerald-600 font-bold ml-1">✓ ${stats.diff > 0 ? '(+' + stats.diff + ')' : ''}</span>`;
+          diffBadge = `<span class="text-emerald-600 font-bold ml-0.5">✓${stats.diff > 0 ? '(+' + stats.diff + ')' : ''}</span>`;
         } else {
-          diffBadge = `<span class="text-[10px] text-rose-500 font-bold ml-1">(${stats.diff})</span>`;
+          diffBadge = `<span class="text-[10px] text-rose-500 font-bold ml-0.5">(${stats.diff})</span>`;
         }
 
-        html += `<td class="p-1 border bg-blue-50/40 font-semibold">${stats.standardHours}s</td>`;
-        html += `<td class="p-1 border bg-amber-50/60 font-bold text-amber-700">${stats.earnedOvertime}s ${diffBadge}</td>`;
-        html += `<td class="p-1 border bg-emerald-50/40 font-black text-emerald-700">${stats.totalHours}s</td>`;
-        html += `<td class="p-1 border bg-purple-50/50 font-bold text-purple-800 text-center">${shiftCount}</td>`;
+        html += `<td class="p-1 border bg-blue-50/40 font-semibold w-12">${stats.standardHours}s</td>`;
+        html += `<td class="p-1 border bg-amber-50/60 font-bold text-amber-700 w-14">${stats.earnedOvertime}s ${diffBadge}</td>`;
+        html += `<td class="p-1 border bg-emerald-50/40 font-black text-emerald-700 w-12">${stats.totalHours}s</td>`;
+        html += `<td class="p-1 border bg-purple-50/50 font-bold text-purple-800 text-center w-12">${shiftCount}</td>`;
         
-        html += `<td class="p-1 border bg-white text-center no-print">
+        html += `<td class="p-1 border bg-white text-center no-print w-6">
           <button onclick="deleteDoctor('${doc.id}')" class="text-slate-300 hover:text-red-500 font-bold px-1">&times;</button>
         </td>`;
         
         html += `</tr>`;
       });
 
-      // Alt Kontrol Satırı (0 olan gün varsa kırmızı alarm verir)
+      // Alt Kontrol Satırı
       html += `</tbody><tfoot class="bg-slate-100 font-bold border-t-2"><tr>`;
-      html += `<td colspan="2" class="p-2 border text-left">Günlük Nöbetçi Toplamı</td>`;
+      html += `<td colspan="2" class="p-2 border text-left">Günlük Nöbetçi</td>`;
       for (let d = 1; d <= daysInMonth; d++) {
         let count = 0;
         doctors.forEach(doc => {
           const s = getEffectiveStatus(doc, d);
           if (s === 'N_FIXED' || s === 'N_AUTO') count++;
         });
-        const countClass = count === 0 ? 'text-red-600 bg-red-200 font-black animate-pulse' : 'text-blue-700 font-bold';
-        html += `<td class="p-1 border ${countClass}">${count}</td>`;
+        const countClass = count === 0 ? 'text-red-600 bg-red-200 font-black' : 'text-blue-700 font-bold';
+        html += `<td class="p-1 border day-col ${countClass}">${count}</td>`;
       }
       html += `<td colspan="4" class="border"></td><td class="no-print border"></td></tr></tfoot>`;
 
       table.innerHTML = html;
-      
+    }
+
+    // SAYFA AÇILDIĞINDA VEYA FİLTRE DEĞİŞTİĞİNDE AUTO-FIT'Lİ RENDER
+    function renderWithAutoFit() {
+      renderOnly();
       if (!isUserZoomed) {
-        setTimeout(autoFitZoom, 30);
+        setTimeout(autoFitZoom, 40);
       } else {
         applyZoom();
       }
     }
 
-    function exportToExcel() {
-      const table = document.getElementById('rosterTable');
-      const wb = XLSX.utils.table_to_book(table, { sheet: "Nöbet Listesi" });
+    // RENKLİ EXCEL DIŞA AKTARMA (HTML XML Raporu - Birebir Renkleri Taşır)
+    function exportToStyledExcel() {
       const curMonth = getSelectedPeriodString();
       const curService = document.getElementById('selectedService').value;
-      XLSX.writeFile(wb, `Nobet_${curService}_${curMonth}.xlsx`);
+      const table = document.getElementById('rosterTable');
+      
+      // Renkleri doğrudan Excel HTML formatı ile dışa aktarır (Arka plan renkleri aynen korunur)
+      const excelHtml = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta charset="utf-8">
+          <style>
+            table { border-collapse: collapse; }
+            th, td { border: 1px solid #94a3b8; text-align: center; font-size: 11px; }
+            .cell-fixed-n { background-color: #b91c1c; color: #ffffff; font-weight: bold; }
+            .cell-auto-n { background-color: #ef4444; color: #ffffff; font-weight: bold; }
+            .cell-ni { background-color: #fef08a; color: #854d0e; font-weight: bold; }
+            .cell-off { background-color: #1e293b; color: #ffffff; font-weight: bold; }
+            .cell-hs { background-color: #f1f5f9; color: #64748b; }
+            .cell-holiday { background-color: #fee2e2; color: #991b1b; font-weight: bold; }
+          </style>
+        </head>
+        <body>${table.outerHTML}</body>
+        </html>
+      `;
+
+      const blob = new Blob([excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `Nobet_${curService}_${curMonth}.xls`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   </script>
 </body>
