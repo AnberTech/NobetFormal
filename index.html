@@ -2,9 +2,10 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>AnberTech/Nöbet Çözücü</title>
+  <title>AnberTech - Formal Nöbet Çözücü V1.0</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Gerçek ve Renkli .xlsx İndirme Kütüphanesi -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -64,47 +65,50 @@
 <body class="bg-slate-100 text-slate-800 p-3 min-h-screen text-xs" onclick="handleGlobalClick(event)">
   <div class="max-w-[99%] mx-auto space-y-2.5">
     
-    <!-- Üst Bar ve Kontrol Bloğu -->
-    <header class="bg-white rounded-xl shadow-sm border border-slate-200 p-2.5 space-y-2 no-print">
+    <!-- Üst Kontrol Bloğu -->
+    <header class="bg-white rounded-xl shadow-sm border border-slate-200 p-2.5 space-y-2.5 no-print">
       
-      <!-- 1. Satır: Marka + Kadro Yönetimi Grubu (Sol) & Arşiv / Kaydet / Dışa Aktarma (Sağ) -->
-      <div class="flex flex-wrap justify-between items-center border-b border-slate-100 pb-2 gap-2">
-        
-        <!-- Sol: Logo ve Kadro Grubu -->
-        <div class="flex items-center gap-3">
-          <div class="flex items-center gap-2">
-            <div class="w-7 h-7 bg-blue-600 text-white rounded-lg flex items-center justify-center font-black text-sm shadow-sm shadow-blue-200">
-              A
-            </div>
-            <div class="leading-none">
-              <span class="text-xs font-black text-slate-900 tracking-tight">AnberTech</span>
-              <span class="text-slate-400 font-light mx-1">/</span>
-              <span class="text-xs font-semibold text-blue-600">Formal Nöbet Çözücü V1.0</span>
-            </div>
+      <!-- 1. Satır: Sadece Marka Satırı -->
+      <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 bg-blue-600 text-white rounded-lg flex items-center justify-center font-black text-sm shadow-sm shadow-blue-200">
+            A
           </div>
-
-          <!-- BORDERLI KADRO YÖNETİMİ GRUBU -->
-          <div class="flex items-center bg-slate-50 border border-slate-300/80 rounded-lg p-0.5 shadow-sm">
-            <span class="text-[9px] font-bold text-slate-400 uppercase px-1.5 hidden md:inline">Kadro:</span>
-            
-            <button onclick="addDoctorRow()" class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1 shadow-2xs" title="Tek yeni hekim satırı ekle">
-              <i class="fa-solid fa-plus text-blue-600"></i>
-              <span>Kişi Ekle</span>
-            </button>
-
-            <button onclick="copyPreviousMonthStaff()" class="px-2.5 py-1 hover:bg-white text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1" title="Önceki aydan hekim kadrosunu kopyala">
-              <i class="fa-solid fa-users text-indigo-600"></i>
-              <span>Kişileri Aktar</span>
-            </button>
-
-            <button onclick="openPasteModal()" class="px-2.5 py-1 hover:bg-white text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1" title="Excel'den isim ve hedef saatleri toplu yapıştır">
-              <i class="fa-solid fa-clipboard-list text-emerald-600"></i>
-              <span>Toplu Gir</span>
-            </button>
+          <div class="leading-none">
+            <span class="text-xs font-black text-slate-900 tracking-tight">AnberTech</span>
+            <span class="text-slate-400 font-light mx-1">/</span>
+            <span class="text-xs font-semibold text-blue-600">Formal Nöbet Çözücü V1.0</span>
           </div>
         </div>
+        <div class="text-[10px] text-slate-400 font-medium hidden sm:block">
+          Hekim Çalışma ve Nöbet Optimizasyon Sistemi
+        </div>
+      </div>
 
-        <!-- Sağ: Seed, Zoom, Arşiv, Kaydet, Dışa Aktar Butonları -->
+      <!-- 2. Satır: Kadro Yönetimi Grubu (Sol) & Kaydet / Arşiv / İndirmeler (Sağ) -->
+      <div class="flex flex-wrap justify-between items-center border-b border-slate-100 pb-2 gap-2">
+        
+        <!-- Sol: Kadro Buton Grubu -->
+        <div class="flex items-center bg-slate-50 border border-slate-300/80 rounded-lg p-0.5 shadow-sm">
+          <span class="text-[9px] font-bold text-slate-400 uppercase px-1.5 hidden md:inline">Kadro:</span>
+          
+          <button onclick="addDoctorRow()" class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1 shadow-2xs" title="Tek yeni hekim satırı ekle">
+            <i class="fa-solid fa-plus text-blue-600"></i>
+            <span>Kişi Ekle</span>
+          </button>
+
+          <button onclick="copyPreviousMonthStaff()" class="px-2.5 py-1 hover:bg-white text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1" title="Önceki aydan hekim kadrosunu kopyala">
+            <i class="fa-solid fa-users text-indigo-600"></i>
+            <span>Kişileri Aktar</span>
+          </button>
+
+          <button onclick="openPasteModal()" class="px-2.5 py-1 hover:bg-white text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1" title="Excel'den isim ve hedef saatleri toplu yapıştır">
+            <i class="fa-solid fa-clipboard-list text-emerald-600"></i>
+            <span>Toplu Gir</span>
+          </button>
+        </div>
+
+        <!-- Sağ: Seed, Zoom, Arşiv, Kaydet, Dışa Aktarma -->
         <div class="flex items-center gap-1.5 ml-auto">
           <span id="seedBadge" class="hidden sm:inline-block px-2 py-0.5 bg-slate-100 border border-slate-200 text-[10px] font-mono font-bold text-slate-600 rounded" title="Aktif Tohum Kodu">Seed: --</span>
 
@@ -123,7 +127,7 @@
             <span id="archiveCountBadge" class="bg-amber-200 text-amber-900 text-[10px] px-1 rounded-full font-bold">0</span>
           </button>
 
-          <!-- MANUEL KAYDET BUTONU (Açıklayıcı Yerel Hafıza Bilgi Notlu) -->
+          <!-- MANUEL KAYDET BUTONU -->
           <button onclick="saveCurrentMonth()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1.5" title="Bu listeyi tarayıcınızın yerel hafızasına (Local Storage) kalıcı olarak kaydeder ve arşive ekler">
             <i class="fa-solid fa-floppy-disk text-xs"></i>
             <span>Kaydet</span>
@@ -138,14 +142,14 @@
             <span class="hidden sm:inline">PDF</span>
           </button>
           
-          <button onclick="exportToStyledExcel()" class="px-2.5 py-1.5 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Renkli Excel Olarak İndir">
+          <button onclick="exportToStyledExcel()" class="px-2.5 py-1.5 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Renkli Excel Olarak İndir (.xlsx)">
             <i class="fa-solid fa-file-excel text-emerald-600"></i>
             <span class="hidden sm:inline">Excel</span>
           </button>
         </div>
       </div>
 
-      <!-- 2. Satır: Tarih / Servis / Kural Parametreleri (Sol) & Nöbetleri Üret (Sağ) -->
+      <!-- 3. Satır: Tarih/Servis Parametreleri (Sol) & Süreli Nöbet Üretici (Sağ) -->
       <div class="flex flex-wrap items-center justify-between gap-2 pt-0.5">
         
         <!-- Sol: Parametreler -->
@@ -176,7 +180,7 @@
             </select>
           </div>
 
-          <!-- Servis Seçici -->
+          <!-- Servis Seçici (Beyazlama Karşıtı Menü) -->
           <div class="relative inline-block" id="serviceDropdownWrapper">
             <div class="flex items-center gap-1 bg-indigo-50/70 border border-indigo-200 rounded-lg px-2 py-1 cursor-pointer" onclick="toggleServiceDropdown(event)">
               <i class="fa-solid fa-stethoscope text-indigo-600 text-[10px]"></i>
@@ -216,10 +220,25 @@
 
         </div>
 
-        <!-- Sağ: Nöbet Üret ve Geri Al Butonları -->
+        <!-- Sağ: Süre Seçimi ve Nöbet Üretici Butonu -->
         <div class="flex items-center gap-1.5 ml-auto">
-          <button id="btnDistribute" onclick="distributeRoster()" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-xs rounded-lg shadow-md shadow-blue-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-blue-400/30">
-            <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+          
+          <!-- OPTİMİZASYON SÜRESİ SEÇİCİ -->
+          <div class="flex items-center gap-1 bg-indigo-50 border border-indigo-200 rounded-lg px-2 py-1" title="Algoritmanın en iyi olasılığı aramak için harcayacağı süre">
+            <i class="fa-solid fa-stopwatch text-indigo-600 text-[11px]"></i>
+            <span class="text-[10px] font-bold text-indigo-900">Süre:</span>
+            <select id="selectOptimizationTime" class="bg-transparent font-black text-indigo-700 text-xs focus:outline-none cursor-pointer">
+              <option value="10">10 sn</option>
+              <option value="20">20 sn</option>
+              <option value="30" selected>30 sn</option>
+              <option value="60">60 sn (1 dk)</option>
+              <option value="120">120 sn (2 dk)</option>
+            </select>
+          </div>
+
+          <!-- NÖBETLERİ ÜRET BUTONU (CANLI SAYAÇLI) -->
+          <button id="btnDistribute" onclick="startTimedOptimization()" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-xs rounded-lg shadow-md shadow-blue-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-blue-400/30">
+            <i id="btnDistributeIcon" class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
             <span id="btnDistributeText">Nöbetleri Üret</span>
           </button>
 
@@ -239,7 +258,7 @@
     </div>
 
     <!-- Tablo Alanı -->
-    <div id="tableOuterWrapper" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto max-h-[76vh] relative">
+    <div id="tableOuterWrapper" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto max-h-[74vh] relative">
       <div id="tableContainer">
         <table id="rosterTable" class="w-full border-collapse" style="table-layout: fixed;"></table>
       </div>
@@ -558,7 +577,7 @@
 
     function exportStateBackup() {
       const backup = {
-        version: "2.0",
+        version: "1.0",
         timestamp: new Date().toISOString(),
         localStorage: {}
       };
@@ -1051,14 +1070,26 @@
       };
     }
 
-    function distributeRoster() {
+    // =========================================================================
+    // ZAMAN AYARLI ASENKRON OPTİMİZASYON MOTORU (TIME-BUDGETED OPTIMIZER)
+    // =========================================================================
+    let isOptimizing = false;
+
+    function startTimedOptimization() {
+      if (isOptimizing) return;
       if (doctors.length === 0) return alert("Lütfen önce hekim ekleyin.");
 
-      currentSeed = Math.floor(Math.random() * 900000) + 100000;
-      document.getElementById('seedBadge').innerText = `Seed: ${currentSeed}`;
-      randomFunc = mulberry32(currentSeed);
-
+      const allocatedSeconds = parseInt(document.getElementById('selectOptimizationTime').value) || 30;
       const maxLimit = parseInt(document.getElementById('maxShiftLimit').value) || 8;
+      
+      const btn = document.getElementById('btnDistribute');
+      const btnText = document.getElementById('btnDistributeText');
+      const btnIcon = document.getElementById('btnDistributeIcon');
+
+      isOptimizing = true;
+      btn.disabled = true;
+      btn.classList.add('opacity-80', 'cursor-not-allowed');
+      btnIcon.className = "fa-solid fa-spinner fa-spin text-amber-300";
 
       let baseGrid = {};
       doctors.forEach(doc => {
@@ -1068,41 +1099,76 @@
         }
       });
 
-      let bestSolution = null;
-      let bestCost = Infinity;
+      let globalBestSolution = null;
+      let globalBestCost = Infinity;
+      let globalBestSeed = 0;
+      let iterationsCount = 0;
 
-      for (let run = 0; run < 120; run++) {
-        let trialGrid = JSON.parse(JSON.stringify(baseGrid));
-        let success = constructFeasibleRoster(trialGrid, maxLimit, randomFunc);
+      const startTime = Date.now();
+      const endTime = startTime + (allocatedSeconds * 1000);
 
-        if (success) {
-          refineRosterLocally(trialGrid, maxLimit, randomFunc);
-          let validation = validateRoster(trialGrid, maxLimit);
-          if (validation.valid) {
-            let cost = evaluateQualityCost(trialGrid);
-            if (cost < bestCost) {
-              bestCost = cost;
-              bestSolution = trialGrid;
+      function step() {
+        const now = Date.now();
+        const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
+        btnText.innerText = `Optimizasyon: ${remaining}s (${iterationsCount} liste)`;
+
+        // Tek frame'de tarayıcıyı dondurmadan küçük bir parti (batch) çözüm üret
+        const batchStart = Date.now();
+        while (Date.now() - batchStart < 25 && Date.now() < endTime) {
+          iterationsCount++;
+          const trialSeed = Math.floor(Math.random() * 900000) + 100000;
+          const rng = mulberry32(trialSeed);
+
+          let trialGrid = JSON.parse(JSON.stringify(baseGrid));
+          let success = constructFeasibleRoster(trialGrid, maxLimit, rng);
+
+          if (success) {
+            refineRosterLocally(trialGrid, maxLimit, rng);
+            let validation = validateRoster(trialGrid, maxLimit);
+            if (validation.valid) {
+              let cost = evaluateQualityCost(trialGrid);
+              if (cost < globalBestCost) {
+                globalBestCost = cost;
+                globalBestSolution = trialGrid;
+                globalBestSeed = trialSeed;
+              }
             }
+          }
+        }
+
+        if (Date.now() < endTime) {
+          setTimeout(step, 10);
+        } else {
+          // SÜRE DOLDU: En iyi listeyi uygula
+          isOptimizing = false;
+          btn.disabled = false;
+          btn.classList.remove('opacity-80', 'cursor-not-allowed');
+          btnIcon.className = "fa-solid fa-wand-magic-sparkles text-amber-300";
+
+          if (globalBestSolution) {
+            grid = globalBestSolution;
+            currentSeed = globalBestSeed;
+            document.getElementById('seedBadge').innerText = `Seed: ${currentSeed}`;
+            isGenerated = true;
+            updateButtons();
+            renderOnly();
+            runIndependentValidation();
+            showToast(`${allocatedSeconds} saniyede ${iterationsCount} liste tarandı, en optimal çözüm uygulandı!`);
+          } else {
+            // Hiç valid bulunamazsa son fallback
+            let fallbackGrid = JSON.parse(JSON.stringify(baseGrid));
+            constructFeasibleRoster(fallbackGrid, maxLimit, Math.random, true);
+            grid = fallbackGrid;
+            isGenerated = true;
+            updateButtons();
+            renderOnly();
+            runIndependentValidation();
+            showToast("Belirtilen sürede tam geçerli çözüm arandı, en yakın liste hazırlandı.");
           }
         }
       }
 
-      if (bestSolution) {
-        grid = bestSolution;
-        isGenerated = true;
-        updateButtons();
-        renderOnly();
-        runIndependentValidation();
-      } else {
-        let fallbackGrid = JSON.parse(JSON.stringify(baseGrid));
-        constructFeasibleRoster(fallbackGrid, maxLimit, randomFunc, true);
-        grid = fallbackGrid;
-        isGenerated = true;
-        updateButtons();
-        renderOnly();
-        runIndependentValidation();
-      }
+      step();
     }
 
     function constructFeasibleRoster(workGrid, maxLimit, rng, isFallback = false) {
@@ -1466,132 +1532,125 @@
       }, 50);
     }
 
+    // SheetJS ile Gerçek İkili .XLSX İndirme
     function exportToStyledExcel() {
-  const curMonth = getSelectedPeriodString();
-  const curService = document.getElementById('selectedService').value;
-  const dayNames = ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'];
+      const curMonth = getSelectedPeriodString();
+      const curService = document.getElementById('selectedService').value;
+      const dayNames = ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'];
 
-  // 1. Satır: Gün Numaraları ve Sütun Başlıkları
-  const headerRow1 = ['Hekim Adı', 'Hedef (s)'];
-  // 2. Satır: Gün İsimleri
-  const headerRow2 = ['', ''];
+      const headerRow1 = ['Hekim Adı', 'Hedef (s)'];
+      const headerRow2 = ['', ''];
 
-  for (let d = 1; d <= daysInMonth; d++) {
-    const meta = daysMeta[d - 1];
-    headerRow1.push(String(d));
-    headerRow2.push(dayNames[meta.dayOfWeek]);
-  }
-
-  headerRow1.push('Standart', 'Ek Mesai', 'Toplam', 'N. Sayısı');
-  headerRow2.push('', '', '', '');
-
-  const data = [headerRow1, headerRow2];
-
-  // Hekim Verilerini Doldur
-  doctors.forEach(doc => {
-    const stats = calculateDocStats(doc);
-    const shiftCount = countDoctorShifts(doc);
-    const row = [doc.name, doc.targetOvertime];
-
-    for (let d = 1; d <= daysInMonth; d++) {
-      const meta = daysMeta[d - 1];
-      const st = getEffectiveStatus(doc, d);
-      let label = meta.isWeekend ? '-' : '8';
-      if (meta.isHoliday) label = 'T';
-
-      if (st === 'N_FIXED' || st === 'N_AUTO') label = 'N';
-      else if (st === 'N_IZNI') label = 'N-İzni';
-      else if (st === 'OFF') label = 'X';
-
-      row.push(label);
-    }
-
-    row.push(
-      `${stats.standardHours}s`,
-      `${stats.earnedOvertime}s (${stats.diff >= 0 ? '+' : ''}${stats.diff})`,
-      `${stats.totalHours}s`,
-      shiftCount
-    );
-    data.push(row);
-  });
-
-  // Alt Toplam Satırı (Günlük Nöbetçi)
-  const footerRow = ['Günlük Nöbetçi', ''];
-  for (let d = 1; d <= daysInMonth; d++) {
-    let count = 0;
-    doctors.forEach(doc => {
-      const s = getEffectiveStatus(doc, d);
-      if (s === 'N_FIXED' || s === 'N_AUTO') count++;
-    });
-    footerRow.push(count);
-  }
-  footerRow.push('', '', '', '');
-  data.push(footerRow);
-
-  // Tabloyu Oluştur
-  const ws = XLSX.utils.aoa_to_sheet(data);
-
-  // Sütun Genişlikleri
-  const colWidths = [{ wch: 18 }, { wch: 10 }];
-  for (let d = 1; d <= daysInMonth; d++) colWidths.push({ wch: 6 });
-  colWidths.push({ wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 10 });
-  ws['!cols'] = colWidths;
-
-  // Hücre Renklerini ve Kenarlıkları İşle
-  for (let R = 2; R < 2 + doctors.length; ++R) {
-    for (let C = 2; C < 2 + daysInMonth; ++C) {
-      const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-      const cell = ws[cellAddress];
-      if (!cell) continue;
-
-      const d = C - 1;
-      const meta = daysMeta[d - 1];
-      const val = cell.v;
-
-      let fill = null;
-      let fontColor = '64748B';
-      let isBold = false;
-
-      if (val === 'N') {
-        fill = { fgColor: { rgb: 'EF4444' } }; // Kırmızı Nöbet
-        fontColor = 'FFFFFF';
-        isBold = true;
-      } else if (val === 'N-İzni') {
-        fill = { fgColor: { rgb: 'FEF08A' } }; // Sarı N-İzni
-        fontColor = '854D0E';
-        isBold = true;
-      } else if (val === 'X') {
-        fill = { fgColor: { rgb: '1E293B' } }; // Siyah İzin
-        fontColor = 'FFFFFF';
-        isBold = true;
-      } else if (meta.isHoliday) {
-        fill = { fgColor: { rgb: 'FEE2E2' } }; // Tatil
-        fontColor = '991B1B';
-        isBold = true;
-      } else if (meta.isWeekend) {
-        fill = { fgColor: { rgb: 'F1F5F9' } }; // Hafta sonu
+      for (let d = 1; d <= daysInMonth; d++) {
+        const meta = daysMeta[d - 1];
+        headerRow1.push(String(d));
+        headerRow2.push(dayNames[meta.dayOfWeek]);
       }
 
-      cell.s = {
-        alignment: { horizontal: 'center', vertical: 'center' },
-        font: { name: 'Calibri', sz: 10, bold: isBold, color: { rgb: fontColor } },
-        border: {
-          top: { style: 'thin', color: { rgb: 'CBD5E1' } },
-          bottom: { style: 'thin', color: { rgb: 'CBD5E1' } },
-          left: { style: 'thin', color: { rgb: 'CBD5E1' } },
-          right: { style: 'thin', color: { rgb: 'CBD5E1' } }
+      headerRow1.push('Standart', 'Ek Mesai', 'Toplam', 'N. Sayısı');
+      headerRow2.push('', '', '', '');
+
+      const data = [headerRow1, headerRow2];
+
+      doctors.forEach(doc => {
+        const stats = calculateDocStats(doc);
+        const shiftCount = countDoctorShifts(doc);
+        const row = [doc.name, doc.targetOvertime];
+
+        for (let d = 1; d <= daysInMonth; d++) {
+          const meta = daysMeta[d - 1];
+          const st = getEffectiveStatus(doc, d);
+          let label = meta.isWeekend ? '-' : '8';
+          if (meta.isHoliday) label = 'T';
+
+          if (st === 'N_FIXED' || st === 'N_AUTO') label = 'N';
+          else if (st === 'N_IZNI') label = 'N-İzni';
+          else if (st === 'OFF') label = 'X';
+
+          row.push(label);
         }
-      };
 
-      if (fill) cell.s.fill = fill;
+        row.push(
+          `${stats.standardHours}s`,
+          `${stats.earnedOvertime}s (${stats.diff >= 0 ? '+' : ''}${stats.diff})`,
+          `${stats.totalHours}s`,
+          shiftCount
+        );
+        data.push(row);
+      });
+
+      const footerRow = ['Günlük Nöbetçi', ''];
+      for (let d = 1; d <= daysInMonth; d++) {
+        let count = 0;
+        doctors.forEach(doc => {
+          const s = getEffectiveStatus(doc, d);
+          if (s === 'N_FIXED' || s === 'N_AUTO') count++;
+        });
+        footerRow.push(count);
+      }
+      footerRow.push('', '', '', '');
+      data.push(footerRow);
+
+      const ws = XLSX.utils.aoa_to_sheet(data);
+
+      const colWidths = [{ wch: 18 }, { wch: 10 }];
+      for (let d = 1; d <= daysInMonth; d++) colWidths.push({ wch: 6 });
+      colWidths.push({ wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 10 });
+      ws['!cols'] = colWidths;
+
+      for (let R = 2; R < 2 + doctors.length; ++R) {
+        for (let C = 2; C < 2 + daysInMonth; ++C) {
+          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+          const cell = ws[cellAddress];
+          if (!cell) continue;
+
+          const d = C - 1;
+          const meta = daysMeta[d - 1];
+          const val = cell.v;
+
+          let fill = null;
+          let fontColor = '64748B';
+          let isBold = false;
+
+          if (val === 'N') {
+            fill = { fgColor: { rgb: 'EF4444' } };
+            fontColor = 'FFFFFF';
+            isBold = true;
+          } else if (val === 'N-İzni') {
+            fill = { fgColor: { rgb: 'FEF08A' } };
+            fontColor = '854D0E';
+            isBold = true;
+          } else if (val === 'X') {
+            fill = { fgColor: { rgb: '1E293B' } };
+            fontColor = 'FFFFFF';
+            isBold = true;
+          } else if (meta.isHoliday) {
+            fill = { fgColor: { rgb: 'FEE2E2' } };
+            fontColor = '991B1B';
+            isBold = true;
+          } else if (meta.isWeekend) {
+            fill = { fgColor: { rgb: 'F1F5F9' } };
+          }
+
+          cell.s = {
+            alignment: { horizontal: 'center', vertical: 'center' },
+            font: { name: 'Calibri', sz: 10, bold: isBold, color: { rgb: fontColor } },
+            border: {
+              top: { style: 'thin', color: { rgb: 'CBD5E1' } },
+              bottom: { style: 'thin', color: { rgb: 'CBD5E1' } },
+              left: { style: 'thin', color: { rgb: 'CBD5E1' } },
+              right: { style: 'thin', color: { rgb: 'CBD5E1' } }
+            }
+          };
+
+          if (fill) cell.s.fill = fill;
+        }
+      }
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Nöbet Çizelgesi");
+      XLSX.writeFile(wb, `Nobet_${curService}_${curMonth}.xlsx`);
     }
-  }
-
-  // Çalışma Kitabını Oluştur ve Gerçek .xlsx Olarak İndir
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Nöbet Çizelgesi");
-  XLSX.writeFile(wb, `Nobet_${curService}_${curMonth}.xlsx`);
-}
   </script>
 </body>
 </html>
