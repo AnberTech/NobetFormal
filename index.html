@@ -2,413 +2,421 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Akıllı Doktor Nöbet & Mesai Çizelgeleme Sistemi</title>
+  <title>Akıllı Nöbet & Mesai Çizelgesi</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    .cell-n { background-color: #ef4444; color: white; font-weight: bold; }
+    .cell-fixed-n { background-color: #dc2626 !important; color: white !important; font-weight: 800; }
+    .cell-auto-n { background-color: #ef4444; color: white; font-weight: bold; }
     .cell-ni { background-color: #fef08a; color: #854d0e; font-weight: 600; }
-    .cell-m { background-color: #f8fafc; color: #64748b; }
-    .cell-hs { background-color: #e2e8f0; color: #94a3b8; }
-    .cell-r { background-color: #fed7aa; color: #9a3412; font-weight: 600; }
-    .cell-fixed { border: 2px solid #b91c1c !important; }
+    .cell-off { background-color: #334155; color: #f8fafc; font-weight: bold; }
+    .cell-m { background-color: #ffffff; color: #64748b; }
+    .cell-hs { background-color: #f1f5f9; color: #94a3b8; }
+    .cell-holiday { background-color: #fee2e2; color: #991b1b; }
     th, td { text-align: center; vertical-align: middle; white-space: nowrap; }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 p-4 min-h-screen">
-  <div class="max-w-7xl mx-auto space-y-4">
-    <!-- Üst Başlık -->
-    <header class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
-      <div>
-        <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
-          <i class="fa-solid fa-hospital-user text-blue-600"></i> Akıllı Nöbet & Ek Mesai Planlayıcı
-        </h1>
-        <p class="text-sm text-slate-500 mt-1">24 Saatlik Bloklar • Gün Aşırı Nöbet Yasağı • Simetrik Servis Dağıtımı</p>
+<body class="bg-slate-100 text-slate-800 p-3 min-h-screen text-xs">
+  <div class="max-w-[98%] mx-auto space-y-3">
+    
+    <!-- Üst Kontrol Paneli -->
+    <header class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-3">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 bg-blue-50 text-blue-600 rounded-lg text-lg">
+          <i class="fa-solid fa-calendar-check"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-slate-900 leading-tight">Akıllı Nöbet & Ek Mesai Dağıtıcı</h1>
+          <p class="text-[11px] text-slate-500">Tıkla: Boş → N (Sabit) → X (İzin/OFF) | Otomatik Simetrik Dağıtım</p>
+        </div>
       </div>
-      <div class="flex flex-wrap items-center gap-2">
-        <button onclick="loadSampleData()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition">
-          <i class="fa-solid fa-users-viewfinder mr-1"></i> Örnek Liste Yükle (40 Doktor)
+
+      <!-- Ay Seçimi & Temel Bilgiler -->
+      <div class="flex items-center gap-4 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 uppercase">Dönem</label>
+          <input type="month" id="selectedMonth" class="bg-white border border-slate-300 rounded px-2 py-0.5 text-xs font-semibold" onchange="initCalendar()">
+        </div>
+        <div class="border-l pl-3">
+          <span class="block text-[10px] font-bold text-slate-500 uppercase">İş Günü</span>
+          <span id="statWorkdays" class="font-bold text-slate-700">-- Gün</span>
+        </div>
+        <div class="border-l pl-3">
+          <span class="block text-[10px] font-bold text-slate-500 uppercase">Standart Mesai</span>
+          <span id="statStandardHours" class="font-bold text-blue-600">-- Saat</span>
+        </div>
+      </div>
+
+      <!-- Aksiyon Butonları -->
+      <div class="flex items-center gap-2">
+        <button onclick="loadSampleData()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition">
+          <i class="fa-solid fa-users mr-1"></i> Örnek 40 Doktor
         </button>
-        <button onclick="generateRoster()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition">
+        <button onclick="addDoctorPrompt()" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-lg transition">
+          <i class="fa-solid fa-user-plus mr-1"></i> Hekim Ekle
+        </button>
+        <button onclick="distributeRoster()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm transition">
           <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Nöbetleri Dağıt
         </button>
-        <button onclick="exportToExcel()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition">
-          <i class="fa-solid fa-file-excel mr-1"></i> Excel İndir
+        <button onclick="exportToExcel()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition">
+          <i class="fa-solid fa-file-excel mr-1"></i> Excel
         </button>
       </div>
     </header>
 
-    <!-- Ayarlar Paneli -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Ay ve Yıl</label>
-        <input type="month" id="selectedMonth" class="w-full border border-slate-300 rounded-lg p-2 text-sm font-medium" onchange="initCalendar()">
-      </div>
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Servis 1 Günlük Nöbetçi</label>
-        <input type="number" id="s1Daily" value="2" min="1" max="10" class="w-full border border-slate-300 rounded-lg p-2 text-sm font-medium">
-      </div>
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Servis 2 Günlük Nöbetçi</label>
-        <input type="number" id="s2Daily" value="2" min="1" max="10" class="w-full border border-slate-300 rounded-lg p-2 text-sm font-medium">
-      </div>
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
-        <div>
-          <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Hafta İçi Gün Sayısı</span>
-          <span id="weekdayCount" class="text-xl font-bold text-slate-800">-- Gün</span>
-        </div>
-        <div>
-          <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Standart Mesai</span>
-          <span id="standardHours" class="text-xl font-bold text-blue-600">-- Saat</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Doktor Yönetim Çubuğu -->
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-2">
-      <div class="flex items-center gap-2">
-        <span class="font-bold text-slate-700">Kayıtlı Doktorlar:</span>
-        <span id="docBadgeCount" class="px-2.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">0</span>
-      </div>
-      <div class="flex gap-2">
-        <button onclick="openDoctorModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg">
-          <i class="fa-solid fa-user-plus mr-1"></i> Yeni Doktor Ekle
-        </button>
-        <button onclick="clearAllDoctors()" class="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-semibold rounded-lg">
-          Tümünü Temizle
-        </button>
-      </div>
-    </div>
-
-    <!-- Tablo Alanı -->
+    <!-- Çizelge Tablosu -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="overflow-x-auto max-h-[600px] relative">
-        <table id="rosterTable" class="w-full text-xs border-collapse">
-          <!-- Dinamik Render -->
+      <div class="overflow-x-auto max-h-[75vh]">
+        <table id="rosterTable" class="w-full border-collapse">
+          <!-- JS Tarafından Dinamik Üretilir -->
         </table>
       </div>
     </div>
-  </div>
 
-  <!-- Modal: Doktor Ekleme -->
-  <div id="docModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4">
-      <h3 class="text-lg font-bold text-slate-900">Doktor Ekle</h3>
-      <div>
-        <label class="block text-xs font-medium text-slate-600 mb-1">Ad Soyad</label>
-        <input type="text" id="docName" class="w-full border border-slate-300 rounded-lg p-2 text-sm" placeholder="Örn: Dr. Ahmet Yılmaz">
-      </div>
-      <div>
-        <label class="block text-xs font-medium text-slate-600 mb-1">Görev Yaptığı Servis</label>
-        <select id="docService" class="w-full border border-slate-300 rounded-lg p-2 text-sm">
-          <option value="1">Servis 1</option>
-          <option value="2">Servis 2</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs font-medium text-slate-600 mb-1">Hedef Ek Mesai Saati</label>
-        <input type="number" id="docTargetOvertime" class="w-full border border-slate-300 rounded-lg p-2 text-sm" value="96" step="8">
-      </div>
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeDoctorModal()" class="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">İptal</button>
-        <button onclick="saveDoctor()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">Kaydet</button>
-      </div>
+    <!-- Lejant Bilgilendirme -->
+    <div class="flex flex-wrap gap-4 text-[11px] bg-white p-3 rounded-lg border border-slate-200 text-slate-600">
+      <div class="flex items-center gap-1.5"><span class="w-4 h-4 rounded bg-red-600 inline-block border"></span> <strong>N (Kilitli):</strong> Sizin koyduğunuz kesin nöbet</div>
+      <div class="flex items-center gap-1.5"><span class="w-4 h-4 rounded bg-red-500 inline-block"></span> <strong>N:</strong> Algoritmanın hedef saate göre atadığı nöbet</div>
+      <div class="flex items-center gap-1.5"><span class="w-4 h-4 rounded bg-yellow-200 border border-yellow-400 inline-block"></span> <strong>N-İzni:</strong> Nöbet ertesi dinlenme</div>
+      <div class="flex items-center gap-1.5"><span class="w-4 h-4 rounded bg-slate-700 inline-block"></span> <strong>X (OFF):</strong> İzin / Rapor (Nöbet yazılamaz)</div>
+      <div class="flex items-center gap-1.5"><span class="w-4 h-4 rounded bg-red-100 border border-red-300 inline-block"></span> <strong>Kırmızı Sütun:</strong> Resmi Tatil (+24 Saat Ek Mesai)</div>
     </div>
   </div>
 
   <script>
+    // Türkiye Resmi Tatilleri (Ay-Gün ve Değişken Dini Bayramlar)
+    const FIXED_HOLIDAYS = {
+      "01-01": "Yılbaşı",
+      "04-23": "23 Nisan",
+      "05-01": "1 Mayıs",
+      "05-19": "19 Mayıs",
+      "07-15": "15 Temmuz",
+      "08-30": "30 Ağustos",
+      "10-29": "29 Ekim"
+    };
+
+    // Örnek Yaklaşık Dini Bayramlar (Yıl Bazlı Genişletilebilir)
+    const RELIGIOUS_HOLIDAYS = {
+      2025: ["03-30", "03-31", "04-01", "06-06", "06-07", "06-08", "06-09"],
+      2026: ["03-20", "03-21", "03-22", "05-27", "05-28", "05-29", "05-30"]
+    };
+
     let doctors = [];
     let daysInMonth = 30;
-    let monthDates = [];
-    let currentSchedule = {}; // docId -> [dayStatus]
+    let daysMeta = []; // Her günün tatil, haftasonu bilgisi
+    let grid = {};     // docId -> { day: status } ('', 'N_FIXED', 'N_AUTO', 'N_IZNI', 'OFF')
 
     window.onload = () => {
-      const today = new Date();
-      const yr = today.getFullYear();
-      const mo = String(today.getMonth() + 1).padStart(2, '0');
+      const now = new Date();
+      const yr = now.getFullYear();
+      const mo = String(now.getMonth() + 1).padStart(2, '0');
       document.getElementById('selectedMonth').value = `${yr}-${mo}`;
       initCalendar();
     };
 
+    function isHoliday(year, month, day) {
+      const mm = String(month).padStart(2, '0');
+      const dd = String(day).padStart(2, '0');
+      const key = `${mm}-${dd}`;
+      
+      if (FIXED_HOLIDAYS[key]) return { holiday: true, name: FIXED_HOLIDAYS[key] };
+      if (RELIGIOUS_HOLIDAYS[year] && RELIGIOUS_HOLIDAYS[year].includes(key)) {
+        return { holiday: true, name: "Dini Bayram" };
+      }
+      return { holiday: false, name: "" };
+    }
+
     function initCalendar() {
       const [year, month] = document.getElementById('selectedMonth').value.split('-').map(Number);
-      const totalDays = new Date(year, month, 0).getDate();
-      daysInMonth = totalDays;
-      monthDates = [];
-      let weekdays = 0;
+      daysInMonth = new Date(year, month, 0).getDate();
+      daysMeta = [];
+      let workdays = 0;
 
-      for (let d = 1; d <= totalDays; d++) {
-        const dateObj = new Date(year, month - 1, d);
-        const dayOfWeek = dateObj.getDay(); // 0: Paz, 6: Cmt
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dt = new Date(year, month - 1, d);
+        const dayOfWeek = dt.getDay(); // 0: Paz, 6: Cmt
+        const hol = isHoliday(year, month, d);
         const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
-        if (!isWeekend) weekdays++;
-        monthDates.push({ day: d, isWeekend, dayOfWeek });
+        const isOfficialOff = isWeekend || hol.holiday;
+
+        if (!isOfficialOff) workdays++;
+
+        daysMeta.push({
+          day: d,
+          dayOfWeek,
+          isWeekend,
+          isHoliday: hol.holiday,
+          holidayName: hol.name
+        });
       }
 
-      document.getElementById('weekdayCount').innerText = `${weekdays} Gün`;
-      document.getElementById('standardHours').innerText = `${weekdays * 8} Saat`;
-      renderTable();
-    }
+      document.getElementById('statWorkdays').innerText = `${workdays} Gün`;
+      document.getElementById('statStandardHours').innerText = `${workdays * 8} Saat`;
 
-    function openDoctorModal() { document.getElementById('docModal').classList.remove('hidden'); }
-    function closeDoctorModal() { document.getElementById('docModal').classList.add('hidden'); }
-
-    function saveDoctor() {
-      const name = document.getElementById('docName').value.trim();
-      const service = parseInt(document.getElementById('docService').value);
-      const targetOvertime = parseInt(document.getElementById('docTargetOvertime').value) || 0;
-      if (!name) return alert('Lütfen doktor adı girin.');
-
-      doctors.push({
-        id: 'doc_' + Date.now(),
-        name,
-        service,
-        targetOvertime,
-        fixedDays: [], // gün numaraları
-        leaveDays: []  // gün numaraları
+      doctors.forEach(doc => {
+        if (!grid[doc.id]) grid[doc.id] = {};
+        for (let d = 1; d <= daysInMonth; d++) {
+          if (!grid[doc.id][d]) grid[doc.id][d] = '';
+        }
       });
 
-      document.getElementById('docName').value = '';
-      closeDoctorModal();
-      updateBadge();
-      renderTable();
+      render();
     }
 
-    function updateBadge() {
-      document.getElementById('docBadgeCount').innerText = doctors.length;
-    }
-
-    function clearAllDoctors() {
-      if (confirm('Tüm doktor listesini temizlemek istediğinize emin misiniz?')) {
-        doctors = [];
-        currentSchedule = {};
-        updateBadge();
-        renderTable();
-      }
+    function addDoctorPrompt() {
+      const name = prompt("Hekim Adı Soyadı:");
+      if (!name) return;
+      const target = parseInt(prompt("Hedef Ek Mesai Saati:", "80")) || 0;
+      
+      const doc = { id: 'd_' + Date.now(), name, targetOvertime: target };
+      doctors.push(doc);
+      grid[doc.id] = {};
+      for (let d = 1; d <= daysInMonth; d++) grid[doc.id][d] = '';
+      render();
     }
 
     function loadSampleData() {
       doctors = [];
-      for (let i = 1; i <= 20; i++) {
-        doctors.push({
-          id: 'doc_s1_' + i,
-          name: `Dr. S1 - ${i < 10 ? '0' + i : i}`,
-          service: 1,
-          targetOvertime: (i % 2 === 0 ? 96 : 80),
-          fixedDays: i === 1 ? [1] : [],
-          leaveDays: i === 2 ? [5, 6, 7] : []
-        });
+      grid = {};
+      for (let i = 1; i <= 40; i++) {
+        const id = 'd_' + i;
+        const targets = [64, 80, 88, 96, 112, 120];
+        const doc = {
+          id,
+          name: `Dr. Personel ${i < 10 ? '0' + i : i}`,
+          targetOvertime: targets[i % targets.length]
+        };
+        doctors.push(doc);
+        grid[id] = {};
+        for (let d = 1; d <= daysInMonth; d++) grid[id][d] = '';
       }
-      for (let i = 1; i <= 20; i++) {
-        doctors.push({
-          id: 'doc_s2_' + i,
-          name: `Dr. S2 - ${i < 10 ? '0' + i : i}`,
-          service: 2,
-          targetOvertime: 88,
-          fixedDays: [],
-          leaveDays: []
-        });
-      }
-      updateBadge();
-      renderTable();
-      generateRoster();
+
+      // Örnek: Birkaç kişiye örnek kilitli nöbet ve izin ekleyelim
+      if (doctors[0]) grid[doctors[0].id][1] = 'N_FIXED';
+      if (doctors[1]) grid[doctors[1].id][5] = 'OFF';
+      if (doctors[1]) grid[doctors[1].id][6] = 'OFF';
+
+      initCalendar();
     }
 
-    // Nöbet Dağıtım Motoru
-    function generateRoster() {
-      if (doctors.length === 0) return alert('Lütfen önce doktor ekleyin veya örnek liste yükleyin.');
-      const s1Need = parseInt(document.getElementById('s1Daily').value) || 1;
-      const s2Need = parseInt(document.getElementById('s2Daily').value) || 1;
-
-      currentSchedule = {};
-      doctors.forEach(d => {
-        currentSchedule[d.id] = new Array(daysInMonth + 1).fill('M'); // M: Mesai / Standart
-      });
-
-      // Hafta sonlarını ve İzin/Raporları işaretle
-      for (let d = 1; d <= daysInMonth; d++) {
-        const dateMeta = monthDates[d - 1];
-        doctors.forEach(doc => {
-          if (dateMeta.isWeekend) currentSchedule[doc.id][d] = 'HS';
-          if (doc.leaveDays.includes(d)) currentSchedule[doc.id][d] = 'R'; // R: Rapor/İzin
-        });
+    function toggleDay(docId, day) {
+      const cur = grid[docId][day];
+      // Döngü: Boş -> N_FIXED -> OFF -> Boş
+      if (cur === '' || cur === 'M' || cur === 'N_IZNI' || cur === 'N_AUTO') {
+        grid[docId][day] = 'N_FIXED';
+      } else if (cur === 'N_FIXED') {
+        grid[docId][day] = 'OFF';
+      } else {
+        grid[docId][day] = '';
       }
+      render();
+    }
 
-      // Servis bazında nöbet atama
-      [1, 2].forEach(srv => {
-        const srvDocs = doctors.filter(d => d.service === srv);
-        const dailyQuota = srv === 1 ? s1Need : s2Need;
-        const overtimeHours = {};
-        srvDocs.forEach(d => overtimeHours[d.id] = 0);
+    function updateTarget(docId, val) {
+      const doc = doctors.find(d => d.id === docId);
+      if (doc) doc.targetOvertime = parseInt(val) || 0;
+      renderCalculationsOnly();
+    }
 
+    // Nöbet Ek Mesai Katsayısı Hesaplayıcı
+    function getOvertimeEarned(dayMeta) {
+      // Resmi tatil veya Cumartesi ise: tam 24 saat ek mesai
+      if (dayMeta.isHoliday || dayMeta.dayOfWeek === 6) return 24;
+      // Cuma veya Pazar nöbeti: 16 saat ek mesai
+      if (dayMeta.dayOfWeek === 5 || dayMeta.dayOfWeek === 0) return 16;
+      // Normal hafta içi (Pzt, Sal, Çar, Per): 8 saat ek mesai
+      return 8;
+    }
+
+    function distributeRoster() {
+      if (doctors.length === 0) return alert("Lütfen önce hekim ekleyin.");
+
+      // 1. Önceki otomatik atamaları ve nöbet izinlerini temizle (N_FIXED ve OFF kalır)
+      doctors.forEach(doc => {
         for (let d = 1; d <= daysInMonth; d++) {
-          const dateMeta = monthDates[d - 1];
-          let assignedToday = [];
-
-          // 1. Öncelik: Kesin nöbet girilenler
-          srvDocs.forEach(doc => {
-            if (doc.fixedDays.includes(d)) {
-              assignedToday.push(doc.id);
-            }
-          });
-
-          // 2. Kalan kontenjanı en uygun kişilere dağıt
-          while (assignedToday.length < dailyQuota) {
-            // Uygunluk filtresi (Kural: Nöbet aralığı en az 2 gün olmalı)
-            const candidates = srvDocs.filter(doc => {
-              if (assignedToday.includes(doc.id)) return false;
-              if (doc.leaveDays.includes(d)) return false;
-              
-              // d gününden önceki 2 günde veya sonraki 2 günde nöbet var mı?
-              if (d > 1 && currentSchedule[doc.id][d - 1] === 'N') return false;
-              if (d > 2 && currentSchedule[doc.id][d - 2] === 'N') return false;
-              return true;
-            });
-
-            if (candidates.length === 0) break; // Uygun aday kalmadı
-
-            // Hedef ek mesaisine göre en geride kalanı seç (Adil dengeleme)
-            candidates.sort((a, b) => {
-              const diffA = a.targetOvertime - overtimeHours[a.id];
-              const diffB = b.targetOvertime - overtimeHours[b.id];
-              return diffB - diffA; // En çok eksiği olana öncelik
-            });
-
-            const chosen = candidates[0];
-            assignedToday.push(chosen.id);
+          if (grid[doc.id][d] === 'N_AUTO' || grid[doc.id][d] === 'N_IZNI') {
+            grid[doc.id][d] = '';
           }
-
-          // Seçilenlerin durumunu ve katsayıları işle
-          assignedToday.forEach(docId => {
-            currentSchedule[docId][d] = 'N';
-            
-            // Nöbet ertesi izin (N-İzni)
-            if (d + 1 <= daysInMonth) {
-              currentSchedule[docId][d + 1] = 'N-İzni';
-            }
-
-            // Ek mesai hesaplama katsayıları
-            if (dateMeta.dayOfWeek >= 1 && dateMeta.dayOfWeek <= 4) overtimeHours[docId] += 8;
-            else if (dateMeta.dayOfWeek === 5) overtimeHours[docId] += 16;
-            else if (dateMeta.dayOfWeek === 6) overtimeHours[docId] += 24;
-            else if (dateMeta.dayOfWeek === 0) overtimeHours[docId] += 16;
-          });
         }
       });
 
-      renderTable();
-    }
-
-    function calculateDoctorStats(doc) {
-      const schedule = currentSchedule[doc.id] || [];
-      const [year, month] = document.getElementById('selectedMonth').value.split('-').map(Number);
-      const totalDays = new Date(year, month, 0).getDate();
-      
-      let baseWorkDays = 0;
-      let lostBaseHours = 0;
-      let overtimeHours = 0;
-
-      for (let d = 1; d <= totalDays; d++) {
-        const dateMeta = monthDates[d - 1];
-        const status = schedule[d] || (dateMeta.isWeekend ? 'HS' : 'M');
-
-        if (!dateMeta.isWeekend) {
-          baseWorkDays++;
-          if (status === 'R') lostBaseHours += 8;
+      // 2. Kilitli (N_FIXED) nöbetlerin ertesi gününe N_IZNI yaz
+      doctors.forEach(doc => {
+        for (let d = 1; d <= daysInMonth; d++) {
+          if (grid[doc.id][d] === 'N_FIXED' && d + 1 <= daysInMonth && grid[doc.id][d + 1] !== 'OFF') {
+            grid[doc.id][d + 1] = 'N_IZNI';
+          }
         }
+      });
 
-        if (status === 'N') {
-          if (dateMeta.dayOfWeek >= 1 && dateMeta.dayOfWeek <= 4) overtimeHours += 8;
-          else if (dateMeta.dayOfWeek === 5) overtimeHours += 16;
-          else if (dateMeta.dayOfWeek === 6) overtimeHours += 24;
-          else if (dateMeta.dayOfWeek === 0) overtimeHours += 16;
+      // Toplam hedeflenen ek mesai saatine göre günlük gereken ortalama nöbetçi sayısını kestir
+      let totalTarget = doctors.reduce((acc, d) => acc + d.targetOvertime, 0);
+      let avgDayWeight = 12; // Ortalama gün katsayısı
+      let dailyTargetDocs = Math.max(1, Math.round(totalTarget / (daysInMonth * avgDayWeight)));
+
+      // 3. Gün gün simetrik dağıtım
+      for (let d = 1; d <= daysInMonth; d++) {
+        const meta = daysMeta[d - 1];
+        const otVal = getOvertimeEarned(meta);
+
+        // Bu gün zaten sabit nöbetli olanlar
+        let assignedToday = doctors.filter(doc => grid[doc.id][d] === 'N_FIXED').map(doc => doc.id);
+
+        // Kontenjanı doldur
+        while (assignedToday.length < dailyTargetDocs) {
+          // Uygun hekim adayları
+          const candidates = doctors.filter(doc => {
+            if (assignedToday.includes(doc.id)) return false;
+            if (grid[doc.id][d] === 'OFF') return false;
+
+            // Gün aşırı yasağı: Dün veya önceki gün nöbetçi miydi?
+            if (d > 1 && (grid[doc.id][d - 1] === 'N_FIXED' || grid[doc.id][d - 1] === 'N_AUTO')) return false;
+            if (d > 2 && (grid[doc.id][d - 2] === 'N_FIXED' || grid[doc.id][d - 2] === 'N_AUTO')) return false;
+
+            // Ertesi gün zaten kilitli nöbeti varsa nöbet tutamaz
+            if (d + 1 <= daysInMonth && grid[doc.id][d + 1] === 'N_FIXED') return false;
+
+            // Hedef saatini aşacak mı?
+            const curStats = calculateDocStats(doc);
+            if (curStats.earnedOvertime + otVal > doc.targetOvertime + 8) return false;
+
+            return true;
+          });
+
+          if (candidates.length === 0) break; // Uygun aday kalmadı
+
+          // Hedefe en uzak olan (en çok ek mesai ihtiyacı olan) hekimi seç
+          candidates.sort((a, b) => {
+            const needA = a.targetOvertime - calculateDocStats(a).earnedOvertime;
+            const needB = b.targetOvertime - calculateDocStats(b).earnedOvertime;
+            return needB - needA;
+          });
+
+          const chosen = candidates[0];
+          assignedToday.push(chosen.id);
+          grid[chosen.id][d] = 'N_AUTO';
+
+          // Ertesi gün izni
+          if (d + 1 <= daysInMonth && grid[chosen.id][d + 1] === '') {
+            grid[chosen.id][d + 1] = 'N_IZNI';
+          }
         }
       }
 
-      const standardHours = (baseWorkDays * 8) - lostBaseHours;
-      return { standardHours, overtimeHours, totalHours: standardHours + overtimeHours };
+      render();
     }
 
-    function renderTable() {
+    function calculateDocStats(doc) {
+      let earnedOvertime = 0;
+      let offDaysDeduction = 0;
+      let totalWorkdays = 0;
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const meta = daysMeta[d - 1];
+        const status = grid[doc.id][d];
+
+        if (!meta.isWeekend && !meta.isHoliday) {
+          totalWorkdays++;
+          if (status === 'OFF') offDaysDeduction += 8;
+        }
+
+        if (status === 'N_FIXED' || status === 'N_AUTO') {
+          earnedOvertime += getOvertimeEarned(meta);
+        }
+      }
+
+      const standardHours = (totalWorkdays * 8) - offDaysDeduction;
+      return {
+        standardHours,
+        earnedOvertime,
+        diff: earnedOvertime - doc.targetOvertime,
+        totalHours: standardHours + earnedOvertime
+      };
+    }
+
+    function render() {
       const table = document.getElementById('rosterTable');
       if (doctors.length === 0) {
-        table.innerHTML = `<tr><td class="p-8 text-slate-400">Henüz doktor eklenmedi. "Yeni Doktor Ekle" veya "Örnek Liste Yükle"ye tıklayın.</td></tr>`;
+        table.innerHTML = `<tr><td class="p-8 text-slate-400">Hekim eklenmedi. "Örnek 40 Doktor"a tıklayarak hemen başlayabilirsiniz.</td></tr>`;
         return;
       }
 
+      const dayNames = ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'];
+
       let html = `<thead class="bg-slate-50 sticky top-0 z-20 border-b"><tr>`;
-      html += `<th class="p-2 border text-left bg-slate-100">Personel</th>`;
-      html += `<th class="p-2 border bg-slate-100">Srv</th>`;
+      html += `<th class="p-2 border text-left bg-slate-100 min-w-[140px]">Hekim Adı</th>`;
+      html += `<th class="p-1 border bg-amber-50 text-amber-900 min-w-[65px]">Hedef (s)</th>`;
 
       for (let d = 1; d <= daysInMonth; d++) {
-        const dm = monthDates[d - 1];
-        const dayName = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'][dm.dayOfWeek];
-        html += `<th class="p-1 border min-w-[34px] ${dm.isWeekend ? 'bg-red-50 text-red-700' : 'bg-slate-50'}">
+        const meta = daysMeta[d - 1];
+        let colClass = meta.isWeekend ? 'bg-slate-100 text-slate-500' : 'bg-white';
+        if (meta.isHoliday) colClass = 'bg-red-100 text-red-700 font-bold';
+
+        html += `<th class="p-1 border min-w-[28px] ${colClass}" title="${meta.holidayName || ''}">
           <div>${d}</div>
-          <div class="text-[9px] font-normal">${dayName}</div>
+          <div class="text-[8px] uppercase">${dayNames[meta.dayOfWeek]}</div>
         </th>`;
       }
 
-      html += `<th class="p-2 border bg-blue-50 text-blue-900">Norm. Mesai</th>`;
-      html += `<th class="p-2 border bg-amber-50 text-amber-900">Ek Mesai</th>`;
+      html += `<th class="p-2 border bg-blue-50 text-blue-900">Standart</th>`;
+      html += `<th class="p-2 border bg-amber-100 text-amber-900">Ek Mesai</th>`;
       html += `<th class="p-2 border bg-emerald-50 text-emerald-900">Toplam</th>`;
       html += `</tr></thead><tbody>`;
 
       doctors.forEach(doc => {
-        const stats = calculateDoctorStats(doc);
-        const sched = currentSchedule[doc.id] || [];
-        
+        const stats = calculateDocStats(doc);
         html += `<tr>`;
-        html += `<td class="p-2 border text-left font-medium bg-white">${doc.name}</td>`;
-        html += `<td class="p-1 border bg-white text-slate-500">S${doc.service}</td>`;
+        html += `<td class="p-1.5 border text-left font-medium bg-white truncate">${doc.name}</td>`;
+        html += `<td class="p-1 border bg-amber-50/30">
+          <input type="number" step="8" value="${doc.targetOvertime}" class="w-12 text-center font-bold bg-white border border-slate-300 rounded" onchange="updateTarget('${doc.id}', this.value)">
+        </td>`;
 
         for (let d = 1; d <= daysInMonth; d++) {
-          const dm = monthDates[d - 1];
-          const st = sched[d] || (dm.isWeekend ? 'HS' : 'M');
-          let cellClass = 'cell-m';
-          let label = st;
+          const meta = daysMeta[d - 1];
+          const st = grid[doc.id][d];
+          let cellClass = meta.isWeekend ? 'cell-hs' : 'cell-m';
+          let label = meta.isWeekend ? '-' : '8';
 
-          if (st === 'N') { cellClass = 'cell-n'; label = 'N'; }
-          else if (st === 'N-İzni') { cellClass = 'cell-ni'; label = 'N-İzni'; }
-          else if (st === 'HS') { cellClass = 'cell-hs'; label = '-'; }
-          else if (st === 'R') { cellClass = 'cell-r'; label = 'Rapor'; }
-          else { label = '8'; }
+          if (meta.isHoliday) { cellClass = 'cell-holiday'; label = 'T'; }
 
-          if (doc.fixedDays.includes(d)) cellClass += ' cell-fixed';
+          if (st === 'N_FIXED') { cellClass = 'cell-fixed-n'; label = 'N'; }
+          else if (st === 'N_AUTO') { cellClass = 'cell-auto-n'; label = 'N'; }
+          else if (st === 'N_IZNI') { cellClass = 'cell-ni'; label = 'N-İzni'; }
+          else if (st === 'OFF') { cellClass = 'cell-off'; label = 'X'; }
 
-          html += `<td class="p-1 border cursor-pointer ${cellClass}" title="Tıkla: Durumu Değiştir" onclick="toggleCell('${doc.id}', ${d})">${label}</td>`;
+          html += `<td class="p-1 border cursor-pointer select-none ${cellClass}" onclick="toggleDay('${doc.id}', ${d})">${label}</td>`;
         }
 
-        html += `<td class="p-2 border font-bold bg-blue-50/50">${stats.standardHours}s</td>`;
-        html += `<td class="p-2 border font-bold text-amber-600 bg-amber-50/50">${stats.overtimeHours}s</td>`;
-        html += `<td class="p-2 border font-black text-emerald-700 bg-emerald-50/50">${stats.totalHours}s</td>`;
+        const diffBadge = stats.diff === 0 
+          ? `<span class="text-emerald-600 font-bold ml-1">✓</span>` 
+          : `<span class="text-xs text-slate-400">(${stats.diff > 0 ? '+' : ''}${stats.diff})</span>`;
+
+        html += `<td class="p-1 border bg-blue-50/40 font-semibold">${stats.standardHours}s</td>`;
+        html += `<td class="p-1 border bg-amber-50/60 font-bold text-amber-700">${stats.earnedOvertime}s ${diffBadge}</td>`;
+        html += `<td class="p-1 border bg-emerald-50/40 font-extrabold text-emerald-700">${stats.totalHours}s</td>`;
         html += `</tr>`;
       });
 
-      // Günlük Nöbetçi Sayısı Denetim Satırı
+      // Nöbetçi Dağılımı Denge Kontrol Satırı
       html += `</tbody><tfoot class="bg-slate-100 font-bold border-t-2"><tr>`;
-      html += `<td colspan="2" class="p-2 border text-left">Günlük Toplam Nöbetçi</td>`;
+      html += `<td colspan="2" class="p-2 border text-left">Günlük Nöbetçi Sayısı</td>`;
       for (let d = 1; d <= daysInMonth; d++) {
         let count = 0;
         doctors.forEach(doc => {
-          if (currentSchedule[doc.id] && currentSchedule[doc.id][d] === 'N') count++;
+          const s = grid[doc.id][d];
+          if (s === 'N_FIXED' || s === 'N_AUTO') count++;
         });
-        html += `<td class="p-1 border text-blue-700">${count}</td>`;
+        html += `<td class="p-1 border text-blue-700 font-bold">${count}</td>`;
       }
       html += `<td colspan="3" class="border"></td></tr></tfoot>`;
 
       table.innerHTML = html;
     }
 
-    function toggleCell(docId, day) {
-      if (!currentSchedule[docId]) return;
-      const cur = currentSchedule[docId][day];
-      const cycle = ['M', 'N', 'N-İzni', 'R'];
-      let nextIdx = (cycle.indexOf(cur) + 1) % cycle.length;
-      currentSchedule[docId][day] = cycle[nextIdx];
-      renderTable();
+    function renderCalculationsOnly() {
+      render();
     }
 
     function exportToExcel() {
