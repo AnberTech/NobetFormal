@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Akıllı Nöbet & Mesai Çizelgesi</title>
+  <title>AnberTech - Formal Nöbet Çözücü</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -37,23 +37,25 @@
   <div class="max-w-[99%] mx-auto space-y-3">
     
     <!-- Üst Kontrol Paneli -->
-    <header class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-3 no-print">
-      <div class="flex items-center gap-3">
-        <div class="p-2.5 bg-blue-50 text-blue-600 rounded-lg text-lg">
-          <i class="fa-solid fa-hospital"></i>
+    <header class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-2 no-print">
+      
+      <!-- Sadeleştirilmiş Başlık (AnberTech / Formal Nöbet Çözücü) -->
+      <div class="flex items-center gap-2.5">
+        <div class="p-2 bg-blue-50 text-blue-600 rounded-lg text-base">
+          <i class="fa-solid fa-hospital-user"></i>
         </div>
-        <div>
-          <h1 class="text-base font-bold text-slate-900 leading-tight">Akıllı Nöbet & Mesai Optimizasyonu</h1>
-          <p class="text-[11px] text-slate-500">Nöbet Sayısı Göstergeli • Maks. +8 Aşım Sınırı • Sıfır Gün Yasağı</p>
+        <div class="leading-tight">
+          <div class="text-[11px] font-black text-blue-700 tracking-wider uppercase">AnberTech</div>
+          <div class="text-sm font-bold text-slate-900">Formal Nöbet Çözücü</div>
         </div>
       </div>
 
       <!-- Ay, Yıl, Servis ve Parametreler -->
-      <div class="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+      <div class="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
         
-        <div class="flex items-center gap-1.5">
+        <div class="flex items-center gap-1">
           <div>
-            <label class="block text-[10px] font-bold text-slate-500 uppercase">Yıl</label>
+            <label class="block text-[9px] font-bold text-slate-500 uppercase">Yıl</label>
             <select id="selectYear" class="bg-white border border-slate-300 rounded px-1.5 py-0.5 text-xs font-semibold" onchange="onFilterChanged()">
               <option value="2025">2025</option>
               <option value="2026" selected>2026</option>
@@ -62,7 +64,7 @@
             </select>
           </div>
           <div>
-            <label class="block text-[10px] font-bold text-slate-500 uppercase">Ay</label>
+            <label class="block text-[9px] font-bold text-slate-500 uppercase">Ay</label>
             <select id="selectMonth" class="bg-white border border-slate-300 rounded px-1.5 py-0.5 text-xs font-semibold" onchange="onFilterChanged()">
               <option value="01">Ocak (01)</option>
               <option value="02">Şubat (02)</option>
@@ -80,77 +82,80 @@
           </div>
         </div>
         
-        <div class="border-l pl-3">
-          <label class="block text-[10px] font-bold text-indigo-600 uppercase">Servis / Birim</label>
-          <input type="text" id="selectedService" list="serviceOptions" value="Acil Servis" placeholder="Servis seçin" class="bg-white border border-indigo-300 rounded px-2 py-0.5 text-xs font-bold text-indigo-900 w-28" onchange="onFilterChanged()">
+        <div class="border-l pl-2">
+          <label class="block text-[9px] font-bold text-indigo-600 uppercase">Servis</label>
+          <input type="text" id="selectedService" list="serviceOptions" value="Acil Servis" placeholder="Servis seçin" class="bg-white border border-indigo-300 rounded px-1.5 py-0.5 text-xs font-bold text-indigo-900 w-24" onchange="onFilterChanged()">
           <datalist id="serviceOptions"></datalist>
         </div>
 
-        <div class="border-l pl-3">
-          <label class="block text-[10px] font-bold text-amber-700 uppercase" title="Ayın son gün nöbeti sonraki aya izin sarkıtıyorsa saatini seçebilirsiniz">Ay Sonu Nöbeti</label>
-          <select id="lastDayShiftRule" class="bg-white border border-amber-300 rounded px-1.5 py-0.5 text-xs font-bold text-amber-900" onchange="render()">
-            <option value="auto">Standart (Otomatik)</option>
-            <option value="16" selected>16 Saat (Sarkan İzin)</option>
-            <option value="24">24 Saat (Tam Ek Mesai)</option>
+        <div class="border-l pl-2">
+          <label class="block text-[9px] font-bold text-amber-700 uppercase" title="Ayın son gün nöbeti sonraki aya izin sarkıtıyorsa saatini seçebilirsiniz">Ay Sonu</label>
+          <select id="lastDayShiftRule" class="bg-white border border-amber-300 rounded px-1 py-0.5 text-xs font-bold text-amber-900" onchange="render()">
+            <option value="auto">Otomatik</option>
+            <option value="16" selected>16 Saat</option>
+            <option value="24">24 Saat</option>
             <option value="8">8 Saat</option>
           </select>
         </div>
 
-        <div class="border-l pl-3">
-          <label class="block text-[10px] font-bold text-rose-600 uppercase" title="Kliniğin asla sıfır kalmaması için taban nöbetçi">Min. Nöbetçi</label>
-          <input type="number" id="minDailyShifts" value="1" min="1" max="5" class="w-12 text-center font-bold bg-white border border-rose-300 rounded px-1 py-0.5 text-xs text-rose-700">
+        <div class="border-l pl-2">
+          <label class="block text-[9px] font-bold text-rose-600 uppercase" title="Kliniğin asla sıfır kalmaması için taban nöbetçi">Min.</label>
+          <input type="number" id="minDailyShifts" value="1" min="1" max="5" class="w-10 text-center font-bold bg-white border border-rose-300 rounded px-0.5 py-0.5 text-xs text-rose-700">
         </div>
-        <div class="border-l pl-3">
-          <label class="block text-[10px] font-bold text-blue-600 uppercase" title="Her hekimin ayda alabileceği maksimum nöbet">Maks. Nöbet</label>
-          <input type="number" id="maxShiftLimit" value="8" min="1" max="15" class="w-12 text-center font-bold bg-white border border-blue-300 rounded px-1 py-0.5 text-xs text-blue-700">
+        <div class="border-l pl-2">
+          <label class="block text-[9px] font-bold text-blue-600 uppercase" title="Her hekimin ayda alabileceği maksimum nöbet">Maks.</label>
+          <input type="number" id="maxShiftLimit" value="8" min="1" max="15" class="w-10 text-center font-bold bg-white border border-blue-300 rounded px-0.5 py-0.5 text-xs text-blue-700">
         </div>
-        <div class="border-l pl-3">
-          <span class="block text-[10px] font-bold text-slate-500 uppercase">İş Günü</span>
-          <span id="statWorkdays" class="font-bold text-slate-700">-- Gün</span>
+        <div class="border-l pl-2">
+          <span class="block text-[9px] font-bold text-slate-500 uppercase">İş Günü</span>
+          <span id="statWorkdays" class="font-bold text-slate-700">--</span>
         </div>
-        <div class="border-l pl-3">
-          <span class="block text-[10px] font-bold text-slate-500 uppercase">Standart Mesai</span>
-          <span id="statStandardHours" class="font-bold text-blue-600">-- Saat</span>
+        <div class="border-l pl-2">
+          <span class="block text-[9px] font-bold text-slate-500 uppercase">Standart</span>
+          <span id="statStandardHours" class="font-bold text-blue-600">--s</span>
         </div>
       </div>
 
-      <!-- Zoom -->
-      <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-        <span class="text-[10px] font-bold text-slate-500 uppercase"><i class="fa-solid fa-magnifying-glass mr-1"></i>Zoom:</span>
-        <button onclick="changeZoom(-0.1)" class="w-6 h-6 bg-white border border-slate-300 rounded text-slate-700 font-bold hover:bg-slate-100">-</button>
-        <span id="zoomLabel" class="font-bold text-slate-700 text-xs min-w-[38px] text-center">100%</span>
-        <button onclick="changeZoom(0.1)" class="w-6 h-6 bg-white border border-slate-300 rounded text-slate-700 font-bold hover:bg-slate-100">+</button>
-        <button onclick="resetZoom()" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[11px] text-slate-600 hover:bg-slate-100">Sıfırla</button>
+      <!-- Zoom ve Otomatik Sığdırma Çubuğu -->
+      <div class="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
+        <span class="text-[9px] font-bold text-slate-500 uppercase"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <button onclick="changeZoom(-0.05)" class="w-5 h-5 bg-white border border-slate-300 rounded text-slate-700 font-bold hover:bg-slate-100 flex items-center justify-center">-</button>
+        <span id="zoomLabel" class="font-bold text-slate-700 text-xs min-w-[32px] text-center">--%</span>
+        <button onclick="changeZoom(0.05)" class="w-5 h-5 bg-white border border-slate-300 rounded text-slate-700 font-bold hover:bg-slate-100 flex items-center justify-center">+</button>
+        <button onclick="autoFitZoom()" class="px-1.5 py-0.5 bg-blue-50 border border-blue-200 text-blue-700 rounded text-[10px] font-bold hover:bg-blue-100" title="Tabloyu ekrana tam sığdırır">
+          Sığdır
+        </button>
+        <button onclick="resetZoom()" class="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[10px] text-slate-600 hover:bg-slate-100">100%</button>
       </div>
 
       <!-- İşlem Butonları -->
-      <div class="flex items-center gap-2">
-        <button onclick="saveCurrentMonth()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition">
-          <i class="fa-solid fa-floppy-disk mr-1"></i> Kaydet
+      <div class="flex items-center gap-1.5">
+        <button onclick="saveCurrentMonth()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1">
+          <i class="fa-solid fa-floppy-disk"></i> Kaydet
         </button>
-        <button onclick="copyPreviousMonthStaff()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition" title="Bir önceki ayın hekim kadrosunu kopyala">
-          <i class="fa-solid fa-users mr-1"></i> Önceki Aydan Aktar
+        <button onclick="copyPreviousMonthStaff()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition" title="Bir önceki ayın hekim kadrosunu kopyala">
+          <i class="fa-solid fa-users"></i> Aktar
         </button>
-        <button onclick="openPasteModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition" title="İsim ve Saatleri alt alta yapıştırın">
-          <i class="fa-solid fa-clipboard-list mr-1"></i> Toplu İsim + Saat
+        <button onclick="openPasteModal()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition" title="İsim ve Saatleri alt alta yapıştırın">
+          <i class="fa-solid fa-clipboard-list"></i> Toplu İsim
         </button>
-        <button onclick="addDoctorRow()" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-lg transition">
-          <i class="fa-solid fa-plus mr-1"></i> Hekim Ekle
+        <button onclick="addDoctorRow()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-lg transition">
+          <i class="fa-solid fa-plus"></i> Ekle
         </button>
         
-        <button id="btnDistribute" onclick="distributeRoster()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm transition">
-          <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Nöbetleri Dağıt
+        <button id="btnDistribute" onclick="distributeRoster()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Dağıt
         </button>
 
-        <button onclick="clearOnlyGenerated()" id="btnClearGenerated" class="hidden px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-medium rounded-lg transition">
-          <i class="fa-solid fa-rotate-left mr-1"></i> Geri Al
+        <button onclick="clearOnlyGenerated()" id="btnClearGenerated" class="hidden px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-medium rounded-lg transition">
+          <i class="fa-solid fa-rotate-left"></i>
         </button>
 
-        <button onclick="window.print()" class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white font-medium rounded-lg transition">
-          <i class="fa-solid fa-file-pdf mr-1"></i> PDF
+        <button onclick="window.print()" class="px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-medium rounded-lg transition">
+          <i class="fa-solid fa-file-pdf"></i>
         </button>
-        <button onclick="exportToExcel()" class="px-3 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-medium rounded-lg transition">
-          <i class="fa-solid fa-file-excel mr-1"></i> Excel
+        <button onclick="exportToExcel()" class="px-2.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-medium rounded-lg transition">
+          <i class="fa-solid fa-file-excel"></i>
         </button>
       </div>
     </header>
@@ -162,7 +167,7 @@
     </div>
 
     <!-- Tablo Alanı -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto max-h-[76vh] relative">
+    <div id="tableOuterWrapper" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto max-h-[76vh] relative">
       <div id="tableContainer">
         <table id="rosterTable" class="w-full border-collapse"></table>
       </div>
@@ -234,6 +239,7 @@
     let daysMeta = [];
     let grid = {}; 
     let currentZoom = 1.0;
+    let isUserZoomed = false;
     let isGenerated = false;
 
     window.onload = () => {
@@ -244,7 +250,48 @@
       refreshServiceOptions();
       refreshDoctorAutocompletePool();
       loadActiveRoster();
+
+      window.addEventListener('resize', () => {
+        if (!isUserZoomed) {
+          autoFitZoom();
+        }
+      });
     };
+
+    function autoFitZoom() {
+      const wrapper = document.getElementById('tableOuterWrapper');
+      const table = document.getElementById('rosterTable');
+      if (!wrapper || !table) return;
+
+      const availableWidth = wrapper.clientWidth - 16;
+      const actualWidth = table.scrollWidth || 1550;
+
+      if (actualWidth > 0 && availableWidth > 0) {
+        let idealZoom = availableWidth / actualWidth;
+        idealZoom = Math.min(Math.max(0.55, idealZoom), 1.0);
+        currentZoom = Math.round(idealZoom * 100) / 100;
+        applyZoom();
+      }
+    }
+
+    function changeZoom(delta) {
+      isUserZoomed = true;
+      currentZoom = Math.min(Math.max(0.4, currentZoom + delta), 1.4);
+      applyZoom();
+    }
+
+    function resetZoom() {
+      isUserZoomed = true;
+      currentZoom = 1.0;
+      applyZoom();
+    }
+
+    function applyZoom() {
+      const container = document.getElementById('tableContainer');
+      container.style.transform = `scale(${currentZoom})`;
+      container.style.width = `${100 / currentZoom}%`;
+      document.getElementById('zoomLabel').innerText = `${Math.round(currentZoom * 100)}%`;
+    }
 
     function getSelectedPeriodString() {
       return `${document.getElementById('selectYear').value}-${document.getElementById('selectMonth').value}`;
@@ -428,18 +475,6 @@
         doctors.push({ id, name: `Dr. Hekim ${i}`, targetOvertime: 80 });
         grid[id] = {};
       }
-    }
-
-    function changeZoom(delta) {
-      currentZoom = Math.min(Math.max(0.5, currentZoom + delta), 1.4);
-      applyZoom();
-    }
-    function resetZoom() { currentZoom = 1.0; applyZoom(); }
-    function applyZoom() {
-      const container = document.getElementById('tableContainer');
-      container.style.transform = `scale(${currentZoom})`;
-      container.style.width = `${100 / currentZoom}%`;
-      document.getElementById('zoomLabel').innerText = `${Math.round(currentZoom * 100)}%`;
     }
 
     function isHoliday(year, month, day) {
@@ -628,12 +663,12 @@
       const btn = document.getElementById('btnDistribute');
       const btnClear = document.getElementById('btnClearGenerated');
       if (isGenerated) {
-        btn.innerHTML = `<i class="fa-solid fa-arrows-rotate mr-1"></i> Farklı Dağıt (Yeni Liste)`;
-        btn.className = "px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm transition";
+        btn.innerHTML = `<i class="fa-solid fa-arrows-rotate mr-1"></i> Yeniden Dağıt`;
+        btn.className = "px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1";
         btnClear.classList.remove('hidden');
       } else {
-        btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Nöbetleri Dağıt`;
-        btn.className = "px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm transition";
+        btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Dağıt`;
+        btn.className = "px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1";
         btnClear.classList.add('hidden');
       }
     }
@@ -905,8 +940,6 @@
         html += `<td class="p-1 border bg-blue-50/40 font-semibold">${stats.standardHours}s</td>`;
         html += `<td class="p-1 border bg-amber-50/60 font-bold text-amber-700">${stats.earnedOvertime}s ${diffBadge}</td>`;
         html += `<td class="p-1 border bg-emerald-50/40 font-black text-emerald-700">${stats.totalHours}s</td>`;
-        
-        // Yeni Nöbet Sayısı Sütunu
         html += `<td class="p-1 border bg-purple-50/50 font-bold text-purple-800 text-center">${shiftCount}</td>`;
         
         html += `<td class="p-1 border bg-white text-center no-print">
@@ -932,7 +965,12 @@
       html += `<td colspan="4" class="border"></td><td class="no-print border"></td></tr></tfoot>`;
 
       table.innerHTML = html;
-      applyZoom();
+      
+      if (!isUserZoomed) {
+        setTimeout(autoFitZoom, 30);
+      } else {
+        applyZoom();
+      }
     }
 
     function exportToExcel() {
