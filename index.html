@@ -30,6 +30,21 @@
       transition: transform 0.05s ease-out;
     }
 
+    /* Özel Dropdown Menü Stili - Beyazlama Sorununa Kesin Çözüm */
+    .service-dropdown-item {
+      color: #1e293b !important;
+      background-color: #ffffff;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      transition: all 0.15s ease;
+    }
+    .service-dropdown-item:hover {
+      background-color: #4f46e5 !important;
+      color: #ffffff !important;
+    }
+
     @media print {
       * {
         -webkit-print-color-adjust: exact !important;
@@ -46,7 +61,7 @@
     }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 p-3 min-h-screen text-xs">
+<body class="bg-slate-100 text-slate-800 p-3 min-h-screen text-xs" onclick="handleGlobalClick(event)">
   <div class="max-w-[99%] mx-auto space-y-2.5">
     
     <!-- Üst Bar ve Kontrol Bloğu -->
@@ -126,10 +141,19 @@
             </select>
           </div>
 
-          <div class="flex items-center gap-1 bg-indigo-50/60 border border-indigo-200 rounded-lg px-2 py-1">
-            <i class="fa-solid fa-stethoscope text-indigo-600 text-[10px]"></i>
-            <input type="text" id="selectedService" list="serviceOptions" value="Acil Servis" placeholder="Servis..." class="bg-transparent font-bold text-indigo-900 text-xs w-24 focus:outline-none" onchange="onFilterChanged()">
-            <datalist id="serviceOptions"></datalist>
+          <!-- YENİ: BEYAZLAMA SORUNU OLMAYAN ÖZEL SERVİS MENÜSÜ -->
+          <div class="relative inline-block" id="serviceDropdownWrapper">
+            <div class="flex items-center gap-1 bg-indigo-50/70 border border-indigo-200 rounded-lg px-2 py-1 cursor-pointer" onclick="toggleServiceDropdown(event)">
+              <i class="fa-solid fa-stethoscope text-indigo-600 text-[10px]"></i>
+              <input type="text" id="selectedService" value="Acil Servis" placeholder="Servis..." 
+                class="bg-transparent font-bold text-indigo-950 text-xs w-24 focus:outline-none cursor-pointer" 
+                onchange="onFilterChanged()" onfocus="openServiceDropdown(event)">
+              <i class="fa-solid fa-chevron-down text-indigo-400 text-[9px] ml-0.5"></i>
+            </div>
+            <!-- Açılır Menü Listesi -->
+            <div id="serviceCustomMenu" class="hidden absolute left-0 mt-1 w-44 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden py-1">
+              <div id="serviceCustomList"></div>
+            </div>
           </div>
 
           <div class="flex items-center gap-1 bg-amber-50/60 border border-amber-200 rounded-lg px-2 py-1" title="Ay sonu nöbet saati katsayısı">
@@ -168,15 +192,13 @@
             <i class="fa-solid fa-users text-slate-500"></i> Aktar
           </button>
 
-          <!-- YENİ: ARŞİV BUTONU -->
           <button onclick="openArchiveModal()" class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 font-bold rounded-lg transition flex items-center gap-1.5" title="Geçmiş Kayıtlar & Snapshot Havuzu">
             <i class="fa-solid fa-box-archive text-amber-600"></i>
             <span>Arşiv</span>
             <span id="archiveCountBadge" class="bg-amber-200 text-amber-900 text-[10px] px-1 rounded-full font-bold">0</span>
           </button>
 
-          <!-- KAYDET BUTONU (Aynı zamanda Tarih/Saat Damgalı Arşive Ekler) -->
-          <button onclick="saveCurrentMonth()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1.5">
+          <button onclick="saveCurrentMonth()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1.5" title="Listeyi ve Arşivi Onaylayıp Kaydet">
             <i class="fa-solid fa-floppy-disk text-xs"></i> Kaydet
           </button>
 
@@ -226,8 +248,6 @@
     </div>
   </div>
 
-  <datalist id="doctorAutocompletePool"></datalist>
-
   <!-- ARŞİV MODAL PENCERESİ -->
   <div id="archiveModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white w-full max-w-2xl rounded-2xl p-5 shadow-2xl space-y-3.5 flex flex-col max-h-[85vh]">
@@ -240,13 +260,10 @@
       </div>
 
       <div class="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-[11px] text-amber-900 leading-relaxed">
-        Her <strong>"Kaydet"</strong>e bastığınızda o anki çizelge tarih, saat, dakika ve saniye damgasıyla bir versiyon (snapshot) olarak buraya arşivlenir. Dilediğiniz eski bir versiyonu tek tıkla geri yükleyebilirsiniz.
+        Siz <strong>"Kaydet"</strong> butonuna bastığınızda o anki çizelge tarih, saat, dakika ve saniye damgasıyla buraya arşivlenir. Dilediğiniz eski bir versiyonu tek tıkla geri yükleyebilirsiniz.
       </div>
 
-      <!-- Arşiv Listesi -->
-      <div class="overflow-y-auto flex-1 pr-1 space-y-2" id="archiveListContainer">
-        <!-- Dinamik Arşiv Kartları Buraya Eklenir -->
-      </div>
+      <div class="overflow-y-auto flex-1 pr-1 space-y-2" id="archiveListContainer"></div>
 
       <div class="flex justify-between items-center pt-2 border-t text-xs">
         <button onclick="clearAllArchivesForCurrent()" class="text-rose-600 hover:text-rose-800 font-medium flex items-center gap-1">
@@ -326,7 +343,6 @@
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // Formatlı Tarih & Saat Damgası (Örn: 2026-09-20 00:15:32)
     function getFormattedTimestamp(dateObj = new Date()) {
       const y = dateObj.getFullYear();
       const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -351,13 +367,61 @@
       document.getElementById('selectMonth').value = String(now.getMonth() + 1).padStart(2, '0');
       
       refreshServiceOptions();
-      refreshDoctorAutocompletePool();
       loadActiveRoster();
 
       window.addEventListener('resize', () => {
         if (!isUserZoomed) autoFitZoom();
       });
     };
+
+    // ÖZEL SERVİS AÇILIR MENÜ KONTROLLERİ (Beyazlama Karşıtı)
+    function refreshServiceOptions() {
+      const savedServices = JSON.parse(localStorage.getItem('nobet_known_services') || '["Acil Servis", "Dahiliye", "Çocuk Cerrahisi", "Genel Cerrahi", "Anestezi", "Kardiyoloji"]');
+      const listContainer = document.getElementById('serviceCustomList');
+      listContainer.innerHTML = '';
+      
+      savedServices.forEach(srv => {
+        const item = document.createElement('div');
+        item.className = "service-dropdown-item";
+        item.innerText = srv;
+        item.onclick = () => selectServiceItem(srv);
+        listContainer.appendChild(item);
+      });
+    }
+
+    function toggleServiceDropdown(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById('serviceCustomMenu');
+      menu.classList.toggle('hidden');
+    }
+
+    function openServiceDropdown(e) {
+      if (e) e.stopPropagation();
+      document.getElementById('serviceCustomMenu').classList.remove('hidden');
+    }
+
+    function selectServiceItem(val) {
+      document.getElementById('selectedService').value = val;
+      document.getElementById('serviceCustomMenu').classList.add('hidden');
+      onFilterChanged();
+    }
+
+    function handleGlobalClick(e) {
+      const wrapper = document.getElementById('serviceDropdownWrapper');
+      if (wrapper && !wrapper.contains(e.target)) {
+        document.getElementById('serviceCustomMenu').classList.add('hidden');
+      }
+    }
+
+    function registerServiceName(srv) {
+      if (!srv) return;
+      let saved = JSON.parse(localStorage.getItem('nobet_known_services') || '["Acil Servis", "Dahiliye", "Çocuk Cerrahisi", "Genel Cerrahi", "Anestezi", "Kardiyoloji"]');
+      if (!saved.some(s => trNormalize(s) === trNormalize(srv))) {
+        saved.push(srv.trim());
+        localStorage.setItem('nobet_known_services', JSON.stringify(saved));
+        refreshServiceOptions();
+      }
+    }
 
     function autoFitZoom() {
       const wrapper = document.getElementById('tableOuterWrapper');
@@ -416,55 +480,6 @@
     function getArchiveStorageKey(monthStr, serviceName) {
       const srvClean = (serviceName || 'Genel').trim().toLowerCase().replace(/\s+/g, '_');
       return `nobet_archive_${monthStr}_${srvClean}`;
-    }
-
-    function refreshServiceOptions() {
-      const savedServices = JSON.parse(localStorage.getItem('nobet_known_services') || '["Acil Servis", "Dahiliye", "Çocuk Cerrahisi", "Genel Cerrahi"]');
-      const datalist = document.getElementById('serviceOptions');
-      datalist.innerHTML = '';
-      savedServices.forEach(srv => {
-        const opt = document.createElement('option');
-        opt.value = srv;
-        datalist.appendChild(opt);
-      });
-    }
-
-    function registerServiceName(srv) {
-      if (!srv) return;
-      let saved = JSON.parse(localStorage.getItem('nobet_known_services') || '["Acil Servis", "Dahiliye", "Çocuk Cerrahisi", "Genel Cerrahi"]');
-      if (!saved.includes(srv.trim())) {
-        saved.push(srv.trim());
-        localStorage.setItem('nobet_known_services', JSON.stringify(saved));
-        refreshServiceOptions();
-      }
-    }
-
-    function refreshDoctorAutocompletePool() {
-      const savedPool = JSON.parse(localStorage.getItem('nobet_doctor_pool') || '[]');
-      const datalist = document.getElementById('doctorAutocompletePool');
-      datalist.innerHTML = '';
-      savedPool.forEach(name => {
-        const opt = document.createElement('option');
-        opt.value = name;
-        datalist.appendChild(opt);
-      });
-    }
-
-    function registerDoctorsToPool(nameList) {
-      let pool = JSON.parse(localStorage.getItem('nobet_doctor_pool') || '[]');
-      let updated = false;
-      nameList.forEach(n => {
-        const trimName = n.trim();
-        if (trimName && !pool.includes(trimName)) {
-          pool.push(trimName);
-          updated = true;
-        }
-      });
-      if (updated) {
-        pool.sort();
-        localStorage.setItem('nobet_doctor_pool', JSON.stringify(pool));
-        refreshDoctorAutocompletePool();
-      }
     }
 
     function getPreviousMonthString(curMonthStr) {
@@ -554,9 +569,6 @@
       a.click();
     }
 
-    // =========================================================================
-    // ARŞİVLEME VE VERSİYONLAMA MOTORU
-    // =========================================================================
     function getArchiveList() {
       const monthStr = getSelectedPeriodString();
       const srvName = document.getElementById('selectedService').value;
@@ -576,7 +588,6 @@
       const nowStamp = getFormattedTimestamp();
       
       registerServiceName(srvName);
-      registerDoctorsToPool(doctors.map(d => d.name));
 
       const payload = {
         doctors,
@@ -589,10 +600,8 @@
         timestamp: Date.now()
       };
 
-      // 1. Aktif çalışma kaydını güncelle
       localStorage.setItem(getStorageKey(monthStr, srvName), JSON.stringify(payload));
 
-      // 2. Tarih-Saat-Dakika-Saniye damgalı Arşiv Snapshot'ı ekle
       let archiveList = getArchiveList();
       archiveList.unshift({
         id: 'arch_' + Date.now(),
@@ -604,7 +613,6 @@
         snapshot: payload
       });
 
-      // Arşivde en son 50 versiyon saklanır
       if (archiveList.length > 50) archiveList = archiveList.slice(0, 50);
       localStorage.setItem(getArchiveStorageKey(monthStr, srvName), JSON.stringify(archiveList));
 
@@ -626,7 +634,7 @@
           <div class="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
             <i class="fa-solid fa-folder-open text-3xl mb-2 text-slate-300"></i>
             <p>Bu ay ve servis için henüz arşivlenmiş bir liste bulunmuyor.</p>
-            <p class="text-[10px] mt-1">"Kaydet" butonuna bastığınızda anlık liste otomatik olarak buraya kaydedilecektir.</p>
+            <p class="text-[10px] mt-1">"Kaydet" butonuna bastığınızda anlık liste tarih damgasıyla buraya kaydedilecektir.</p>
           </div>
         `;
       } else {
@@ -676,7 +684,7 @@
       const item = archiveList.find(a => a.id === archiveId);
       if (!item || !item.snapshot) return alert("Kayıt bulunamadı!");
 
-      if (confirm(`${item.timestampStr} tarihli arşiv versiyonu ekrana yüklensin mi? (Mevcut kaydedilmemiş düzenlemeleriniz varsa değişecektir)`)) {
+      if (confirm(`${item.timestampStr} tarihli arşiv versiyonu ekrana yüklensin mi?`)) {
         const snap = item.snapshot;
         doctors = snap.doctors || [];
         grid = snap.grid || {};
@@ -702,7 +710,7 @@
         let archiveList = getArchiveList().filter(a => a.id !== archiveId);
         localStorage.setItem(getArchiveStorageKey(monthStr, srvName), JSON.stringify(archiveList));
         updateArchiveBadge();
-        openArchiveModal(); // Listeyi tazele
+        openArchiveModal();
       }
     }
 
@@ -914,7 +922,6 @@
         }
       });
 
-      registerDoctorsToPool(parsedNames);
       closePasteModal();
       document.getElementById('bulkNames').value = '';
       initCalendar();
@@ -1038,9 +1045,6 @@
       };
     }
 
-    // =========================================================================
-    // MOTOR V2: ÇÖZÜCÜ VE OPTİMİZASYON HESAPLAYICISI
-    // =========================================================================
     function distributeRoster() {
       if (doctors.length === 0) return alert("Lütfen önce hekim ekleyin.");
 
@@ -1084,7 +1088,6 @@
         updateButtons();
         renderOnly();
         runIndependentValidation();
-        saveCurrentMonth();
       } else {
         let fallbackGrid = JSON.parse(JSON.stringify(baseGrid));
         constructFeasibleRoster(fallbackGrid, maxLimit, randomFunc, true);
@@ -1380,7 +1383,7 @@
         html += `<tr>`;
         
         html += `<td class="p-1 border text-left bg-white min-w-[140px] max-w-[140px]">
-          <input type="text" list="doctorAutocompletePool" value="${escapeHtml(doc.name)}" class="w-full bg-transparent border-0 focus:ring-1 focus:ring-blue-500 rounded px-1.5 py-0.5 font-medium text-slate-800 text-xs" oninput="updateDoctorName('${doc.id}', this.value)" placeholder="İsim Girin">
+          <input type="text" value="${escapeHtml(doc.name)}" class="w-full bg-transparent border-0 focus:ring-1 focus:ring-blue-500 rounded px-1.5 py-0.5 font-medium text-slate-800 text-xs" oninput="updateDoctorName('${doc.id}', this.value)" placeholder="İsim Girin">
         </td>`;
 
         html += `<td class="p-1 border bg-amber-50/30 w-12 min-w-[48px]">
