@@ -31,7 +31,6 @@
       transition: transform 0.05s ease-out;
     }
 
-    /* Özel Dropdown Menü Stili - Beyazlama Karşıtı */
     .service-dropdown-item {
       color: #1e293b !important;
       background-color: #ffffff;
@@ -46,7 +45,6 @@
       color: #ffffff !important;
     }
 
-    /* Zıplayan Top Animasyonu */
     @keyframes bounceBall {
       0%, 100% {
         transform: translateY(0) scale(1.15, 0.85);
@@ -69,13 +67,8 @@
       }
     }
 
-    .bouncing-ball {
-      animation: bounceBall 0.6s infinite alternate;
-    }
-
-    .ball-shadow {
-      animation: shadowPulse 0.6s infinite alternate;
-    }
+    .bouncing-ball { animation: bounceBall 0.6s infinite alternate; }
+    .ball-shadow { animation: shadowPulse 0.6s infinite alternate; }
 
     @media print {
       * {
@@ -111,8 +104,9 @@
             <span class="text-xs font-semibold text-blue-600">Formal Nöbet Çözücü V1.0</span>
           </div>
         </div>
-        <div class="text-[10px] text-slate-400 font-medium hidden sm:block">
-          Hekim Çalışma ve Nöbet Optimizasyon Sistemi
+        <div class="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
+          <span id="dirtyIndicator" class="hidden text-amber-600 font-bold bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">● Kaydedilmemiş Değişiklikler Var</span>
+          <span class="hidden sm:inline">Hekim Çalışma ve Nöbet Optimizasyon Sistemi</span>
         </div>
       </div>
 
@@ -123,17 +117,17 @@
         <div class="flex items-center bg-slate-50 border border-slate-300/80 rounded-lg p-0.5 shadow-sm">
           <span class="text-[9px] font-bold text-slate-400 uppercase px-1.5 hidden md:inline">Kadro:</span>
           
-          <button onclick="addDoctorRow()" class="lockable-ui px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1 shadow-2xs" title="Tek yeni hekim satırı ekle">
+          <button type="button" onclick="addDoctorRow()" class="lockable-ui px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1 shadow-2xs" title="Tek yeni hekim satırı ekle">
             <i class="fa-solid fa-plus text-blue-600"></i>
             <span>Kişi Ekle</span>
           </button>
 
-          <button onclick="copyPreviousMonthStaff()" class="lockable-ui px-2.5 py-1 hover:bg-white text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1" title="Önceki aydan hekim kadrosunu kopyala">
+          <button type="button" onclick="copyPreviousMonthStaff()" class="lockable-ui px-2.5 py-1 hover:bg-white text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1" title="Önceki aydan hekim kadrosunu kopyala">
             <i class="fa-solid fa-users text-indigo-600"></i>
             <span>Kişileri Aktar</span>
           </button>
 
-          <button onclick="openPasteModal()" class="lockable-ui px-2.5 py-1 hover:bg-white text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1" title="Excel'den isim ve hedef saatleri toplu yapıştır">
+          <button type="button" onclick="openPasteModal()" class="lockable-ui px-2.5 py-1 hover:bg-white text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1" title="Excel'den isim ve hedef saatleri toplu yapıştır">
             <i class="fa-solid fa-clipboard-list text-emerald-600"></i>
             <span>Toplu Gir</span>
           </button>
@@ -141,39 +135,43 @@
 
         <!-- Sağ: Seed, Zoom, Arşiv, Kaydet, Dışa Aktarma -->
         <div class="flex items-center gap-1.5 ml-auto">
-          <span id="seedBadge" class="hidden sm:inline-block px-2 py-0.5 bg-slate-100 border border-slate-200 text-[10px] font-mono font-bold text-slate-600 rounded" title="Aktif Tohum Kodu">Seed: --</span>
+          <!-- Tıklanabilir ve Düzenlenebilir Seed Butonu -->
+          <div class="flex items-center bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5" title="Tohum kodunu değiştirmek için tıklayın">
+            <span class="text-[10px] font-mono text-slate-500 mr-1 font-bold">Seed:</span>
+            <input type="number" id="seedInput" value="1337" class="w-14 bg-transparent font-mono font-bold text-[10px] text-slate-800 text-center focus:outline-none" onchange="onSeedManuallyChanged(this.value)">
+          </div>
 
           <!-- Zoom Araçları -->
           <div class="flex items-center bg-slate-50 border border-slate-200 rounded-lg p-0.5 text-slate-600 mr-1">
-            <button onclick="changeZoom(-0.05)" class="lockable-ui w-6 h-6 hover:bg-white rounded flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold transition">-</button>
+            <button type="button" onclick="changeZoom(-0.05)" class="lockable-ui w-6 h-6 hover:bg-white rounded flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold transition">-</button>
             <span id="zoomLabel" class="font-bold text-[10px] min-w-[34px] text-center">100%</span>
-            <button onclick="changeZoom(0.05)" class="lockable-ui w-6 h-6 hover:bg-white rounded flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold transition">+</button>
-            <button onclick="autoFitZoom()" class="lockable-ui px-2 py-0.5 hover:bg-white rounded text-[10px] font-bold text-blue-600 transition" title="Ekrana Tam Sığdır">Sığdır</button>
+            <button type="button" onclick="changeZoom(0.05)" class="lockable-ui w-6 h-6 hover:bg-white rounded flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold transition">+</button>
+            <button type="button" onclick="autoFitZoom()" class="lockable-ui px-2 py-0.5 hover:bg-white rounded text-[10px] font-bold text-blue-600 transition" title="Ekrana Tam Sığdır">Sığdır</button>
           </div>
 
           <!-- ARŞİV BUTONU -->
-          <button onclick="openArchiveModal()" class="lockable-ui px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 font-bold rounded-lg transition flex items-center gap-1.5 shadow-2xs" title="Geçmiş Kayıtlar & Snapshot Havuzu">
+          <button type="button" onclick="openArchiveModal()" class="lockable-ui px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 font-bold rounded-lg transition flex items-center gap-1.5 shadow-2xs" title="Geçmiş Kayıtlar & Snapshot Havuzu">
             <i class="fa-solid fa-box-archive text-amber-600"></i>
             <span>Arşiv</span>
             <span id="archiveCountBadge" class="bg-amber-200 text-amber-900 text-[10px] px-1 rounded-full font-bold">0</span>
           </button>
 
           <!-- MANUEL KAYDET BUTONU -->
-          <button onclick="saveCurrentMonth()" class="lockable-ui px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1.5" title="Bu listeyi tarayıcınızın yerel hafızasına (Local Storage) kalıcı olarak kaydeder ve arşive ekler">
+          <button type="button" onclick="saveCurrentMonth()" class="lockable-ui px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1.5" title="Bu listeyi tarayıcınızın yerel hafızasına kalıcı olarak kaydeder">
             <i class="fa-solid fa-floppy-disk text-xs"></i>
             <span>Kaydet</span>
           </button>
 
-          <button onclick="exportStateBackup()" class="lockable-ui px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-medium rounded-lg transition" title="Veritabanı Yedeği Al (JSON İndir)">
+          <button type="button" onclick="exportStateBackup()" class="lockable-ui px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-medium rounded-lg transition" title="Veritabanı Yedeği Al (JSON İndir)">
             <i class="fa-solid fa-download text-slate-500"></i>
           </button>
 
-          <button onclick="window.print()" class="lockable-ui px-2.5 py-1.5 bg-slate-50 hover:bg-rose-50 hover:text-rose-600 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Renkli PDF Çıktısı Al">
+          <button type="button" onclick="window.print()" class="lockable-ui px-2.5 py-1.5 bg-slate-50 hover:bg-rose-50 hover:text-rose-600 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Renkli PDF Çıktısı Al">
             <i class="fa-solid fa-file-pdf text-rose-500"></i>
             <span class="hidden sm:inline">PDF</span>
           </button>
           
-          <button onclick="exportToStyledExcel()" class="lockable-ui px-2.5 py-1.5 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Renkli Excel Olarak İndir (.xlsx)">
+          <button type="button" onclick="exportToStyledExcel()" class="lockable-ui px-2.5 py-1.5 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Renkli Excel Olarak İndir (.xlsx)">
             <i class="fa-solid fa-file-excel text-emerald-600"></i>
             <span class="hidden sm:inline">Excel</span>
           </button>
@@ -188,14 +186,14 @@
           
           <!-- Yıl / Ay -->
           <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
-            <select id="selectYear" class="lockable-ui bg-transparent font-bold text-slate-800 text-xs focus:outline-none cursor-pointer" onchange="onFilterChanged()">
+            <select id="selectYear" class="lockable-ui bg-transparent font-bold text-slate-800 text-xs focus:outline-none cursor-pointer" onchange="onFilterChanged('year')">
               <option value="2025">2025</option>
               <option value="2026" selected>2026</option>
               <option value="2027">2027</option>
               <option value="2028">2028</option>
             </select>
             <span class="text-slate-300">/</span>
-            <select id="selectMonth" class="lockable-ui bg-transparent font-bold text-slate-800 text-xs focus:outline-none cursor-pointer" onchange="onFilterChanged()">
+            <select id="selectMonth" class="lockable-ui bg-transparent font-bold text-slate-800 text-xs focus:outline-none cursor-pointer" onchange="onFilterChanged('month')">
               <option value="01">Ocak</option>
               <option value="02">Şubat</option>
               <option value="03">Mart</option>
@@ -211,13 +209,13 @@
             </select>
           </div>
 
-          <!-- Servis Seçici (Beyazlama Karşıtı Menü) -->
+          <!-- Servis Seçici -->
           <div class="relative inline-block" id="serviceDropdownWrapper">
             <div class="lockable-ui flex items-center gap-1 bg-indigo-50/70 border border-indigo-200 rounded-lg px-2 py-1 cursor-pointer" onclick="toggleServiceDropdown(event)">
               <i class="fa-solid fa-stethoscope text-indigo-600 text-[10px]"></i>
               <input type="text" id="selectedService" value="Acil Servis" placeholder="Servis..." 
                 class="bg-transparent font-bold text-indigo-950 text-xs w-24 focus:outline-none cursor-pointer" 
-                onchange="onFilterChanged()" onfocus="openServiceDropdown(event)">
+                onchange="onFilterChanged('service')" onfocus="openServiceDropdown(event)">
               <i class="fa-solid fa-chevron-down text-indigo-400 text-[9px] ml-0.5"></i>
             </div>
             <div id="serviceCustomMenu" class="hidden absolute left-0 mt-1 w-44 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden py-1">
@@ -228,7 +226,7 @@
           <!-- Ay Sonu Kuralı -->
           <div class="flex items-center gap-1 bg-amber-50/60 border border-amber-200 rounded-lg px-2 py-1" title="Ay sonu nöbet saati katsayısı">
             <span class="text-[10px] font-bold text-amber-800">Ay Sonu:</span>
-            <select id="lastDayShiftRule" class="lockable-ui bg-transparent font-bold text-amber-900 text-xs focus:outline-none cursor-pointer" onchange="renderOnly()">
+            <select id="lastDayShiftRule" class="lockable-ui bg-transparent font-bold text-amber-900 text-xs focus:outline-none cursor-pointer" onchange="markDirty(); renderOnly();">
               <option value="auto">Oto</option>
               <option value="16" selected>16s</option>
               <option value="24">24s</option>
@@ -239,7 +237,7 @@
           <!-- Maks Nöbet Sınırı -->
           <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1" title="Bir hekime yazılabilecek azami nöbet sayısı">
             <span class="text-[10px] font-bold text-blue-600">Maks. Nöbet:</span>
-            <input type="number" id="maxShiftLimit" value="8" min="1" max="15" class="lockable-ui w-8 text-center font-bold bg-white border border-blue-200 rounded text-xs text-blue-700 py-0.5">
+            <input type="number" id="maxShiftLimit" value="8" min="1" max="15" class="lockable-ui w-8 text-center font-bold bg-white border border-blue-200 rounded text-xs text-blue-700 py-0.5" onchange="markDirty();">
           </div>
 
           <!-- Gün / Mesai İstatistiği -->
@@ -254,8 +252,8 @@
         <!-- Sağ: Hızlı Üret + Süreli Optimizasyon Butonları -->
         <div class="flex items-center gap-1.5 ml-auto">
           
-          <!-- HIZLI ÜRET (BEKLETMEYEN ANINDA MOTOR) -->
-          <button id="btnInstant" onclick="distributeInstantRoster()" class="lockable-ui px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs rounded-lg transition flex items-center gap-1.5 shadow-2xs" title="Beklemeden ilk geçerli listeyi 50 milisaniyede anında üretir">
+          <!-- HIZLI ÜRET -->
+          <button type="button" id="btnInstant" onclick="distributeInstantRoster()" class="lockable-ui px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs rounded-lg transition flex items-center gap-1.5 shadow-2xs" title="Beklemeden ilk geçerli listeyi anında üretir">
             <i class="fa-solid fa-bolt text-amber-500"></i>
             <span id="btnInstantText">Hızlı Üret</span>
           </button>
@@ -274,12 +272,12 @@
           </div>
 
           <!-- SÜRELİ DERİN OPTİMİZASYON BUTONU -->
-          <button id="btnDistribute" onclick="startTimedOptimization()" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-xs rounded-lg shadow-md shadow-blue-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-blue-400/30" title="Seçilen süre boyunca arayarak saat farkı 0'a en yakın en adil listeyi bulur">
+          <button type="button" id="btnDistribute" onclick="startTimedOptimization()" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-xs rounded-lg shadow-md shadow-blue-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-blue-400/30" title="Seçilen süre boyunca arayarak saat farkı 0'a en yakın listeyi bulur">
             <i id="btnDistributeIcon" class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
             <span id="btnDistributeText">Nöbetleri Üret</span>
           </button>
 
-          <button onclick="clearOnlyGenerated()" id="btnClearGenerated" class="lockable-ui hidden px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-medium rounded-lg transition" title="Sadece algoritmanın atadığı nöbetleri geri al">
+          <button type="button" onclick="clearOnlyGenerated()" id="btnClearGenerated" class="lockable-ui hidden px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-medium rounded-lg transition" title="Sadece algoritmanın atadığı nöbetleri geri al">
             <i class="fa-solid fa-rotate-left"></i>
           </button>
         </div>
@@ -298,7 +296,6 @@
     <div id="optimizingOverlay" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
       <div class="bg-white rounded-2xl p-6 shadow-2xl flex flex-col items-center justify-center space-y-4 max-w-xs w-full text-center border border-slate-100">
         
-        <!-- Zıplayan Top Sahnesi -->
         <div class="h-20 w-24 flex flex-col items-center justify-end relative">
           <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-500 to-amber-300 shadow-md shadow-indigo-300 bouncing-ball flex items-center justify-center text-white text-xs font-black">
             <i class="fa-solid fa-wand-magic-sparkles text-[10px] text-amber-200"></i>
@@ -307,11 +304,10 @@
         </div>
 
         <div class="space-y-1">
-          <h4 class="font-black text-slate-900 text-sm tracking-tight">En İyi Olasılık Aranıyor...</h4>
-          <p class="text-[11px] text-slate-500 leading-snug">Hedef saat sapması en düşük adil liste hesaplanıyor.</p>
+          <h4 class="font-black text-slate-900 text-sm tracking-tight">En İyi Olasılık Hesaplanıyor...</h4>
+          <p class="text-[11px] text-slate-500 leading-snug">Hedef saat sapması en düşük adil liste taranıyor.</p>
         </div>
 
-        <!-- Canlı İstatistik Göstergeleri -->
         <div class="w-full bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 grid grid-cols-2 gap-2 text-[11px]">
           <div class="text-left border-r border-slate-200 pr-1">
             <div class="text-slate-400 text-[9px] uppercase font-bold">Kalan Süre</div>
@@ -363,20 +359,20 @@
           <i class="fa-solid fa-box-archive text-amber-600 text-base"></i>
           <span>Geçmiş Listeler ve Arşiv (<span id="archiveModalTitleInfo">--</span>)</span>
         </h3>
-        <button onclick="closeArchiveModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
+        <button type="button" onclick="closeArchiveModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
       </div>
 
       <div class="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-[11px] text-amber-900 leading-relaxed">
-        Siz <strong>"Kaydet"</strong> butonuna bastığınızda o anki çizelge tarih, saat, dakika ve saniye damgasıyla buraya arşivlenir. Dilediğiniz eski bir versiyonu tek tıkla geri yükleyebilirsiniz.
+        Siz <strong>"Kaydet"</strong> butonuna bastığınızda o anki çizelge tarih damgasıyla buraya arşivlenir. Dilediğiniz eski bir versiyonu tek tıkla geri yükleyebilirsiniz.
       </div>
 
       <div class="overflow-y-auto flex-1 pr-1 space-y-2" id="archiveListContainer"></div>
 
       <div class="flex justify-between items-center pt-2 border-t text-xs">
-        <button onclick="clearAllArchivesForCurrent()" class="text-rose-600 hover:text-rose-800 font-medium flex items-center gap-1">
+        <button type="button" onclick="clearAllArchivesForCurrent()" class="text-rose-600 hover:text-rose-800 font-medium flex items-center gap-1">
           <i class="fa-solid fa-trash-can"></i> Bu Ayın Arşivini Temizle
         </button>
-        <button onclick="closeArchiveModal()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition">Kapat</button>
+        <button type="button" onclick="closeArchiveModal()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition">Kapat</button>
       </div>
     </div>
   </div>
@@ -388,7 +384,7 @@
         <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
           <i class="fa-solid fa-clipboard-user text-blue-600"></i> Toplu Hekim ve Ek Mesai Saati Yapıştır
         </h3>
-        <button onclick="closePasteModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
+        <button type="button" onclick="closePasteModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
       </div>
       
       <div class="bg-blue-50 border border-blue-200 rounded-lg p-2.5 text-[11px] text-blue-800 space-y-1">
@@ -397,7 +393,6 @@
           <div>• Dr. Ahmet Yılmaz [TAB] 120 (Excel'den 2 sütun kopyalama)</div>
           <div>• Dr. Ayşe Kaya - 96</div>
           <div>• Dr. Mehmet Demir, 80</div>
-          <div>• Dr. Ali Veli: 112</div>
           <div>• Dr. Fatma Şen (Varsayılan 80s atanır)</div>
         </div>
       </div>
@@ -410,8 +405,8 @@
           <span>Mevcut kilitli izinleri/nöbetleri koru (Birleştir)</span>
         </label>
         <div class="flex gap-2">
-          <button onclick="closePasteModal()" class="px-3 py-1.5 border rounded-lg text-xs font-medium text-slate-600">İptal</button>
-          <button onclick="applyBulkNames()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm">Listeyi Aktar</button>
+          <button type="button" onclick="closePasteModal()" class="px-3 py-1.5 border rounded-lg text-xs font-medium text-slate-600">İptal</button>
+          <button type="button" onclick="applyBulkNames()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm">Listeyi Aktar</button>
         </div>
       </div>
     </div>
@@ -467,23 +462,76 @@
     let currentZoom = 1.0;
     let isUserZoomed = false;
     let isGenerated = false;
+    let isOptimizing = false;
+
+    // 1. İYİLEŞTİRME: SESSİZ VERİ KAYBI KORUMASI (DIRTY STATE)
+    let isDirty = false;
+    let activePreviousFilter = { year: '2026', month: '09', service: 'Acil Servis' };
+
+    function markDirty() {
+      isDirty = true;
+      const el = document.getElementById('dirtyIndicator');
+      if (el) el.classList.remove('hidden');
+    }
+
+    function clearDirty() {
+      isDirty = false;
+      const el = document.getElementById('dirtyIndicator');
+      if (el) el.classList.add('hidden');
+    }
+
+    window.onbeforeunload = (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = 'Kaydedilmemiş değişiklikleriniz var. Sayfadan ayrılmak istediğinize emin misiniz?';
+      }
+    };
 
     window.onload = () => {
-      const now = new Date();
-      document.getElementById('selectYear').value = now.getFullYear();
-      document.getElementById('selectMonth').value = String(now.getMonth() + 1).padStart(2, '0');
-      
-      refreshServiceOptions();
-      loadActiveRoster();
+      try {
+        const now = new Date();
+        const y = String(now.getFullYear());
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        document.getElementById('selectYear').value = y;
+        document.getElementById('selectMonth').value = m;
+        activePreviousFilter = { year: y, month: m, service: document.getElementById('selectedService').value };
+        
+        refreshServiceOptions();
+        loadActiveRoster();
+        setUILocked(false);
 
-      window.addEventListener('resize', () => {
-        if (!isUserZoomed) autoFitZoom();
-      });
+        window.addEventListener('resize', () => {
+          if (!isUserZoomed) autoFitZoom();
+        });
+      } catch (err) {
+        console.error("Yükleme hatası:", err);
+      }
     };
+
+    function onFilterChanged(changedType) {
+      if (isDirty) {
+        if (!confirm("Kaydedilmemiş değişiklikleriniz var! Başka bir aya veya servise geçerseniz mevcut liste kaybolacaktır. Devam edilsin mi?")) {
+          // Eski değere geri döndür
+          if (changedType === 'year') document.getElementById('selectYear').value = activePreviousFilter.year;
+          if (changedType === 'month') document.getElementById('selectMonth').value = activePreviousFilter.month;
+          if (changedType === 'service') document.getElementById('selectedService').value = activePreviousFilter.service;
+          return;
+        }
+      }
+      activePreviousFilter = {
+        year: document.getElementById('selectYear').value,
+        month: document.getElementById('selectMonth').value,
+        service: document.getElementById('selectedService').value
+      };
+      clearDirty();
+      isUserZoomed = false;
+      loadActiveRoster();
+    }
 
     function refreshServiceOptions() {
       const savedServices = JSON.parse(localStorage.getItem('nobet_known_services') || '["Acil Servis", "Dahiliye", "Çocuk Cerrahisi", "Genel Cerrahi", "Anestezi", "Kardiyoloji"]');
       const listContainer = document.getElementById('serviceCustomList');
+      if (!listContainer) return;
       listContainer.innerHTML = '';
       
       savedServices.forEach(srv => {
@@ -499,25 +547,28 @@
       if (e) e.stopPropagation();
       if (isOptimizing) return;
       const menu = document.getElementById('serviceCustomMenu');
-      menu.classList.toggle('hidden');
+      if (menu) menu.classList.toggle('hidden');
     }
 
     function openServiceDropdown(e) {
       if (e) e.stopPropagation();
       if (isOptimizing) return;
-      document.getElementById('serviceCustomMenu').classList.remove('hidden');
+      const menu = document.getElementById('serviceCustomMenu');
+      if (menu) menu.classList.remove('hidden');
     }
 
     function selectServiceItem(val) {
       document.getElementById('selectedService').value = val;
-      document.getElementById('serviceCustomMenu').classList.add('hidden');
-      onFilterChanged();
+      const menu = document.getElementById('serviceCustomMenu');
+      if (menu) menu.classList.add('hidden');
+      onFilterChanged('service');
     }
 
     function handleGlobalClick(e) {
       const wrapper = document.getElementById('serviceDropdownWrapper');
       if (wrapper && !wrapper.contains(e.target)) {
-        document.getElementById('serviceCustomMenu').classList.add('hidden');
+        const menu = document.getElementById('serviceCustomMenu');
+        if (menu) menu.classList.add('hidden');
       }
     }
 
@@ -537,7 +588,8 @@
       if (!wrapper || !table) return;
 
       const availableWidth = wrapper.clientWidth - 16;
-      const actualWidth = table.scrollWidth || 1550;
+      // Güvenli doğal genişlik (31 gün x 32px + isim 115px + sağ sütunlar)
+      const actualWidth = Math.max(table.scrollWidth || 0, 1380);
 
       if (actualWidth > 0 && availableWidth > 0) {
         let idealZoom = availableWidth / actualWidth;
@@ -575,11 +627,6 @@
       return `${document.getElementById('selectYear').value}-${document.getElementById('selectMonth').value}`;
     }
 
-    function onFilterChanged() {
-      isUserZoomed = false;
-      loadActiveRoster();
-    }
-
     function getStorageKey(monthStr, serviceName) {
       const srvClean = (serviceName || 'Genel').trim().toLowerCase().replace(/\s+/g, '_');
       return `nobet_roster_${monthStr}_${srvClean}`;
@@ -615,9 +662,9 @@
       }
     }
 
-    function getPreviousMonthTailShifts(doc) {
+    function getPreviousMonthTailShiftsRaw(doc) {
       if (!previousMonthCache || !previousMonthCache.doctors) {
-        return { lastDayShift: false, secondLastDayShift: false, foundInPrev: false };
+        return { lastDayShift: false, secondLastDayShift: false };
       }
 
       let prevDoc = previousMonthCache.doctors.find(d => d.id === doc.id);
@@ -626,7 +673,7 @@
         prevDoc = previousMonthCache.doctors.find(d => trNormalize(d.name) === targetNorm);
       }
 
-      if (!prevDoc) return { lastDayShift: false, secondLastDayShift: false, foundInPrev: false };
+      if (!prevDoc) return { lastDayShift: false, secondLastDayShift: false };
 
       const [y, m] = getPreviousMonthString(getSelectedPeriodString()).split('-').map(Number);
       const prevTotalDays = new Date(y, m, 0).getDate();
@@ -637,13 +684,31 @@
 
       return {
         lastDayShift: (lastSt === 'N_FIXED' || lastSt === 'N_AUTO'),
-        secondLastDayShift: (secLastSt === 'N_FIXED' || secLastSt === 'N_AUTO'),
-        foundInPrev: true
+        secondLastDayShift: (secLastSt === 'N_FIXED' || secLastSt === 'N_AUTO')
       };
+    }
+
+    // 3. İYİLEŞTİRME: SICAK DÖNGÜ ÖNBELLEKLEME (CACHE)
+    let prevTailShiftsCache = {};
+    let cachedLastDayRuleVal = 16;
+
+    function buildSimulationCaches() {
+      prevTailShiftsCache = {};
+      doctors.forEach(doc => {
+        prevTailShiftsCache[doc.id] = getPreviousMonthTailShiftsRaw(doc);
+      });
+      const rule = document.getElementById('lastDayShiftRule').value;
+      cachedLastDayRuleVal = (rule === 'auto') ? 8 : parseInt(rule);
+    }
+
+    function getPreviousMonthTailShifts(doc) {
+      if (prevTailShiftsCache[doc.id]) return prevTailShiftsCache[doc.id];
+      return getPreviousMonthTailShiftsRaw(doc);
     }
 
     function showToast(msg) {
       const toast = document.getElementById('saveToast');
+      if (!toast) return;
       document.getElementById('toastMessage').innerText = msg;
       toast.classList.remove('hidden');
       setTimeout(() => toast.classList.add('hidden'), 2500);
@@ -657,7 +722,7 @@
       };
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k.startsWith('nobet_')) {
+        if (k && k.startsWith('nobet_')) {
           backup.localStorage[k] = localStorage.getItem(k);
         }
       }
@@ -681,6 +746,7 @@
       if (badge) badge.innerText = list.length;
     }
 
+    // 2. İYİLEŞTİRME: KOTA PATLAMA GÜVENCESİ (TRY/CATCH + FIFO BUDAMA)
     function saveCurrentMonth() {
       const monthStr = getSelectedPeriodString();
       const srvName = document.getElementById('selectedService').value;
@@ -699,24 +765,36 @@
         timestamp: Date.now()
       };
 
-      localStorage.setItem(getStorageKey(monthStr, srvName), JSON.stringify(payload));
+      try {
+        localStorage.setItem(getStorageKey(monthStr, srvName), JSON.stringify(payload));
 
-      let archiveList = getArchiveList();
-      archiveList.unshift({
-        id: 'arch_' + Date.now(),
-        timestampStr: nowStamp,
-        seed: currentSeed,
-        doctorCount: doctors.length,
-        serviceName: srvName,
-        monthStr: monthStr,
-        snapshot: payload
-      });
+        let archiveList = getArchiveList();
+        archiveList.unshift({
+          id: 'arch_' + Date.now(),
+          timestampStr: nowStamp,
+          seed: currentSeed,
+          doctorCount: doctors.length,
+          serviceName: srvName,
+          monthStr: monthStr,
+          snapshot: payload
+        });
 
-      if (archiveList.length > 50) archiveList = archiveList.slice(0, 50);
-      localStorage.setItem(getArchiveStorageKey(monthStr, srvName), JSON.stringify(archiveList));
+        if (archiveList.length > 30) archiveList = archiveList.slice(0, 30);
+        
+        try {
+          localStorage.setItem(getArchiveStorageKey(monthStr, srvName), JSON.stringify(archiveList));
+        } catch (eQuota) {
+          // Kota doluysa en eski 15 taneyi buda ve tekrar dene
+          archiveList = archiveList.slice(0, 15);
+          localStorage.setItem(getArchiveStorageKey(monthStr, srvName), JSON.stringify(archiveList));
+        }
 
-      updateArchiveBadge();
-      showToast(`Tarayıcı Hafızasına Kaydedildi ve Arşive Eklendi! (${nowStamp})`);
+        clearDirty();
+        updateArchiveBadge();
+        showToast(`Hafızaya Kaydedildi ve Arşive Eklendi! (${nowStamp})`);
+      } catch (err) {
+        alert("Tarayıcı depolama alanı dolu! Lütfen eski arşivleri veya JSON yedeği alıp tarayıcı geçmişini temizleyin.");
+      }
     }
 
     function openArchiveModal() {
@@ -759,10 +837,10 @@
             </div>
 
             <div class="flex items-center gap-1.5">
-              <button onclick="restoreArchiveItem('${item.id}')" class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm" title="Bu versiyonu ekrana geri yükle">
+              <button type="button" onclick="restoreArchiveItem('${item.id}')" class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm" title="Bu versiyonu ekrana geri yükle">
                 <i class="fa-solid fa-rotate-left"></i> Yükle
               </button>
-              <button onclick="deleteArchiveItem('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition" title="Bu kaydı sil">
+              <button type="button" onclick="deleteArchiveItem('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition" title="Bu kaydı sil">
                 <i class="fa-solid fa-trash-can text-sm"></i>
               </button>
             </div>
@@ -791,12 +869,13 @@
         if (snap.lastDayRule) document.getElementById('lastDayShiftRule').value = snap.lastDayRule;
         if (snap.seed) {
           currentSeed = snap.seed;
-          document.getElementById('seedBadge').innerText = `Seed: ${currentSeed}`;
+          document.getElementById('seedInput').value = currentSeed;
         }
         isGenerated = true;
-        updateButtons();
+        clearDirty();
         closeArchiveModal();
-        renderOnly();
+        initCalendar();
+        updateButtons();
         runIndependentValidation();
         showToast(`Arşiv versiyonu yüklendi: ${item.timestampStr}`);
       }
@@ -807,7 +886,9 @@
         const monthStr = getSelectedPeriodString();
         const srvName = document.getElementById('selectedService').value;
         let archiveList = getArchiveList().filter(a => a.id !== archiveId);
-        localStorage.setItem(getArchiveStorageKey(monthStr, srvName), JSON.stringify(archiveList));
+        try {
+          localStorage.setItem(getArchiveStorageKey(monthStr, srvName), JSON.stringify(archiveList));
+        } catch (e) {}
         updateArchiveBadge();
         openArchiveModal();
       }
@@ -840,13 +921,13 @@
           if (parsed.lastDayRule) document.getElementById('lastDayShiftRule').value = parsed.lastDayRule;
           if (parsed.seed) {
             currentSeed = parsed.seed;
-            document.getElementById('seedBadge').innerText = `Seed: ${currentSeed}`;
+            document.getElementById('seedInput').value = currentSeed;
           }
           isGenerated = true;
-          updateButtons();
         } catch (e) {
           doctors = createDefaultDoctors(10);
           grid = {};
+          isGenerated = false;
         }
       } else {
         const prevMonth = getPreviousMonthString(monthStr);
@@ -866,9 +947,10 @@
           grid = {};
         }
         isGenerated = false;
-        updateButtons();
       }
       initCalendar();
+      updateButtons();
+      runIndependentValidation();
     }
 
     function copyPreviousMonthStaff() {
@@ -883,6 +965,7 @@
         doctors = prevData.doctors.map(d => ({ id: d.id || ('doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)), name: d.name, targetOvertime: d.targetOvertime }));
         grid = {};
         doctors.forEach(d => grid[d.id] = {});
+        markDirty();
         initCalendar();
       }
     }
@@ -920,8 +1003,10 @@
         daysMeta.push({ day: d, dayOfWeek, isWeekend, isHoliday: hol.holiday, holidayName: hol.name });
       }
 
-      document.getElementById('statWorkdays').innerText = `${workdays}`;
-      document.getElementById('statStandardHours').innerText = `${workdays * 8}s`;
+      const statWork = document.getElementById('statWorkdays');
+      const statHours = document.getElementById('statStandardHours');
+      if (statWork) statWork.innerText = `${workdays}`;
+      if (statHours) statHours.innerText = `${workdays * 8}s`;
 
       doctors.forEach(doc => {
         if (!grid[doc.id]) grid[doc.id] = {};
@@ -933,20 +1018,25 @@
     }
 
     function addDoctorRow() {
+      markDirty();
       const id = 'doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
       doctors.push({ id, name: `Dr. Hekim ${doctors.length + 1}`, targetOvertime: 80 });
       grid[id] = {};
       for (let d = 1; d <= daysInMonth; d++) grid[id][d] = '';
       renderOnly();
+      runIndependentValidation();
     }
 
     function deleteDoctor(docId) {
+      markDirty();
       doctors = doctors.filter(d => d.id !== docId);
       delete grid[docId];
       renderOnly();
+      runIndependentValidation();
     }
 
     function updateDoctorName(docId, val) {
+      markDirty();
       const doc = doctors.find(d => d.id === docId);
       if (doc) doc.name = val;
     }
@@ -973,10 +1063,6 @@
         const parts = trimmed.split(':').map(p => p.trim());
         name = parts[0];
         if (parts.length > 1 && !isNaN(parseInt(parts[1]))) hours = parseInt(parts[1]);
-      } else if (trimmed.includes(',') || trimmed.includes(';')) {
-        const parts = trimmed.split(/[,;]/).map(p => p.trim());
-        name = parts[0];
-        if (parts.length > 1 && !isNaN(parseInt(parts[1]))) hours = parseInt(parts[1]);
       } else {
         const match = trimmed.match(/^(.*?)[\s\-_]+(\d{1,3})\s*$/);
         if (match) {
@@ -993,8 +1079,12 @@
       if (!text) return closePasteModal();
 
       const merge = document.getElementById('chkMergeBulk').checked;
+      if (!merge && doctors.length > 0) {
+        if (!confirm("Mevcut kadro silinip yeni yapıştırılan isimler eklenecektir. Onaylıyor musunuz?")) return;
+      }
+
+      markDirty();
       const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-      const parsedNames = [];
 
       if (!merge) {
         doctors = [];
@@ -1017,24 +1107,24 @@
             grid[id] = {};
             for (let d = 1; d <= daysInMonth; d++) grid[id][d] = '';
           }
-          parsedNames.push(res.name);
         }
       });
 
       closePasteModal();
       document.getElementById('bulkNames').value = '';
       initCalendar();
+      runIndependentValidation();
     }
 
     function getEffectiveStatus(doc, day) {
-      const cur = grid[doc.id][day] || '';
+      const cur = grid[doc.id] ? (grid[doc.id][day] || '') : '';
       if (cur === 'N_FIXED' || cur === 'N_AUTO' || cur === 'OFF') return cur;
 
       if (day === 1) {
         const prevTail = getPreviousMonthTailShifts(doc);
         if (prevTail.lastDayShift) return 'N_IZNI';
       } else {
-        const prev = grid[doc.id][day - 1];
+        const prev = grid[doc.id] ? grid[doc.id][day - 1] : '';
         if (prev === 'N_FIXED' || prev === 'N_AUTO') return 'N_IZNI';
       }
       return '';
@@ -1042,6 +1132,8 @@
 
     function toggleDay(docId, day) {
       if (isOptimizing) return;
+      markDirty();
+      if (!grid[docId]) grid[docId] = {};
       const cur = grid[docId][day] || '';
 
       if (cur === '' || cur === 'N_AUTO') {
@@ -1057,6 +1149,7 @@
     }
 
     function updateTarget(docId, val) {
+      markDirty();
       const doc = doctors.find(d => d.id === docId);
       if (doc) doc.targetOvertime = parseInt(val) || 0;
       renderOnly();
@@ -1064,31 +1157,31 @@
     }
 
     function getOvertimeEarned(dayMeta, dayNum) {
+      if (!dayMeta) return 8;
       if (dayMeta.isHoliday || dayMeta.dayOfWeek === 6) return 24;
       if (dayMeta.dayOfWeek === 0 || dayMeta.dayOfWeek === 5) return 16;
 
       if (dayNum === daysInMonth) {
-        const rule = document.getElementById('lastDayShiftRule').value;
-        if (rule !== 'auto') {
-          return parseInt(rule);
-        }
+        return cachedLastDayRuleVal;
       }
       return 8;
     }
 
     function clearOnlyGenerated() {
+      markDirty();
       doctors.forEach(doc => {
         for (let d = 1; d <= daysInMonth; d++) {
-          if (grid[doc.id][d] === 'N_AUTO') grid[doc.id][d] = '';
+          if (grid[doc.id] && grid[doc.id][d] === 'N_AUTO') grid[doc.id][d] = '';
         }
       });
       isGenerated = false;
-      document.getElementById('warningPanel').classList.add('hidden');
+      const warning = document.getElementById('warningPanel');
+      if (warning) warning.classList.add('hidden');
       updateButtons();
       renderOnly();
+      runIndependentValidation();
     }
 
-    // BUTON İSİMLERİNİ DİNAMİK GÜNCELLEME (Hızlı ve Süreli İçin)
     function updateButtons() {
       const btnInstantText = document.getElementById('btnInstantText');
       const btnDistText = document.getElementById('btnDistributeText');
@@ -1108,7 +1201,7 @@
     function countDoctorShifts(doc, gridRef = grid) {
       let count = 0;
       for (let d = 1; d <= daysInMonth; d++) {
-        const s = gridRef[doc.id][d];
+        const s = gridRef[doc.id] ? gridRef[doc.id][d] : '';
         if (s === 'N_FIXED' || s === 'N_AUTO') count++;
       }
       return count;
@@ -1122,9 +1215,9 @@
       let heavyDayCount = 0;
 
       for (let d = 1; d <= daysInMonth; d++) {
-        const meta = daysMeta[d - 1];
-        const status = gridRef[doc.id][d] || '';
-        const effectiveStatus = (status !== '') ? status : (d === 1 && getPreviousMonthTailShifts(doc).lastDayShift ? 'N_IZNI' : (d > 1 && (gridRef[doc.id][d-1] === 'N_FIXED' || gridRef[doc.id][d-1] === 'N_AUTO') ? 'N_IZNI' : ''));
+        const meta = daysMeta[d - 1] || { isWeekend: false, isHoliday: false, dayOfWeek: 1 };
+        const status = gridRef[doc.id] ? (gridRef[doc.id][d] || '') : '';
+        const effectiveStatus = (status !== '') ? status : (d === 1 && getPreviousMonthTailShifts(doc).lastDayShift ? 'N_IZNI' : (d > 1 && (gridRef[doc.id] && (gridRef[doc.id][d-1] === 'N_FIXED' || gridRef[doc.id][d-1] === 'N_AUTO')) ? 'N_IZNI' : ''));
 
         if (!meta.isWeekend && !meta.isHoliday) {
           totalWorkdays++;
@@ -1168,23 +1261,37 @@
       }
     }
 
+    // 6. İYİLEŞTİRME: TOHUM (SEED) DEĞİŞTİRME & ÇALIŞTIRMA
+    function onSeedManuallyChanged(val) {
+      const parsed = parseInt(val);
+      if (!isNaN(parsed) && parsed > 0) {
+        currentSeed = parsed;
+        markDirty();
+        showToast(`Tohum ${currentSeed} olarak ayarlandı. Üret butonuna basarak bu tohumu çalıştırabilirsiniz.`);
+      }
+    }
+
     // =========================================================================
-    // 1. MOD: HIZLI VE BEKLETMEYEN ÜRETİM (ANINDA ÇIKTI)
+    // 1. MOD: HIZLI VE ANINDA ÜRETİM (50ms)
     // =========================================================================
     function distributeInstantRoster() {
       if (isOptimizing) return;
-      if (doctors.length === 0) return alert("Lütfen önce hekim ekleyin.");
+      if (!doctors || doctors.length === 0) return alert("Lütfen önce hekim ekleyin.");
+
+      if (!daysMeta || daysMeta.length === 0) initCalendar();
+      buildSimulationCaches();
 
       const maxLimit = parseInt(document.getElementById('maxShiftLimit').value) || 8;
       currentSeed = Math.floor(Math.random() * 900000) + 100000;
-      document.getElementById('seedBadge').innerText = `Seed: ${currentSeed}`;
+      document.getElementById('seedInput').value = currentSeed;
       randomFunc = mulberry32(currentSeed);
 
       let baseGrid = {};
       doctors.forEach(doc => {
         baseGrid[doc.id] = {};
         for (let d = 1; d <= daysInMonth; d++) {
-          baseGrid[doc.id][d] = (grid[doc.id][d] === 'N_FIXED' || grid[doc.id][d] === 'OFF') ? grid[doc.id][d] : '';
+          const st = grid[doc.id] ? grid[doc.id][d] : '';
+          baseGrid[doc.id][d] = (st === 'N_FIXED' || st === 'OFF') ? st : '';
         }
       });
 
@@ -1199,6 +1306,7 @@
         grid = trialGrid;
       }
 
+      markDirty();
       isGenerated = true;
       updateButtons();
       renderOnly();
@@ -1211,7 +1319,10 @@
     // =========================================================================
     function startTimedOptimization() {
       if (isOptimizing) return;
-      if (doctors.length === 0) return alert("Lütfen önce hekim ekleyin.");
+      if (!doctors || doctors.length === 0) return alert("Lütfen önce hekim ekleyin.");
+
+      if (!daysMeta || daysMeta.length === 0) initCalendar();
+      buildSimulationCaches();
 
       const allocatedSeconds = parseInt(document.getElementById('selectOptimizationTime').value) || 15;
       const maxLimit = parseInt(document.getElementById('maxShiftLimit').value) || 8;
@@ -1224,26 +1335,34 @@
       const listCountEl = document.getElementById('overlayListCount');
 
       isOptimizing = true;
-      btn.disabled = true;
-      btn.classList.add('opacity-75', 'cursor-not-allowed');
-      btnIcon.className = "fa-solid fa-spinner fa-spin text-amber-300";
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add('opacity-75', 'cursor-not-allowed');
+      }
+      if (btnIcon) btnIcon.className = "fa-solid fa-spinner fa-spin text-amber-300";
 
       setUILocked(true);
-      overlay.classList.remove('hidden');
+      if (overlay) overlay.classList.remove('hidden');
 
       let baseGrid = {};
       doctors.forEach(doc => {
         baseGrid[doc.id] = {};
         for (let d = 1; d <= daysInMonth; d++) {
-          baseGrid[doc.id][d] = (grid[doc.id][d] === 'N_FIXED' || grid[doc.id][d] === 'OFF') ? grid[doc.id][d] : '';
+          const st = grid[doc.id] ? grid[doc.id][d] : '';
+          baseGrid[doc.id][d] = (st === 'N_FIXED' || st === 'OFF') ? st : '';
         }
       });
 
-      let globalBestSolution = null;
-      let globalBestCost = Infinity;
-      let globalBestSeed = 0;
-      let iterationsCount = 0;
+      // 5. İYİLEŞTİRME: BEST-VALID VE BEST-ANY DUAL HAVUZ
+      let globalBestValidSolution = null;
+      let globalBestValidCost = Infinity;
+      let globalBestValidSeed = 0;
 
+      let globalBestAnySolution = null;
+      let globalBestAnyCost = Infinity;
+      let globalBestAnySeed = 0;
+
+      let iterationsCount = 0;
       const startTime = Date.now();
       const endTime = startTime + (allocatedSeconds * 1000);
 
@@ -1251,9 +1370,9 @@
         const now = Date.now();
         const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
         
-        btnText.innerText = `Aranıyor: ${remaining}s`;
-        countdownEl.innerText = `${remaining} sn`;
-        listCountEl.innerText = `${iterationsCount}`;
+        if (btnText) btnText.innerText = `Aranıyor: ${remaining}s`;
+        if (countdownEl) countdownEl.innerText = `${remaining} sn`;
+        if (listCountEl) listCountEl.innerText = `${iterationsCount}`;
 
         const batchStart = Date.now();
         while (Date.now() - batchStart < 25 && Date.now() < endTime) {
@@ -1266,41 +1385,57 @@
 
           if (success) {
             refineRosterLocally(trialGrid, maxLimit, rng);
-            let validation = validateRoster(trialGrid, maxLimit);
-            if (validation.valid) {
-              let cost = evaluateQualityCost(trialGrid);
-              if (cost < globalBestCost) {
-                globalBestCost = cost;
-                globalBestSolution = trialGrid;
-                globalBestSeed = trialSeed;
+            let cost = evaluateQualityCost(trialGrid);
 
-                if (cost === 0) {
-                  break;
-                }
-              }
+            // Her halükarda en az sapmalı listeyi kaydet
+            if (cost < globalBestAnyCost) {
+              globalBestAnyCost = cost;
+              globalBestAnySolution = trialGrid;
+              globalBestAnySeed = trialSeed;
+            }
+
+            // Tam geçerli ise valid havuzuna yaz
+            let validation = validateRoster(trialGrid, maxLimit);
+            if (validation.valid && cost < globalBestValidCost) {
+              globalBestValidCost = cost;
+              globalBestValidSolution = trialGrid;
+              globalBestValidSeed = trialSeed;
+
+              // Kusursuz sıfır sapmalı liste bulunduysa erken bitir
+              if (cost === 0) break;
             }
           }
         }
 
-        if (globalBestCost === 0 || Date.now() >= endTime) {
+        if (globalBestValidCost === 0 || Date.now() >= endTime) {
           isOptimizing = false;
-          btn.disabled = false;
-          btn.classList.remove('opacity-75', 'cursor-not-allowed');
-          btnIcon.className = "fa-solid fa-wand-magic-sparkles text-amber-300";
+          if (btn) {
+            btn.disabled = false;
+            btn.classList.remove('opacity-75', 'cursor-not-allowed');
+          }
+          if (btnIcon) btnIcon.className = "fa-solid fa-wand-magic-sparkles text-amber-300";
 
-          overlay.classList.add('hidden');
+          if (overlay) overlay.classList.add('hidden');
           setUILocked(false);
 
-          if (globalBestSolution) {
-            grid = globalBestSolution;
-            currentSeed = globalBestSeed;
-            document.getElementById('seedBadge').innerText = `Seed: ${currentSeed}`;
+          let chosenSolution = globalBestValidSolution || globalBestAnySolution;
+          let chosenSeed = globalBestValidSolution ? globalBestValidSeed : globalBestAnySeed;
+
+          if (chosenSolution) {
+            grid = chosenSolution;
+            currentSeed = chosenSeed;
+            document.getElementById('seedInput').value = currentSeed;
+            markDirty();
             isGenerated = true;
             updateButtons();
             renderOnly();
             runIndependentValidation();
-            const note = globalBestCost === 0 ? "Mükemmel sıfır sapmalı liste bulundu!" : "En adil ve hedeflere en yakın çizelge uygulandı!";
-            showToast(`${iterationsCount} alternatif tarandı. ${note}`);
+            
+            if (globalBestValidSolution) {
+              showToast(`${iterationsCount} alternatif tarandı. Mükemmel hedefe sıfır sapmalı liste uygulandı!`);
+            } else {
+              showToast(`${iterationsCount} liste tarandı. Hedef saatlere en yakın en adil alternatif uygulandı.`);
+            }
           } else {
             let fallbackGrid = JSON.parse(JSON.stringify(baseGrid));
             constructFeasibleRoster(fallbackGrid, maxLimit, Math.random, true);
@@ -1309,7 +1444,7 @@
             updateButtons();
             renderOnly();
             runIndependentValidation();
-            showToast("Belirtilen sürede tam geçerli çözüm arandı, en yakın liste hazırlandı.");
+            showToast("Olasılıklar tarandı, en dengeli liste hazırlandı.");
           }
         } else {
           setTimeout(step, 8);
@@ -1319,6 +1454,7 @@
       step();
     }
 
+    // 4. İYİLEŞTİRME: KARARLI SIRALAMA (STABLE COMPARATOR & SCHWARTZIAN TRANSFORM)
     function constructFeasibleRoster(workGrid, maxLimit, rng, isFallback = false) {
       let unfilledDays = [];
       for (let d = 1; d <= daysInMonth; d++) {
@@ -1326,13 +1462,16 @@
         if (!hasShift) unfilledDays.push(d);
       }
 
-      unfilledDays.sort((d1, d2) => {
-        let c1 = getEligibleCandidates(d1, [], maxLimit, getOvertimeEarned(daysMeta[d1 - 1], d1), true, workGrid).length;
-        let c2 = getEligibleCandidates(d2, [], maxLimit, getOvertimeEarned(daysMeta[d2 - 1], d2), true, workGrid).length;
-        return c1 - c2;
+      // Günleri aday sayısına göre kararlı sırala (Aday sayısını 1 kez önceden ölç)
+      const dayMetrics = unfilledDays.map(d => {
+        const ot = getOvertimeEarned(daysMeta[d - 1], d);
+        const count = getEligibleCandidates(d, [], maxLimit, ot, true, workGrid).length;
+        return { day: d, count };
       });
+      dayMetrics.sort((a, b) => a.count - b.count);
 
-      for (let d of unfilledDays) {
+      for (let item of dayMetrics) {
+        const d = item.day;
         const otVal = getOvertimeEarned(daysMeta[d - 1], d);
         let candidates = getEligibleCandidates(d, [], maxLimit, otVal, !isFallback, workGrid);
         if (candidates.length === 0 && isFallback) {
@@ -1340,15 +1479,17 @@
         }
         if (candidates.length === 0) return false;
 
-        candidates.sort((a, b) => {
-          let scoreA = scoreCandidateChoice(a, d, otVal, workGrid);
-          let scoreB = scoreCandidateChoice(b, d, otVal, workGrid);
-          return scoreB - scoreA + (rng() * 0.4 - 0.2);
-        });
+        // Aday skorunu jitter ile bir kez hesaplayıp deterministik sırala
+        const scoredCandidates = candidates.map(c => ({
+          doc: c,
+          score: scoreCandidateChoice(c, d, otVal, workGrid) + (rng() * 0.4 - 0.2)
+        }));
+        scoredCandidates.sort((a, b) => b.score - a.score);
 
-        workGrid[candidates[0].id][d] = 'N_AUTO';
+        workGrid[scoredCandidates[0].doc.id][d] = 'N_AUTO';
       }
 
+      // Hedef tamamlama adımı
       let sortedDocs = [...doctors].sort((a, b) => {
         let diffA = a.targetOvertime - calculateDocStats(a, workGrid).earnedOvertime;
         let diffB = b.targetOvertime - calculateDocStats(b, workGrid).earnedOvertime;
@@ -1377,14 +1518,13 @@
 
           if (feasibleDays.length === 0) break;
 
-          feasibleDays.sort((d1, d2) => {
-            let gap1 = Math.abs(missing - d1.otVal);
-            let gap2 = Math.abs(missing - d2.otVal);
-            if (gap1 !== gap2) return gap1 - gap2;
-            return (d1.assignedCount - d2.assignedCount) + (rng() * 0.5 - 0.25);
-          });
+          const scoredDays = feasibleDays.map(f => ({
+            item: f,
+            score: Math.abs(missing - f.otVal) * 10 + f.assignedCount + (rng() * 0.5 - 0.25)
+          }));
+          scoredDays.sort((a, b) => a.score - b.score);
 
-          workGrid[doc.id][feasibleDays[0].day] = 'N_AUTO';
+          workGrid[doc.id][scoredDays[0].item.day] = 'N_AUTO';
         }
       }
 
@@ -1481,7 +1621,7 @@
     function getEligibleCandidates(d, assignedToday, maxLimit, otVal, checkTargetCap, workGrid = grid) {
       return doctors.filter(doc => {
         if (assignedToday.includes(doc.id)) return false;
-        if (workGrid[doc.id][d] === 'OFF' || workGrid[doc.id][d] === 'N_FIXED' || workGrid[doc.id][d] === 'N_AUTO') return false;
+        if (!workGrid[doc.id] || workGrid[doc.id][d] === 'OFF' || workGrid[doc.id][d] === 'N_FIXED' || workGrid[doc.id][d] === 'N_AUTO') return false;
 
         const prevTail = getPreviousMonthTailShifts(doc);
         if (d === 1 && (prevTail.lastDayShift || prevTail.secondLastDayShift)) return false;
@@ -1511,7 +1651,7 @@
       for (let d = 1; d <= daysInMonth; d++) {
         let count = 0;
         doctors.forEach(doc => {
-          if (workGrid[doc.id][d] === 'N_FIXED' || workGrid[doc.id][d] === 'N_AUTO') count++;
+          if (workGrid[doc.id] && (workGrid[doc.id][d] === 'N_FIXED' || workGrid[doc.id][d] === 'N_AUTO')) count++;
         });
         if (count === 0) violations.push(`Ayın ${d}. gününde hiç nöbetçi yok (Sıfır Gün İhlali).`);
       }
@@ -1519,7 +1659,7 @@
       doctors.forEach(doc => {
         let shifts = [];
         for (let d = 1; d <= daysInMonth; d++) {
-          if (workGrid[doc.id][d] === 'N_FIXED' || workGrid[doc.id][d] === 'N_AUTO') shifts.push(d);
+          if (workGrid[doc.id] && (workGrid[doc.id][d] === 'N_FIXED' || workGrid[doc.id][d] === 'N_AUTO')) shifts.push(d);
         }
 
         for (let i = 0; i < shifts.length - 1; i++) {
@@ -1560,6 +1700,7 @@
       const res = validateRoster(grid, maxLimit);
       const panel = document.getElementById('warningPanel');
       const list = document.getElementById('warningList');
+      if (!list || !panel) return;
       list.innerHTML = '';
 
       if (!res.valid) {
@@ -1577,7 +1718,7 @@
     function renderOnly() {
       const table = document.getElementById('rosterTable');
       if (!table) return;
-      if (doctors.length === 0) {
+      if (!doctors || doctors.length === 0) {
         table.innerHTML = `<tr><td class="p-8 text-slate-400">Liste boş. "Kişi Ekle" veya "Toplu Gir" butonuna tıklayın.</td></tr>`;
         return;
       }
@@ -1589,7 +1730,7 @@
       html += `<th class="p-1 border bg-amber-50 text-amber-900 w-12 min-w-[48px] max-w-[48px]">Hedef</th>`;
 
       for (let d = 1; d <= daysInMonth; d++) {
-        const meta = daysMeta[d - 1];
+        const meta = daysMeta[d - 1] || { isWeekend: false, isHoliday: false, dayOfWeek: 1 };
         let colClass = meta.isWeekend ? 'bg-slate-100 text-slate-500' : 'bg-white';
         if (meta.isHoliday) colClass = 'bg-red-100 text-red-700 font-bold';
 
@@ -1620,7 +1761,7 @@
         </td>`;
 
         for (let d = 1; d <= daysInMonth; d++) {
-          const meta = daysMeta[d - 1];
+          const meta = daysMeta[d - 1] || { isWeekend: false, isHoliday: false, dayOfWeek: 1 };
           const st = getEffectiveStatus(doc, d);
           let cellClass = meta.isWeekend ? 'cell-hs' : 'cell-m';
           let label = meta.isWeekend ? '-' : '8';
@@ -1661,7 +1802,7 @@
         html += `<td class="p-1 border bg-purple-50/50 font-bold text-purple-800 text-center w-[55px]">${shiftCount}</td>`;
         
         html += `<td class="p-1 border bg-white text-center no-print w-6">
-          <button onclick="deleteDoctor('${doc.id}')" class="text-slate-300 hover:text-red-500 font-bold px-1">&times;</button>
+          <button type="button" onclick="deleteDoctor('${doc.id}')" class="text-slate-300 hover:text-red-500 font-bold px-1">&times;</button>
         </td>`;
         
         html += `</tr>`;
@@ -1691,6 +1832,7 @@
       }, 50);
     }
 
+    // SheetJS ile Donmuş Başlıklı & Stilli Excel İndirme
     function exportToStyledExcel() {
       const curMonth = getSelectedPeriodString();
       const curService = document.getElementById('selectedService').value;
@@ -1700,7 +1842,7 @@
       const headerRow2 = ['', ''];
 
       for (let d = 1; d <= daysInMonth; d++) {
-        const meta = daysMeta[d - 1];
+        const meta = daysMeta[d - 1] || { dayOfWeek: 1 };
         headerRow1.push(String(d));
         headerRow2.push(dayNames[meta.dayOfWeek]);
       }
@@ -1716,7 +1858,7 @@
         const row = [doc.name, doc.targetOvertime];
 
         for (let d = 1; d <= daysInMonth; d++) {
-          const meta = daysMeta[d - 1];
+          const meta = daysMeta[d - 1] || { isWeekend: false, isHoliday: false };
           const st = getEffectiveStatus(doc, d);
           let label = meta.isWeekend ? '-' : '8';
           if (meta.isHoliday) label = 'T';
@@ -1756,6 +1898,9 @@
       colWidths.push({ wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 10 });
       ws['!cols'] = colWidths;
 
+      // Üst 2 başlık satırını ve sol isim sütununu dondur
+      ws['!freeze'] = { xSplit: 2, ySplit: 2, topLeftCell: 'C3' };
+
       for (let R = 2; R < 2 + doctors.length; ++R) {
         for (let C = 2; C < 2 + daysInMonth; ++C) {
           const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
@@ -1763,7 +1908,7 @@
           if (!cell) continue;
 
           const d = C - 1;
-          const meta = daysMeta[d - 1];
+          const meta = daysMeta[d - 1] || { isWeekend: false, isHoliday: false };
           const val = cell.v;
 
           let fill = null;
