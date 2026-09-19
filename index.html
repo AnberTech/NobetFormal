@@ -40,23 +40,23 @@
     <header class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-3 no-print">
       <div class="flex items-center gap-3">
         <div class="p-2.5 bg-blue-50 text-blue-600 rounded-lg text-lg">
-          <i class="fa-solid fa-calendar-check"></i>
+          <i class="fa-solid fa-hospital"></i>
         </div>
         <div>
-          <h1 class="text-base font-bold text-slate-900 leading-tight">Akıllı Nöbet & Ek Mesai Dağıtıcı</h1>
-          <p class="text-[11px] text-slate-500">🔒 N ve X kilitlidir • Nöbet silindiğinde ertesi gün izni anında kalkar</p>
+          <h1 class="text-base font-bold text-slate-900 leading-tight">Akıllı Nöbet & Mesai Arşivi</h1>
+          <p class="text-[11px] text-slate-500">Önceki ay devri aktif • Otomatik yerel yedekleme</p>
         </div>
       </div>
 
-      <!-- Ay ve Nöbet Sınırı Ayarları -->
+      <!-- Ay ve Parametreler -->
       <div class="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
         <div>
           <label class="block text-[10px] font-bold text-slate-500 uppercase">Dönem</label>
-          <input type="month" id="selectedMonth" class="bg-white border border-slate-300 rounded px-2 py-0.5 text-xs font-semibold" onchange="initCalendar()">
+          <input type="month" id="selectedMonth" class="bg-white border border-slate-300 rounded px-2 py-0.5 text-xs font-semibold" onchange="onMonthChanged()">
         </div>
         <div class="border-l pl-3">
-          <label class="block text-[10px] font-bold text-blue-600 uppercase" title="Her hekimin ayda alabileceği maksimum nöbet">Maks. Nöbet / Ay</label>
-          <input type="number" id="maxShiftLimit" value="8" min="1" max="15" class="w-14 text-center font-bold bg-white border border-blue-300 rounded px-1 py-0.5 text-xs text-blue-700">
+          <label class="block text-[10px] font-bold text-blue-600 uppercase">Maks. Nöbet</label>
+          <input type="number" id="maxShiftLimit" value="8" min="1" max="15" class="w-12 text-center font-bold bg-white border border-blue-300 rounded px-1 py-0.5 text-xs text-blue-700">
         </div>
         <div class="border-l pl-3">
           <span class="block text-[10px] font-bold text-slate-500 uppercase">İş Günü</span>
@@ -68,7 +68,7 @@
         </div>
       </div>
 
-      <!-- Zoom Kontrol Çubuğu -->
+      <!-- Zoom -->
       <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
         <span class="text-[10px] font-bold text-slate-500 uppercase"><i class="fa-solid fa-magnifying-glass mr-1"></i>Zoom:</span>
         <button onclick="changeZoom(-0.1)" class="w-6 h-6 bg-white border border-slate-300 rounded text-slate-700 font-bold hover:bg-slate-100">-</button>
@@ -77,8 +77,14 @@
         <button onclick="resetZoom()" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[11px] text-slate-600 hover:bg-slate-100">Sıfırla</button>
       </div>
 
-      <!-- Aksiyon Butonları -->
+      <!-- İşlem Butonları -->
       <div class="flex items-center gap-2">
+        <button onclick="saveCurrentMonth()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition">
+          <i class="fa-solid fa-floppy-disk mr-1"></i> Kaydet
+        </button>
+        <button onclick="copyPreviousMonthStaff()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition" title="Bir önceki ayın hekim listesini hedef saatleriyle buraya aktarır">
+          <i class="fa-solid fa-users mr-1"></i> Önceki Aydan Aktar
+        </button>
         <button onclick="openPasteModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition">
           <i class="fa-solid fa-clipboard-list mr-1"></i> Toplu İsim
         </button>
@@ -95,19 +101,25 @@
         </button>
 
         <button onclick="window.print()" class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white font-medium rounded-lg transition">
-          <i class="fa-solid fa-file-pdf mr-1"></i> PDF / Yazdır
+          <i class="fa-solid fa-file-pdf mr-1"></i> PDF
         </button>
-        <button onclick="exportToExcel()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition">
+        <button onclick="exportToExcel()" class="px-3 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-medium rounded-lg transition">
           <i class="fa-solid fa-file-excel mr-1"></i> Excel
         </button>
       </div>
     </header>
 
+    <!-- Bildirim Bildirisi (Flash Toast) -->
+    <div id="saveToast" class="hidden fixed top-4 right-4 bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-xl z-50 text-xs font-bold flex items-center gap-2">
+      <i class="fa-solid fa-circle-check text-sm"></i>
+      <span>Değişiklikler ve arşiv başarıyla hafızaya kaydedildi!</span>
+    </div>
+
     <!-- Tablo Alanı -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto max-h-[76vh] relative">
       <div id="tableContainer">
         <table id="rosterTable" class="w-full border-collapse">
-          <!-- Dinamik Render -->
+          <!-- JS Dinamik Üretir -->
         </table>
       </div>
     </div>
@@ -116,18 +128,18 @@
     <div id="warningPanel" class="hidden bg-amber-50 border-l-4 border-amber-500 p-3 rounded-lg shadow-sm no-print space-y-1">
       <div class="flex items-center gap-2 font-bold text-amber-900 text-xs">
         <i class="fa-solid fa-triangle-exclamation text-amber-600 text-sm"></i>
-        <span>Matematiksel Fizibilite & Hedef Bildirimi:</span>
+        <span>Matematiksel Fizibilite ve Önceki Ay Devir Bildirimi:</span>
       </div>
       <ul id="warningList" class="list-disc list-inside text-[11px] text-amber-800 space-y-0.5"></ul>
     </div>
 
     <!-- Lejant -->
     <div class="flex flex-wrap gap-4 text-[11px] bg-white p-3 rounded-lg border border-slate-200 text-slate-600 no-print">
-      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-800 border border-red-950 inline-block"></span> <strong>🔒 N (Kilitli Sabit):</strong> Sizin belirlediğiniz nöbet (Dağıtımda bozulmaz)</div>
-      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-slate-900 inline-block"></span> <strong>🔒 X (Kilitli OFF):</strong> İzin / Rapor (Nöbet yazılamaz)</div>
-      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-500 inline-block"></span> <strong>N (Oto):</strong> Algoritmanın doldurduğu nöbet</div>
-      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-yellow-200 border border-yellow-400 inline-block"></span> <strong>N-İzni:</strong> Nöbetin ertesi günündeki dinamik dinlenme günü</div>
-      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-100 border border-red-300 inline-block"></span> <strong>Kırmızı Sütun:</strong> Resmi Tatil (+24 Saat Ek Mesai)</div>
+      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-800 border border-red-950 inline-block"></span> <strong>🔒 N (Kilitli):</strong> Sabit nöbet</div>
+      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-slate-900 inline-block"></span> <strong>🔒 X (Kilitli):</strong> İzin / Rapor</div>
+      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-500 inline-block"></span> <strong>N (Oto):</strong> Algoritmanın dağıttığı nöbet</div>
+      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-yellow-200 border border-yellow-400 inline-block"></span> <strong>N-İzni:</strong> Nöbet ertesi dinlenme (Önceki ayın son günü nöbetçiyse 1. gün de otomatik sarı olur)</div>
+      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-100 border border-red-300 inline-block"></span> <strong>Kırmızı Sütun:</strong> Resmi Tatil (+24 Saat)</div>
     </div>
   </div>
 
@@ -160,7 +172,7 @@
     let doctors = [];
     let daysInMonth = 30;
     let daysMeta = [];
-    let grid = {}; // docId -> { day: 'N_FIXED' | 'N_AUTO' | 'OFF' | '' }
+    let grid = {}; 
     let currentZoom = 1.0;
     let isGenerated = false;
 
@@ -169,9 +181,116 @@
       const yr = now.getFullYear();
       const mo = String(now.getMonth() + 1).padStart(2, '0');
       document.getElementById('selectedMonth').value = `${yr}-${mo}`;
-      initDefaultDoctors(10);
-      initCalendar();
+      loadMonthData(`${yr}-${mo}`);
     };
+
+    function onMonthChanged() {
+      const selected = document.getElementById('selectedMonth').value;
+      loadMonthData(selected);
+    }
+
+    function getStorageKey(monthStr) {
+      return `nobet_roster_${monthStr}`;
+    }
+
+    function getPreviousMonthString(curMonthStr) {
+      const [y, m] = curMonthStr.split('-').map(Number);
+      const prevDate = new Date(y, m - 2, 1);
+      const py = prevDate.getFullYear();
+      const pm = String(prevDate.getMonth() + 1).padStart(2, '0');
+      return `${py}-${pm}`;
+    }
+
+    // Önceki ayın son günlerinde nöbet var mıydı?
+    function getPreviousMonthTailShifts(docName) {
+      const curMonth = document.getElementById('selectedMonth').value;
+      const prevMonth = getPreviousMonthString(curMonth);
+      const raw = localStorage.getItem(getStorageKey(prevMonth));
+      if (!raw) return { lastDayShift: false, secondLastDayShift: false };
+
+      try {
+        const parsed = JSON.parse(raw);
+        const prevDoc = parsed.doctors.find(d => d.name.trim().toLowerCase() === docName.trim().toLowerCase());
+        if (!prevDoc) return { lastDayShift: false, secondLastDayShift: false };
+
+        const [py, pm] = prevMonth.split('-').map(Number);
+        const prevTotalDays = new Date(py, pm, 0).getDate();
+        const prevGrid = parsed.grid[prevDoc.id] || {};
+
+        const lastSt = prevGrid[prevTotalDays];
+        const secLastSt = prevGrid[prevTotalDays - 1];
+
+        return {
+          lastDayShift: (lastSt === 'N_FIXED' || lastSt === 'N_AUTO'),
+          secondLastDayShift: (secLastSt === 'N_FIXED' || secLastSt === 'N_AUTO')
+        };
+      } catch (e) {
+        return { lastDayShift: false, secondLastDayShift: false };
+      }
+    }
+
+    function saveCurrentMonth() {
+      const monthStr = document.getElementById('selectedMonth').value;
+      const payload = {
+        doctors,
+        grid,
+        maxLimit: document.getElementById('maxShiftLimit').value,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(getStorageKey(monthStr), JSON.stringify(payload));
+      
+      const toast = document.getElementById('saveToast');
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2500);
+    }
+
+    function loadMonthData(monthStr) {
+      const raw = localStorage.getItem(getStorageKey(monthStr));
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          doctors = parsed.doctors || [];
+          grid = parsed.grid || {};
+          if (parsed.maxLimit) document.getElementById('maxShiftLimit').value = parsed.maxLimit;
+          isGenerated = true;
+          updateButtons();
+        } catch (e) {
+          initDefaultDoctors(10);
+        }
+      } else {
+        // Arşiv yoksa önceki aydan kadroyu kontrol et veya varsayılan 10 kişi aç
+        const prevMonth = getPreviousMonthString(monthStr);
+        const prevRaw = localStorage.getItem(getStorageKey(prevMonth));
+        if (prevRaw) {
+          try {
+            const prevData = JSON.parse(prevRaw);
+            doctors = prevData.doctors.map(d => ({ id: 'd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), name: d.name, targetOvertime: d.targetOvertime }));
+            grid = {};
+            doctors.forEach(d => grid[d.id] = {});
+          } catch(e) { initDefaultDoctors(10); }
+        } else {
+          initDefaultDoctors(10);
+        }
+        isGenerated = false;
+        updateButtons();
+      }
+      initCalendar();
+    }
+
+    function copyPreviousMonthStaff() {
+      const curMonth = document.getElementById('selectedMonth').value;
+      const prevMonth = getPreviousMonthString(curMonth);
+      const prevRaw = localStorage.getItem(getStorageKey(prevMonth));
+      if (!prevRaw) return alert(`Önceki aya (${prevMonth}) ait kayıtlı arşiv bulunamadı.`);
+
+      if (confirm(`Önceki ayın (${prevMonth}) hekim listesi ve saat hedefleri bu aya aktarılsın mı?`)) {
+        const prevData = JSON.parse(prevRaw);
+        doctors = prevData.doctors.map(d => ({ id: 'd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), name: d.name, targetOvertime: d.targetOvertime }));
+        grid = {};
+        doctors.forEach(d => grid[d.id] = {});
+        initCalendar();
+      }
+    }
 
     function initDefaultDoctors(count) {
       doctors = [];
@@ -271,23 +390,21 @@
       initCalendar();
     }
 
-    // Bir günün fiili durumunu belirler (Önceki günde N varsa N-İzni dinamik üretilir)
-    function getEffectiveStatus(docId, day) {
-      const cur = grid[docId][day] || '';
-      if (cur === 'N_FIXED' || cur === 'N_AUTO' || cur === 'OFF') {
-        return cur;
-      }
-      // Bir önceki gün nöbet tutulmuşsa ertesi gün dinamik olarak N-İzni'dir
-      if (day > 1) {
-        const prev = grid[docId][day - 1];
-        if (prev === 'N_FIXED' || prev === 'N_AUTO') {
-          return 'N_IZNI';
-        }
+    // Bir günün efektif durumu (Önceki ayın son günü nöbet tutulduysa 1. gün N-İzni sayılır)
+    function getEffectiveStatus(doc, day) {
+      const cur = grid[doc.id][day] || '';
+      if (cur === 'N_FIXED' || cur === 'N_AUTO' || cur === 'OFF') return cur;
+
+      if (day === 1) {
+        const prevTail = getPreviousMonthTailShifts(doc.name);
+        if (prevTail.lastDayShift) return 'N_IZNI';
+      } else {
+        const prev = grid[doc.id][day - 1];
+        if (prev === 'N_FIXED' || prev === 'N_AUTO') return 'N_IZNI';
       }
       return '';
     }
 
-    // Tıklamayla Döngü: Boş -> N_FIXED -> OFF -> Boş
     function toggleDay(docId, day) {
       const cur = grid[docId][day] || '';
 
@@ -330,7 +447,7 @@
       const btn = document.getElementById('btnDistribute');
       const btnClear = document.getElementById('btnClearGenerated');
       if (isGenerated) {
-        btn.innerHTML = `<i class="fa-solid fa-arrows-rotate mr-1"></i> Yeni Liste Oluştur (Alternatif Dağıt)`;
+        btn.innerHTML = `<i class="fa-solid fa-arrows-rotate mr-1"></i> Farklı Dağıt (Yeni Liste)`;
         btn.className = "px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm transition";
         btnClear.classList.remove('hidden');
       } else {
@@ -349,13 +466,12 @@
       return count;
     }
 
-    // Dağıtım Motoru
+    // Dağıtım Motoru (Önceki Ay Devirli)
     function distributeRoster() {
       if (doctors.length === 0) return alert("Lütfen önce hekim ekleyin.");
 
       const maxLimit = parseInt(document.getElementById('maxShiftLimit').value) || 8;
 
-      // 1. Önceki otomatik nöbetleri temizle
       doctors.forEach(doc => {
         for (let d = 1; d <= daysInMonth; d++) {
           if (grid[doc.id][d] === 'N_AUTO') grid[doc.id][d] = '';
@@ -376,20 +492,21 @@
             if (assignedToday.includes(doc.id)) return false;
             if (grid[doc.id][d] === 'OFF' || grid[doc.id][d] === 'N_FIXED') return false;
 
-            // Nöbet ertesi günüyse (dün nöbetçiyse) bugün izinlidir, nöbet alamaz
-            if (d > 1 && (grid[doc.id][d - 1] === 'N_FIXED' || grid[doc.id][d - 1] === 'N_AUTO')) return false;
+            // Önceki ayın son günlerinin kontrolü
+            const prevTail = getPreviousMonthTailShifts(doc.name);
+            if (d === 1 && (prevTail.lastDayShift || prevTail.secondLastDayShift)) return false;
+            if (d === 2 && prevTail.lastDayShift) return false;
 
-            // Gün aşırı dinlenme kuralı (En az 2 gün aralık: d-2 gününde nöbet varsa bugün yazılmaz)
+            // Gün içi önceki günler kontrolü
+            if (d > 1 && (grid[doc.id][d - 1] === 'N_FIXED' || grid[doc.id][d - 1] === 'N_AUTO')) return false;
             if (d > 2 && (grid[doc.id][d - 2] === 'N_FIXED' || grid[doc.id][d - 2] === 'N_AUTO')) return false;
 
-            // Ertesi gün veya sonraki gün sabit kilitli nöbeti varsa aralık bozulmasın
+            // İleriki günler kilitli nöbet kontrolü
             if (d + 1 <= daysInMonth && grid[doc.id][d + 1] === 'N_FIXED') return false;
             if (d + 2 <= daysInMonth && grid[doc.id][d + 2] === 'N_FIXED') return false;
 
-            // Maksimum nöbet limiti
             if (countDoctorShifts(doc) >= maxLimit) return false;
 
-            // Hedef mesai aşım kontrolü
             const curStats = calculateDocStats(doc);
             if (curStats.earnedOvertime + otVal > doc.targetOvertime + 8) return false;
 
@@ -414,6 +531,7 @@
       updateButtons();
       checkFeasibility(maxLimit);
       render();
+      saveCurrentMonth();
     }
 
     function checkFeasibility(maxLimit) {
@@ -429,9 +547,9 @@
 
         if (missing > 8) {
           if (shiftCount >= maxLimit) {
-            warnings.push(`<strong>${doc.name}</strong>: Hedef ${doc.targetOvertime}s iken maksimum nöbet sınırına (${maxLimit} nöbet) ulaşıldığı için en fazla <strong>${stats.earnedOvertime}s</strong> üretilebildi (${missing}s eksik kaldı). Bu nöbet sayısı tavanıyla bu mesai saatine ulaşılması matematiksel olarak mümkün değildir.`);
+            warnings.push(`<strong>${doc.name}</strong>: Hedef ${doc.targetOvertime}s iken maksimum nöbet sınırına (${maxLimit} nöbet) ulaşıldığı için en fazla <strong>${stats.earnedOvertime}s</strong> üretilebildi (${missing}s eksik kaldı).`);
           } else {
-            warnings.push(`<strong>${doc.name}</strong>: Hedef ${doc.targetOvertime}s iken ${shiftCount} nöbet atanabildi (${missing}s eksik). Gün aşırı dinlenme kuralı veya izinli/OFF günlerinin sıklığı sebebiyle boş gün bulunamadı.`);
+            warnings.push(`<strong>${doc.name}</strong>: Hedef ${doc.targetOvertime}s iken ${shiftCount} nöbet atanabildi (${missing}s eksik). Önceki ay devri, gün aşırı kuralı veya izinli günlerin sıklığı sebebiyle uygun gün bulunamadı.`);
           }
         }
       });
@@ -455,7 +573,7 @@
 
       for (let d = 1; d <= daysInMonth; d++) {
         const meta = daysMeta[d - 1];
-        const status = getEffectiveStatus(doc.id, d);
+        const status = getEffectiveStatus(doc, d);
 
         if (!meta.isWeekend && !meta.isHoliday) {
           totalWorkdays++;
@@ -520,7 +638,7 @@
 
         for (let d = 1; d <= daysInMonth; d++) {
           const meta = daysMeta[d - 1];
-          const st = getEffectiveStatus(doc.id, d);
+          const st = getEffectiveStatus(doc, d);
           let cellClass = meta.isWeekend ? 'cell-hs' : 'cell-m';
           let label = meta.isWeekend ? '-' : '8';
 
@@ -555,7 +673,7 @@
       for (let d = 1; d <= daysInMonth; d++) {
         let count = 0;
         doctors.forEach(doc => {
-          const s = getEffectiveStatus(doc.id, d);
+          const s = getEffectiveStatus(doc, d);
           if (s === 'N_FIXED' || s === 'N_AUTO') count++;
         });
         html += `<td class="p-1 border text-blue-700 font-bold">${count}</td>`;
