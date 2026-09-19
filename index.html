@@ -180,7 +180,7 @@
         </div>
       </div>
 
-      <!-- 3. Satır: Tarih/Servis Parametreleri (Sol) & Süreli Nöbet Üretici (Sağ) -->
+      <!-- 3. Satır: Tarih/Servis Parametreleri (Sol) & Hızlı / Süreli Üretim Butonları (Sağ) -->
       <div class="flex flex-wrap items-center justify-between gap-2 pt-0.5">
         
         <!-- Sol: Parametreler -->
@@ -251,10 +251,16 @@
 
         </div>
 
-        <!-- Sağ: Süre Seçimi ve Nöbet Üretici Butonu -->
+        <!-- Sağ: Hızlı Üret + Süreli Optimizasyon Butonları -->
         <div class="flex items-center gap-1.5 ml-auto">
           
-          <!-- OPTİMİZASYON SÜRESİ SEÇİCİ (5, 10, 15, 20, 30 sn) -->
+          <!-- HIZLI ÜRET (BEKLETMEYEN ANINDA MOTOR) -->
+          <button onclick="distributeInstantRoster()" class="lockable-ui px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs rounded-lg transition flex items-center gap-1.5 shadow-2xs" title="Beklemeden ilk geçerli listeyi 50 milisaniyede anında üretir">
+            <i class="fa-solid fa-bolt text-amber-500"></i>
+            <span>Hızlı Üret</span>
+          </button>
+
+          <!-- OPTİMİZASYON SÜRESİ SEÇİCİ -->
           <div class="flex items-center gap-1 bg-indigo-50 border border-indigo-200 rounded-lg px-2 py-1" title="Algoritmanın en iyi olasılığı aramak için harcayacağı süre">
             <i class="fa-solid fa-stopwatch text-indigo-600 text-[11px]"></i>
             <span class="text-[10px] font-bold text-indigo-900">Süre:</span>
@@ -267,8 +273,8 @@
             </select>
           </div>
 
-          <!-- NÖBETLERİ ÜRET BUTONU -->
-          <button id="btnDistribute" onclick="startTimedOptimization()" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-xs rounded-lg shadow-md shadow-blue-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-blue-400/30">
+          <!-- SÜRELİ DERİN OPTİMİZASYON BUTONU -->
+          <button id="btnDistribute" onclick="startTimedOptimization()" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-xs rounded-lg shadow-md shadow-blue-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-blue-400/30" title="Seçilen süre boyunca arayarak saat farkı 0'a en yakın en adil listeyi bulur">
             <i id="btnDistributeIcon" class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
             <span id="btnDistributeText">Nöbetleri Üret</span>
           </button>
@@ -1086,7 +1092,7 @@
       const btnText = document.getElementById('btnDistributeText');
       const btnClear = document.getElementById('btnClearGenerated');
       if (isGenerated) {
-        if (btnText) btnText.innerText = "Yeniden Üret (Alternatif Çözüm)";
+        if (btnText) btnText.innerText = "Yeniden Optimize Et";
         if (btnClear) btnClear.classList.remove('hidden');
       } else {
         if (btnText) btnText.innerText = "Nöbetleri Üret";
@@ -1140,10 +1146,46 @@
     }
 
     // =========================================================================
-    // SÜRE AYARLI ASENKRON ÇÖZÜCÜ (SAAT SAPMASINI SIFIRA İNDİREN MOTOR)
+    // 1. MOD: HIZLI VE BEKLETMEYEN ÜRETİM (50ms İÇİNDE ANINDA ÇIKTI)
     // =========================================================================
-    let isOptimizing = false;
+    function distributeInstantRoster() {
+      if (isOptimizing) return;
+      if (doctors.length === 0) return alert("Lütfen önce hekim ekleyin.");
 
+      const maxLimit = parseInt(document.getElementById('maxShiftLimit').value) || 8;
+      currentSeed = Math.floor(Math.random() * 900000) + 100000;
+      document.getElementById('seedBadge').innerText = `Seed: ${currentSeed}`;
+      randomFunc = mulberry32(currentSeed);
+
+      let baseGrid = {};
+      doctors.forEach(doc => {
+        baseGrid[doc.id] = {};
+        for (let d = 1; d <= daysInMonth; d++) {
+          baseGrid[doc.id][d] = (grid[doc.id][d] === 'N_FIXED' || grid[doc.id][d] === 'OFF') ? grid[doc.id][d] : '';
+        }
+      });
+
+      let trialGrid = JSON.parse(JSON.stringify(baseGrid));
+      let success = constructFeasibleRoster(trialGrid, maxLimit, randomFunc);
+
+      if (success) {
+        refineRosterLocally(trialGrid, maxLimit, randomFunc);
+        grid = trialGrid;
+      } else {
+        constructFeasibleRoster(trialGrid, maxLimit, randomFunc, true);
+        grid = trialGrid;
+      }
+
+      isGenerated = true;
+      updateButtons();
+      renderOnly();
+      runIndependentValidation();
+      showToast("Hızlı liste anında oluşturuldu!");
+    }
+
+    // =========================================================================
+    // 2. MOD: SÜRE AYARLI DERİN ASENKRON ÇÖZÜCÜ (ZIPLAYAN TOPLU)
+    // =========================================================================
     function setUILocked(locked) {
       const lockables = document.querySelectorAll('.lockable-ui');
       lockables.forEach(el => {
@@ -1225,7 +1267,6 @@
                 globalBestSolution = trialGrid;
                 globalBestSeed = trialSeed;
 
-                // MÜKEMMEL ÇÖZÜM: Bütün hekimlerin farkı tam 0 olduysa erken tamamla
                 if (cost === 0) {
                   break;
                 }
@@ -1234,7 +1275,6 @@
           }
         }
 
-        // Eğer tam 0 sapmalı mükemmel liste bulunduysa süreyi beklemeden bitir
         if (globalBestCost === 0 || Date.now() >= endTime) {
           isOptimizing = false;
           btn.disabled = false;
@@ -1355,9 +1395,7 @@
       return score;
     }
 
-    // SAAT FARKLARINI (EKSİ / ARTI) SIFIRA İNDİREN YEREL ARAMA
     function refineRosterLocally(workGrid, maxLimit, rng) {
-      // 1. Fazla Nöbetleri Eksik Saati Olanlara Devret (Move & Swap)
       for (let step = 0; step < 30; step++) {
         let needyDocs = doctors.filter(d => (d.targetOvertime - calculateDocStats(d, workGrid).earnedOvertime) > 0 && countDoctorShifts(d, workGrid) < maxLimit);
         let surplusDocs = doctors.filter(d => (calculateDocStats(d, workGrid).earnedOvertime - d.targetOvertime) > 0);
@@ -1375,7 +1413,6 @@
             
             if (curNeedyStats.earnedOvertime + otVal <= needy.targetOvertime + 8) {
               if (getEligibleCandidates(d, assigned.filter(id => id !== surplus.id), maxLimit, otVal, false, workGrid).some(c => c.id === needy.id)) {
-                // Deneme Transferi
                 workGrid[surplus.id][d] = '';
                 workGrid[needy.id][d] = 'N_AUTO';
 
@@ -1383,9 +1420,8 @@
                 let newCost = Math.abs(calculateDocStats(surplus, workGrid).diff) + Math.abs(calculateDocStats(needy, workGrid).diff);
 
                 if (newCost <= oldCost) {
-                  break; // İyileşti, devir onaylandı
+                  break;
                 } else {
-                  // Geri al
                   workGrid[needy.id][d] = '';
                   workGrid[surplus.id][d] = 'N_AUTO';
                 }
@@ -1395,7 +1431,6 @@
         }
       }
 
-      // 2. Ağır Gün Dengesi (Cumartesi Dağılımını Eşitle)
       let doctorsWithSaturdays = [...doctors].sort((a, b) => calculateDocStats(b, workGrid).saturdayCount - calculateDocStats(a, workGrid).saturdayCount);
       if (doctorsWithSaturdays.length >= 2) {
         let maxSatDoc = doctorsWithSaturdays[0];
@@ -1416,7 +1451,6 @@
       }
     }
 
-    // EN İYİ LİSTE KALİTE SKORU (HEDEFE SIFIR SAPMA MERKEZLİ)
     function evaluateQualityCost(workGrid) {
       let targetDeviationSum = 0;
       let targetQuadraticPenalty = 0;
@@ -1427,15 +1461,13 @@
         let diff = Math.abs(stats.earnedOvertime - doc.targetOvertime);
         
         targetDeviationSum += diff;
-        targetQuadraticPenalty += Math.pow(diff, 2); // Büyük farkları ağır cezalandır
+        targetQuadraticPenalty += Math.pow(diff, 2);
         saturdayCounts.push(stats.saturdayCount);
       });
 
-      // Cumartesi dağılım varyansı
       let avgSat = saturdayCounts.reduce((a, b) => a + b, 0) / (saturdayCounts.length || 1);
       let satVariance = saturdayCounts.reduce((sum, val) => sum + Math.pow(val - avgSat, 2), 0);
 
-      // Ana hedef saat farkını 0 yapmak: Sapma katsayısı en büyüktür!
       return (targetDeviationSum * 1000) + (targetQuadraticPenalty * 100) + (satVariance * 10);
     }
 
@@ -1652,6 +1684,7 @@
       }, 50);
     }
 
+    // SheetJS ile Gerçek İkili .XLSX İndirme
     function exportToStyledExcel() {
       const curMonth = getSelectedPeriodString();
       const curService = document.getElementById('selectedService').value;
