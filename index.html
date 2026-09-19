@@ -36,7 +36,7 @@
         print-color-adjust: exact !important;
       }
       body { background: white !important; padding: 0 !important; font-size: 8px !important; }
-      header, .no-print, #warningPanel, #pasteModal, #feasibilityModal { display: none !important; }
+      header, .no-print, #warningPanel, #pasteModal, #archiveModal { display: none !important; }
       #tableOuterWrapper { max-height: none !important; overflow: visible !important; border: none !important; }
       #tableContainer { transform: scale(1) !important; width: 100% !important; }
       table { width: 100% !important; border-collapse: collapse !important; border: 1px solid #94a3b8 !important; }
@@ -66,7 +66,6 @@
         </div>
 
         <div class="flex items-center gap-1.5">
-          <!-- Tohum Rozeti -->
           <span id="seedBadge" class="hidden sm:inline-block px-2 py-0.5 bg-slate-100 border border-slate-200 text-[10px] font-mono font-bold text-slate-600 rounded" title="Aktif Tohum Kodu">Seed: --</span>
 
           <!-- Zoom Araçları -->
@@ -82,7 +81,7 @@
             <span class="hidden sm:inline">Paylaş</span>
           </button>
 
-          <button onclick="exportStateBackup()" class="px-2 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-medium rounded-lg transition" title="Veritabanı Yedeği Al (JSON)">
+          <button onclick="exportStateBackup()" class="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-medium rounded-lg transition" title="Veritabanı Yedeği Al (JSON)">
             <i class="fa-solid fa-download text-slate-500"></i>
           </button>
 
@@ -133,7 +132,7 @@
             <datalist id="serviceOptions"></datalist>
           </div>
 
-          <div class="flex items-center gap-1 bg-amber-50/60 border border-amber-200 rounded-lg px-2 py-1" title="Ay sonu nöbet saati (Hafta içi nöbet izni sonraki aya sarkarsa)">
+          <div class="flex items-center gap-1 bg-amber-50/60 border border-amber-200 rounded-lg px-2 py-1" title="Ay sonu nöbet saati katsayısı">
             <span class="text-[10px] font-bold text-amber-800">Ay Sonu:</span>
             <select id="lastDayShiftRule" class="bg-transparent font-bold text-amber-900 text-xs focus:outline-none cursor-pointer" onchange="renderOnly()">
               <option value="auto">Oto</option>
@@ -169,11 +168,18 @@
             <i class="fa-solid fa-users text-slate-500"></i> Aktar
           </button>
 
+          <!-- YENİ: ARŞİV BUTONU -->
+          <button onclick="openArchiveModal()" class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 font-bold rounded-lg transition flex items-center gap-1.5" title="Geçmiş Kayıtlar & Snapshot Havuzu">
+            <i class="fa-solid fa-box-archive text-amber-600"></i>
+            <span>Arşiv</span>
+            <span id="archiveCountBadge" class="bg-amber-200 text-amber-900 text-[10px] px-1 rounded-full font-bold">0</span>
+          </button>
+
+          <!-- KAYDET BUTONU (Aynı zamanda Tarih/Saat Damgalı Arşive Ekler) -->
           <button onclick="saveCurrentMonth()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1.5">
             <i class="fa-solid fa-floppy-disk text-xs"></i> Kaydet
           </button>
 
-          <!-- NÖBETLERİ ÜRET BUTONU (V2 LEXICOGRAPHIC ENGINE) -->
           <button id="btnDistribute" onclick="distributeRoster()" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-xs rounded-lg shadow-md shadow-blue-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-blue-400/30">
             <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
             <span id="btnDistributeText">Nöbetleri Üret</span>
@@ -201,7 +207,7 @@
       </div>
     </div>
 
-    <!-- Matematiksel Doğrulama ve Hakem Raporu -->
+    <!-- Matematiksel Doğrulama Raporu -->
     <div id="warningPanel" class="hidden bg-amber-50 border-l-4 border-amber-500 p-3 rounded-lg shadow-sm no-print space-y-1">
       <div class="flex items-center gap-2 font-bold text-amber-900 text-xs">
         <i class="fa-solid fa-shield-halved text-amber-600 text-sm"></i>
@@ -221,6 +227,35 @@
   </div>
 
   <datalist id="doctorAutocompletePool"></datalist>
+
+  <!-- ARŞİV MODAL PENCERESİ -->
+  <div id="archiveModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-2xl rounded-2xl p-5 shadow-2xl space-y-3.5 flex flex-col max-h-[85vh]">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+          <i class="fa-solid fa-box-archive text-amber-600 text-base"></i>
+          <span>Geçmiş Listeler ve Arşiv (<span id="archiveModalTitleInfo">--</span>)</span>
+        </h3>
+        <button onclick="closeArchiveModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
+      </div>
+
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-[11px] text-amber-900 leading-relaxed">
+        Her <strong>"Kaydet"</strong>e bastığınızda o anki çizelge tarih, saat, dakika ve saniye damgasıyla bir versiyon (snapshot) olarak buraya arşivlenir. Dilediğiniz eski bir versiyonu tek tıkla geri yükleyebilirsiniz.
+      </div>
+
+      <!-- Arşiv Listesi -->
+      <div class="overflow-y-auto flex-1 pr-1 space-y-2" id="archiveListContainer">
+        <!-- Dinamik Arşiv Kartları Buraya Eklenir -->
+      </div>
+
+      <div class="flex justify-between items-center pt-2 border-t text-xs">
+        <button onclick="clearAllArchivesForCurrent()" class="text-rose-600 hover:text-rose-800 font-medium flex items-center gap-1">
+          <i class="fa-solid fa-trash-can"></i> Bu Ayın Arşivini Temizle
+        </button>
+        <button onclick="closeArchiveModal()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition">Kapat</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Toplu İsim Modal -->
   <div id="pasteModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -259,7 +294,6 @@
   </div>
 
   <script>
-    // GÜNCEL TATİL VERİLERİ (2025-2028 Kapsamı)
     const FIXED_HOLIDAYS = {
       "01-01": "Yılbaşı", "04-23": "23 Nisan", "05-01": "1 Mayıs",
       "05-19": "19 Mayıs", "07-15": "15 Temmuz", "08-30": "30 Ağustos", "10-29": "29 Ekim"
@@ -271,7 +305,6 @@
       2028: ["02-27", "02-28", "02-29", "05-05", "05-06", "05-07", "05-08"]
     };
 
-    // PRNG (Mulberry32) - Tohumlu Deterministik Rastgelelik
     let currentSeed = 1337;
     function mulberry32(a) {
       return function() {
@@ -283,16 +316,6 @@
     }
     let randomFunc = Math.random;
 
-    // Fisher-Yates Düzgün Karıştırma
-    function shuffleArray(arr, rng = randomFunc) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(rng() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr;
-    }
-
-    // Türkçe Uyumlu Karakter Normalleştirici
     function trNormalize(str) {
       if (!str) return '';
       return str.replace(/İ/g, 'i').replace(/I/g, 'ı').toLowerCase().trim();
@@ -301,6 +324,17 @@
     function escapeHtml(str) {
       if (!str) return '';
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Formatlı Tarih & Saat Damgası (Örn: 2026-09-20 00:15:32)
+    function getFormattedTimestamp(dateObj = new Date()) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      const hh = String(dateObj.getHours()).padStart(2, '0');
+      const mm = String(dateObj.getMinutes()).padStart(2, '0');
+      const ss = String(dateObj.getSeconds()).padStart(2, '0');
+      return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
     }
 
     let doctors = [];
@@ -379,6 +413,11 @@
       return `nobet_roster_${monthStr}_${srvClean}`;
     }
 
+    function getArchiveStorageKey(monthStr, serviceName) {
+      const srvClean = (serviceName || 'Genel').trim().toLowerCase().replace(/\s+/g, '_');
+      return `nobet_archive_${monthStr}_${srvClean}`;
+    }
+
     function refreshServiceOptions() {
       const savedServices = JSON.parse(localStorage.getItem('nobet_known_services') || '["Acil Servis", "Dahiliye", "Çocuk Cerrahisi", "Genel Cerrahi"]');
       const datalist = document.getElementById('serviceOptions');
@@ -436,7 +475,6 @@
       return `${py}-${pm}`;
     }
 
-    // Önbellekli Önceki Ay Verileri (Hızlı & Türkçe Normalizasyonlu)
     let previousMonthCache = null;
     function loadPreviousMonthData() {
       const curMonth = getSelectedPeriodString();
@@ -459,9 +497,7 @@
         return { lastDayShift: false, secondLastDayShift: false, foundInPrev: false };
       }
 
-      // Önce kalıcı ID ile eşleştir
       let prevDoc = previousMonthCache.doctors.find(d => d.id === doc.id);
-      // Bulunamazsa Türkçe normalleştirilmiş isimle ara
       if (!prevDoc) {
         const targetNorm = trNormalize(doc.name);
         prevDoc = previousMonthCache.doctors.find(d => trNormalize(d.name) === targetNorm);
@@ -518,9 +554,26 @@
       a.click();
     }
 
+    // =========================================================================
+    // ARŞİVLEME VE VERSİYONLAMA MOTORU
+    // =========================================================================
+    function getArchiveList() {
+      const monthStr = getSelectedPeriodString();
+      const srvName = document.getElementById('selectedService').value;
+      const raw = localStorage.getItem(getArchiveStorageKey(monthStr, srvName));
+      return raw ? JSON.parse(raw) : [];
+    }
+
+    function updateArchiveBadge() {
+      const list = getArchiveList();
+      const badge = document.getElementById('archiveCountBadge');
+      if (badge) badge.innerText = list.length;
+    }
+
     function saveCurrentMonth() {
       const monthStr = getSelectedPeriodString();
       const srvName = document.getElementById('selectedService').value;
+      const nowStamp = getFormattedTimestamp();
       
       registerServiceName(srvName);
       registerDoctorsToPool(doctors.map(d => d.name));
@@ -532,16 +585,142 @@
         maxLimit: document.getElementById('maxShiftLimit').value,
         lastDayRule: document.getElementById('lastDayShiftRule').value,
         seed: currentSeed,
+        timestampStr: nowStamp,
         timestamp: Date.now()
       };
+
+      // 1. Aktif çalışma kaydını güncelle
       localStorage.setItem(getStorageKey(monthStr, srvName), JSON.stringify(payload));
-      showToast("Değişiklikler başarıyla kaydedildi!");
+
+      // 2. Tarih-Saat-Dakika-Saniye damgalı Arşiv Snapshot'ı ekle
+      let archiveList = getArchiveList();
+      archiveList.unshift({
+        id: 'arch_' + Date.now(),
+        timestampStr: nowStamp,
+        seed: currentSeed,
+        doctorCount: doctors.length,
+        serviceName: srvName,
+        monthStr: monthStr,
+        snapshot: payload
+      });
+
+      // Arşivde en son 50 versiyon saklanır
+      if (archiveList.length > 50) archiveList = archiveList.slice(0, 50);
+      localStorage.setItem(getArchiveStorageKey(monthStr, srvName), JSON.stringify(archiveList));
+
+      updateArchiveBadge();
+      showToast(`Kaydedildi ve Arşive Eklendi! (${nowStamp})`);
+    }
+
+    function openArchiveModal() {
+      const monthStr = getSelectedPeriodString();
+      const srvName = document.getElementById('selectedService').value;
+      document.getElementById('archiveModalTitleInfo').innerText = `${srvName} - ${monthStr}`;
+
+      const container = document.getElementById('archiveListContainer');
+      const archiveList = getArchiveList();
+      container.innerHTML = '';
+
+      if (archiveList.length === 0) {
+        container.innerHTML = `
+          <div class="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+            <i class="fa-solid fa-folder-open text-3xl mb-2 text-slate-300"></i>
+            <p>Bu ay ve servis için henüz arşivlenmiş bir liste bulunmuyor.</p>
+            <p class="text-[10px] mt-1">"Kaydet" butonuna bastığınızda anlık liste otomatik olarak buraya kaydedilecektir.</p>
+          </div>
+        `;
+      } else {
+        archiveList.forEach((item, index) => {
+          const card = document.createElement('div');
+          card.className = "p-3 bg-slate-50 hover:bg-amber-50/50 border border-slate-200 rounded-xl flex items-center justify-between transition gap-2";
+          card.innerHTML = `
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">
+                #${archiveList.length - index}
+              </div>
+              <div>
+                <div class="font-bold text-slate-900 text-xs flex items-center gap-2">
+                  <span>${item.timestampStr}</span>
+                  ${index === 0 ? '<span class="bg-emerald-100 text-emerald-800 text-[9px] px-1.5 py-0.5 rounded font-bold">En Son</span>' : ''}
+                </div>
+                <div class="text-[11px] text-slate-500 space-x-2">
+                  <span><i class="fa-solid fa-user-doctor mr-1"></i>${item.doctorCount} Hekim</span>
+                  <span>•</span>
+                  <span>Seed: ${item.seed || '--'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <button onclick="restoreArchiveItem('${item.id}')" class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm" title="Bu versiyonu ekrana geri yükle">
+                <i class="fa-solid fa-rotate-left"></i> Yükle
+              </button>
+              <button onclick="deleteArchiveItem('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition" title="Bu kaydı sil">
+                <i class="fa-solid fa-trash-can text-sm"></i>
+              </button>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      }
+
+      document.getElementById('archiveModal').classList.remove('hidden');
+    }
+
+    function closeArchiveModal() {
+      document.getElementById('archiveModal').classList.add('hidden');
+    }
+
+    function restoreArchiveItem(archiveId) {
+      const archiveList = getArchiveList();
+      const item = archiveList.find(a => a.id === archiveId);
+      if (!item || !item.snapshot) return alert("Kayıt bulunamadı!");
+
+      if (confirm(`${item.timestampStr} tarihli arşiv versiyonu ekrana yüklensin mi? (Mevcut kaydedilmemiş düzenlemeleriniz varsa değişecektir)`)) {
+        const snap = item.snapshot;
+        doctors = snap.doctors || [];
+        grid = snap.grid || {};
+        if (snap.maxLimit) document.getElementById('maxShiftLimit').value = snap.maxLimit;
+        if (snap.lastDayRule) document.getElementById('lastDayShiftRule').value = snap.lastDayRule;
+        if (snap.seed) {
+          currentSeed = snap.seed;
+          document.getElementById('seedBadge').innerText = `Seed: ${currentSeed}`;
+        }
+        isGenerated = true;
+        updateButtons();
+        closeArchiveModal();
+        renderOnly();
+        runIndependentValidation();
+        showToast(`Arşiv versiyonu yüklendi: ${item.timestampStr}`);
+      }
+    }
+
+    function deleteArchiveItem(archiveId) {
+      if (confirm("Bu arşiv kaydını silmek istediğinize emin misiniz?")) {
+        const monthStr = getSelectedPeriodString();
+        const srvName = document.getElementById('selectedService').value;
+        let archiveList = getArchiveList().filter(a => a.id !== archiveId);
+        localStorage.setItem(getArchiveStorageKey(monthStr, srvName), JSON.stringify(archiveList));
+        updateArchiveBadge();
+        openArchiveModal(); // Listeyi tazele
+      }
+    }
+
+    function clearAllArchivesForCurrent() {
+      const monthStr = getSelectedPeriodString();
+      const srvName = document.getElementById('selectedService').value;
+      if (confirm(`${srvName} servisinin ${monthStr} dönemine ait TÜM arşivini silmek istediğinize emin misiniz?`)) {
+        localStorage.removeItem(getArchiveStorageKey(monthStr, srvName));
+        updateArchiveBadge();
+        openArchiveModal();
+      }
     }
 
     function loadActiveRoster() {
       const monthStr = getSelectedPeriodString();
       const srvName = document.getElementById('selectedService').value;
       loadPreviousMonthData();
+      updateArchiveBadge();
 
       const raw = localStorage.getItem(getStorageKey(monthStr, srvName));
 
@@ -718,7 +897,6 @@
       lines.forEach((line, idx) => {
         const res = parseDoctorLine(line);
         if (res && res.name) {
-          // Eğer birleştirme aktifse aynı isim var mı kontrol et
           let existingDoc = merge ? doctors.find(d => trNormalize(d.name) === trNormalize(res.name)) : null;
           if (existingDoc) {
             existingDoc.targetOvertime = res.hours;
@@ -778,25 +956,16 @@
       runIndependentValidation();
     }
 
-    // AY SONU KATSAYISI DÜZELTMESİ (Cumartesi/Pazar/Tatili ASLA EZMEZ)
     function getOvertimeEarned(dayMeta, dayNum) {
-      // 1. Resmi Tatil veya Cumartesi ise daima 24 saat
-      if (dayMeta.isHoliday || dayMeta.dayOfWeek === 6) {
-        return 24;
-      }
-      // 2. Pazar veya Cuma ise daima 16 saat
-      if (dayMeta.dayOfWeek === 0 || dayMeta.dayOfWeek === 5) {
-        return 16;
-      }
+      if (dayMeta.isHoliday || dayMeta.dayOfWeek === 6) return 24;
+      if (dayMeta.dayOfWeek === 0 || dayMeta.dayOfWeek === 5) return 16;
 
-      // 3. Hafta İçi (Pazartesi - Perşembe): Ay sonu özel kuralı sadece burada devreye girer
       if (dayNum === daysInMonth) {
         const rule = document.getElementById('lastDayShiftRule').value;
         if (rule !== 'auto') {
           return parseInt(rule);
         }
       }
-
       return 8;
     }
 
@@ -870,19 +1039,17 @@
     }
 
     // =========================================================================
-    // MOTOR V2: LEXICOGRAPHIC OPTIMIZER & CONSTRUCTIVE PIPELINE
+    // MOTOR V2: ÇÖZÜCÜ VE OPTİMİZASYON HESAPLAYICISI
     // =========================================================================
     function distributeRoster() {
       if (doctors.length === 0) return alert("Lütfen önce hekim ekleyin.");
 
-      // Yeni tohum üret
       currentSeed = Math.floor(Math.random() * 900000) + 100000;
       document.getElementById('seedBadge').innerText = `Seed: ${currentSeed}`;
       randomFunc = mulberry32(currentSeed);
 
       const maxLimit = parseInt(document.getElementById('maxShiftLimit').value) || 8;
 
-      // Temiz başlangıç matrisi (Kilitliler korunur)
       let baseGrid = {};
       doctors.forEach(doc => {
         baseGrid[doc.id] = {};
@@ -891,20 +1058,15 @@
         }
       });
 
-      // Best-of-N Havuzu
       let bestSolution = null;
       let bestCost = Infinity;
 
-      // 120 Alternatif Arama Döngüsü
       for (let run = 0; run < 120; run++) {
         let trialGrid = JSON.parse(JSON.stringify(baseGrid));
         let success = constructFeasibleRoster(trialGrid, maxLimit, randomFunc);
 
         if (success) {
-          // Yerel İyileştirme (Local Search & Ruin-Recreate)
           refineRosterLocally(trialGrid, maxLimit, randomFunc);
-
-          // Bağımsız Hakem Testi
           let validation = validateRoster(trialGrid, maxLimit);
           if (validation.valid) {
             let cost = evaluateQualityCost(trialGrid);
@@ -924,7 +1086,6 @@
         runIndependentValidation();
         saveCurrentMonth();
       } else {
-        // Tam valid çözüm bulunamazsa en kurala yakın olanı üretip hakem uyarısı bas
         let fallbackGrid = JSON.parse(JSON.stringify(baseGrid));
         constructFeasibleRoster(fallbackGrid, maxLimit, randomFunc, true);
         grid = fallbackGrid;
@@ -935,16 +1096,13 @@
       }
     }
 
-    // YAPICI ÇÖZÜCÜ (Most-Constrained-First + Minimum Regret)
     function constructFeasibleRoster(workGrid, maxLimit, rng, isFallback = false) {
-      // Aşama 1: Sıfır Günleri Doldur (Darboğaz Günler Önce)
       let unfilledDays = [];
       for (let d = 1; d <= daysInMonth; d++) {
         let hasShift = doctors.some(doc => workGrid[doc.id][d] === 'N_FIXED' || workGrid[doc.id][d] === 'N_AUTO');
         if (!hasShift) unfilledDays.push(d);
       }
 
-      // Most-Constrained-First Sıralaması (Uygun adayı en az olan gün önce)
       unfilledDays.sort((d1, d2) => {
         let c1 = getEligibleCandidates(d1, [], maxLimit, getOvertimeEarned(daysMeta[d1 - 1], d1), true, workGrid).length;
         let c2 = getEligibleCandidates(d2, [], maxLimit, getOvertimeEarned(daysMeta[d2 - 1], d2), true, workGrid).length;
@@ -959,7 +1117,6 @@
         }
         if (candidates.length === 0) return false;
 
-        // Look-Ahead Puanlaması (Gelecek günleri en az kilitleyen adayı seç)
         candidates.sort((a, b) => {
           let scoreA = scoreCandidateChoice(a, d, otVal, workGrid);
           let scoreB = scoreCandidateChoice(b, d, otVal, workGrid);
@@ -969,7 +1126,6 @@
         workGrid[candidates[0].id][d] = 'N_AUTO';
       }
 
-      // Aşama 2: Hedef Saatleri Tamamla (En çok eksiği olan hekimler önce)
       let sortedDocs = [...doctors].sort((a, b) => {
         let diffA = a.targetOvertime - calculateDocStats(a, workGrid).earnedOvertime;
         let diffB = b.targetOvertime - calculateDocStats(b, workGrid).earnedOvertime;
@@ -988,7 +1144,6 @@
           let feasibleDays = [];
           for (let d = 1; d <= daysInMonth; d++) {
             const otVal = getOvertimeEarned(daysMeta[d - 1], d);
-            // KATI KURAL: Hedef + 8 asla aşılamaz
             if (stats.earnedOvertime + otVal <= doc.targetOvertime + 8) {
               let assignedToday = doctors.filter(dc => workGrid[dc.id][d] === 'N_FIXED' || workGrid[dc.id][d] === 'N_AUTO').map(dc => dc.id);
               if (getEligibleCandidates(d, assignedToday, maxLimit, otVal, false, workGrid).some(c => c.id === doc.id)) {
@@ -999,7 +1154,6 @@
 
           if (feasibleDays.length === 0) break;
 
-          // En az nöbetçisi olan güne ve eksik saate en yakın getirisi olana öncelik
           feasibleDays.sort((d1, d2) => {
             let gap1 = Math.abs(missing - d1.otVal);
             let gap2 = Math.abs(missing - d2.otVal);
@@ -1014,22 +1168,18 @@
       return true;
     }
 
-    // Aday Seçiminde Look-Ahead & Gelecek Fırsat Maliyeti
     function scoreCandidateChoice(doc, day, otVal, workGrid) {
       let stats = calculateDocStats(doc, workGrid);
       let missing = doc.targetOvertime - stats.earnedOvertime;
       let score = (missing > 0) ? (missing - Math.abs(missing - otVal)) : -50;
 
-      // Gelecek günleri kilitleme cezası (d+1 ve d+2'de başka ağır gün var mı?)
       if (day + 1 <= daysInMonth && getOvertimeEarned(daysMeta[day], day + 1) >= 16) score -= 10;
       if (day + 2 <= daysInMonth && getOvertimeEarned(daysMeta[day + 1], day + 2) >= 16) score -= 8;
 
       return score;
     }
 
-    // YEREL İYİLEŞTİRME & TAKAS (MOVE, SWAP, RUIN & RECREATE)
     function refineRosterLocally(workGrid, maxLimit, rng) {
-      // 1. Move & Swap Adımları
       for (let step = 0; step < 20; step++) {
         let needy = doctors.find(d => (d.targetOvertime - calculateDocStats(d, workGrid).earnedOvertime) > 0 && countDoctorShifts(d, workGrid) < maxLimit);
         if (!needy) break;
@@ -1043,16 +1193,14 @@
             let assigned = doctors.filter(dc => workGrid[dc.id][d] === 'N_FIXED' || workGrid[dc.id][d] === 'N_AUTO').map(dc => dc.id);
             let curNeedyStats = calculateDocStats(needy, workGrid);
             
-            // KATI KURAL: Hedef + 8 tavan kontrolü
             if (curNeedyStats.earnedOvertime + otVal <= needy.targetOvertime + 8) {
               if (getEligibleCandidates(d, assigned.filter(id => id !== candidateToGive.id), maxLimit, otVal, false, workGrid).some(c => c.id === needy.id)) {
                 workGrid[candidateToGive.id][d] = '';
                 workGrid[needy.id][d] = 'N_AUTO';
 
                 if (calculateDocStats(candidateToGive, workGrid).earnedOvertime >= candidateToGive.targetOvertime) {
-                  break; // İyileşti, devam et
+                  break;
                 } else {
-                  // Geri al
                   workGrid[needy.id][d] = '';
                   workGrid[candidateToGive.id][d] = 'N_AUTO';
                 }
@@ -1062,7 +1210,6 @@
         }
       }
 
-      // 2. Heavy-Day Rebalance (Cumartesi / Ağır Gün Adaleti)
       let doctorsWithSaturdays = [...doctors].sort((a, b) => calculateDocStats(b, workGrid).saturdayCount - calculateDocStats(a, workGrid).saturdayCount);
       if (doctorsWithSaturdays.length >= 2) {
         let maxSatDoc = doctorsWithSaturdays[0];
@@ -1083,19 +1230,16 @@
       }
     }
 
-    // KALİTE MALİYET FONKSİYONU (Lexicographic Evaluator)
     function evaluateQualityCost(workGrid) {
       let targetDeviation = 0;
       let saturdayCounts = [];
 
       doctors.forEach(doc => {
         let stats = calculateDocStats(doc, workGrid);
-        // Hedef aşım farkı
         targetDeviation += Math.abs(stats.earnedOvertime - doc.targetOvertime);
         saturdayCounts.push(stats.saturdayCount);
       });
 
-      // Cumartesi dağılım varyansı
       let avgSat = saturdayCounts.reduce((a, b) => a + b, 0) / (saturdayCounts.length || 1);
       let satVariance = saturdayCounts.reduce((sum, val) => sum + Math.pow(val - avgSat, 2), 0);
 
@@ -1107,16 +1251,13 @@
         if (assignedToday.includes(doc.id)) return false;
         if (workGrid[doc.id][d] === 'OFF' || workGrid[doc.id][d] === 'N_FIXED' || workGrid[doc.id][d] === 'N_AUTO') return false;
 
-        // Önceki ay devir kısıtları
         const prevTail = getPreviousMonthTailShifts(doc);
         if (d === 1 && (prevTail.lastDayShift || prevTail.secondLastDayShift)) return false;
         if (d === 2 && prevTail.lastDayShift) return false;
 
-        // Dinlenme Kuralı (d-1, d-2)
         if (d > 1 && (workGrid[doc.id][d - 1] === 'N_FIXED' || workGrid[doc.id][d - 1] === 'N_AUTO')) return false;
         if (d > 2 && (workGrid[doc.id][d - 2] === 'N_FIXED' || workGrid[doc.id][d - 2] === 'N_AUTO')) return false;
 
-        // Dinlenme Kuralı (d+1, d+2)
         if (d + 1 <= daysInMonth && (workGrid[doc.id][d + 1] === 'N_FIXED' || workGrid[doc.id][d + 1] === 'N_AUTO')) return false;
         if (d + 2 <= daysInMonth && (workGrid[doc.id][d + 2] === 'N_FIXED' || workGrid[doc.id][d + 2] === 'N_AUTO')) return false;
 
@@ -1124,7 +1265,6 @@
 
         const curStats = calculateDocStats(doc, workGrid);
         if (checkTargetCap) {
-          // KATI KURAL: Hedef + 8 tavan kontrolü
           if (curStats.earnedOvertime + otVal > doc.targetOvertime + 8) return false;
           if (curStats.earnedOvertime >= doc.targetOvertime) return false;
         }
@@ -1133,13 +1273,9 @@
       });
     }
 
-    // =========================================================================
-    // BAĞIMSIZ HAKEM VE DOĞRULAYICI (FINAL VALIDATOR)
-    // =========================================================================
     function validateRoster(workGrid, maxLimit) {
       let violations = [];
 
-      // 1. Sıfır Gün Kontrolü
       for (let d = 1; d <= daysInMonth; d++) {
         let count = 0;
         doctors.forEach(doc => {
@@ -1148,21 +1284,18 @@
         if (count === 0) violations.push(`Ayın ${d}. gününde hiç nöbetçi yok (Sıfır Gün İhlali).`);
       }
 
-      // 2. Hekim Bazlı Dinlenme ve Hedef Kontrolleri
       doctors.forEach(doc => {
         let shifts = [];
         for (let d = 1; d <= daysInMonth; d++) {
           if (workGrid[doc.id][d] === 'N_FIXED' || workGrid[doc.id][d] === 'N_AUTO') shifts.push(d);
         }
 
-        // Gün aşırı dinlenme kontrolü
         for (let i = 0; i < shifts.length - 1; i++) {
           if (shifts[i + 1] - shifts[i] < 3) {
             violations.push(`${doc.name}: ${shifts[i]} ve ${shifts[i+1]} günleri arasında yetersiz dinlenme.`);
           }
         }
 
-        // Önceki ay devri kontrolü
         const prevTail = getPreviousMonthTailShifts(doc);
         if (prevTail.lastDayShift && (shifts.includes(1) || shifts.includes(2))) {
           violations.push(`${doc.name}: Önceki ayın son günü nöbetçi olduğu halde ayın 1 veya 2'sine nöbet yazılmış.`);
@@ -1171,7 +1304,6 @@
           violations.push(`${doc.name}: Önceki ayın sondan 2. günü nöbetçi olduğu halde ayın 1'ine nöbet yazılmış.`);
         }
 
-        // Hedef ve Tavan Kontrolü
         let stats = calculateDocStats(doc, workGrid);
         if (stats.earnedOvertime < doc.targetOvertime) {
           violations.push(`${doc.name}: Hedef ${doc.targetOvertime}s iken ${stats.earnedOvertime}s yazıldı (${doc.targetOvertime - stats.earnedOvertime}s eksik).`);
@@ -1301,7 +1433,6 @@
         html += `</tr>`;
       });
 
-      // Alt Kontrol Satırı
       html += `</tbody><tfoot class="bg-slate-100 font-bold border-t-2"><tr>`;
       html += `<td colspan="2" class="p-2 border text-left">Günlük Nöbetçi</td>`;
       for (let d = 1; d <= daysInMonth; d++) {
