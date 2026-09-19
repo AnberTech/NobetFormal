@@ -5,7 +5,7 @@
   <title>AnberTech - Formal Nöbet Çözücü V2</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     .day-col {
@@ -1467,37 +1467,131 @@
     }
 
     function exportToStyledExcel() {
-      const curMonth = getSelectedPeriodString();
-      const curService = document.getElementById('selectedService').value;
-      const table = document.getElementById('rosterTable');
-      
-      const excelHtml = `
-        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-        <head>
-          <meta charset="utf-8">
-          <style>
-            table { border-collapse: collapse; }
-            th, td { border: 1px solid #94a3b8; text-align: center; font-size: 11px; }
-            .cell-fixed-n { background-color: #b91c1c; color: #ffffff; font-weight: bold; }
-            .cell-auto-n { background-color: #ef4444; color: #ffffff; font-weight: bold; }
-            .cell-ni { background-color: #fef08a; color: #854d0e; font-weight: bold; }
-            .cell-off { background-color: #1e293b; color: #ffffff; font-weight: bold; }
-            .cell-hs { background-color: #f1f5f9; color: #64748b; }
-            .cell-holiday { background-color: #fee2e2; color: #991b1b; font-weight: bold; }
-          </style>
-        </head>
-        <body>${table.outerHTML}</body>
-        </html>
-      `;
+  const curMonth = getSelectedPeriodString();
+  const curService = document.getElementById('selectedService').value;
+  const dayNames = ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'];
 
-      const blob = new Blob([excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `Nobet_${curService}_${curMonth}.xls`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+  // 1. Satır: Gün Numaraları ve Sütun Başlıkları
+  const headerRow1 = ['Hekim Adı', 'Hedef (s)'];
+  // 2. Satır: Gün İsimleri
+  const headerRow2 = ['', ''];
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const meta = daysMeta[d - 1];
+    headerRow1.push(String(d));
+    headerRow2.push(dayNames[meta.dayOfWeek]);
+  }
+
+  headerRow1.push('Standart', 'Ek Mesai', 'Toplam', 'N. Sayısı');
+  headerRow2.push('', '', '', '');
+
+  const data = [headerRow1, headerRow2];
+
+  // Hekim Verilerini Doldur
+  doctors.forEach(doc => {
+    const stats = calculateDocStats(doc);
+    const shiftCount = countDoctorShifts(doc);
+    const row = [doc.name, doc.targetOvertime];
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const meta = daysMeta[d - 1];
+      const st = getEffectiveStatus(doc, d);
+      let label = meta.isWeekend ? '-' : '8';
+      if (meta.isHoliday) label = 'T';
+
+      if (st === 'N_FIXED' || st === 'N_AUTO') label = 'N';
+      else if (st === 'N_IZNI') label = 'N-İzni';
+      else if (st === 'OFF') label = 'X';
+
+      row.push(label);
     }
+
+    row.push(
+      `${stats.standardHours}s`,
+      `${stats.earnedOvertime}s (${stats.diff >= 0 ? '+' : ''}${stats.diff})`,
+      `${stats.totalHours}s`,
+      shiftCount
+    );
+    data.push(row);
+  });
+
+  // Alt Toplam Satırı (Günlük Nöbetçi)
+  const footerRow = ['Günlük Nöbetçi', ''];
+  for (let d = 1; d <= daysInMonth; d++) {
+    let count = 0;
+    doctors.forEach(doc => {
+      const s = getEffectiveStatus(doc, d);
+      if (s === 'N_FIXED' || s === 'N_AUTO') count++;
+    });
+    footerRow.push(count);
+  }
+  footerRow.push('', '', '', '');
+  data.push(footerRow);
+
+  // Tabloyu Oluştur
+  const ws = XLSX.utils.aoa_to_sheet(data);
+
+  // Sütun Genişlikleri
+  const colWidths = [{ wch: 18 }, { wch: 10 }];
+  for (let d = 1; d <= daysInMonth; d++) colWidths.push({ wch: 6 });
+  colWidths.push({ wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 10 });
+  ws['!cols'] = colWidths;
+
+  // Hücre Renklerini ve Kenarlıkları İşle
+  for (let R = 2; R < 2 + doctors.length; ++R) {
+    for (let C = 2; C < 2 + daysInMonth; ++C) {
+      const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+      const cell = ws[cellAddress];
+      if (!cell) continue;
+
+      const d = C - 1;
+      const meta = daysMeta[d - 1];
+      const val = cell.v;
+
+      let fill = null;
+      let fontColor = '64748B';
+      let isBold = false;
+
+      if (val === 'N') {
+        fill = { fgColor: { rgb: 'EF4444' } }; // Kırmızı Nöbet
+        fontColor = 'FFFFFF';
+        isBold = true;
+      } else if (val === 'N-İzni') {
+        fill = { fgColor: { rgb: 'FEF08A' } }; // Sarı N-İzni
+        fontColor = '854D0E';
+        isBold = true;
+      } else if (val === 'X') {
+        fill = { fgColor: { rgb: '1E293B' } }; // Siyah İzin
+        fontColor = 'FFFFFF';
+        isBold = true;
+      } else if (meta.isHoliday) {
+        fill = { fgColor: { rgb: 'FEE2E2' } }; // Tatil
+        fontColor = '991B1B';
+        isBold = true;
+      } else if (meta.isWeekend) {
+        fill = { fgColor: { rgb: 'F1F5F9' } }; // Hafta sonu
+      }
+
+      cell.s = {
+        alignment: { horizontal: 'center', vertical: 'center' },
+        font: { name: 'Calibri', sz: 10, bold: isBold, color: { rgb: fontColor } },
+        border: {
+          top: { style: 'thin', color: { rgb: 'CBD5E1' } },
+          bottom: { style: 'thin', color: { rgb: 'CBD5E1' } },
+          left: { style: 'thin', color: { rgb: 'CBD5E1' } },
+          right: { style: 'thin', color: { rgb: 'CBD5E1' } }
+        }
+      };
+
+      if (fill) cell.s.fill = fill;
+    }
+  }
+
+  // Çalışma Kitabını Oluştur ve Gerçek .xlsx Olarak İndir
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Nöbet Çizelgesi");
+  XLSX.writeFile(wb, `Nobet_${curService}_${curMonth}.xlsx`);
+}
   </script>
 </body>
 </html>
