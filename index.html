@@ -30,7 +30,7 @@
       transition: transform 0.05s ease-out;
     }
 
-    /* Özel Dropdown Menü Stili - Beyazlama Sorununa Kesin Çözüm */
+    /* Özel Dropdown Menü Stili - Beyazlama Karşıtı */
     .service-dropdown-item {
       color: #1e293b !important;
       background-color: #ffffff;
@@ -141,7 +141,7 @@
             </select>
           </div>
 
-          <!-- YENİ: BEYAZLAMA SORUNU OLMAYAN ÖZEL SERVİS MENÜSÜ -->
+          <!-- Beyazlama Sorunu Olmayan Servis Menüsü -->
           <div class="relative inline-block" id="serviceDropdownWrapper">
             <div class="flex items-center gap-1 bg-indigo-50/70 border border-indigo-200 rounded-lg px-2 py-1 cursor-pointer" onclick="toggleServiceDropdown(event)">
               <i class="fa-solid fa-stethoscope text-indigo-600 text-[10px]"></i>
@@ -150,7 +150,6 @@
                 onchange="onFilterChanged()" onfocus="openServiceDropdown(event)">
               <i class="fa-solid fa-chevron-down text-indigo-400 text-[9px] ml-0.5"></i>
             </div>
-            <!-- Açılır Menü Listesi -->
             <div id="serviceCustomMenu" class="hidden absolute left-0 mt-1 w-44 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden py-1">
               <div id="serviceCustomList"></div>
             </div>
@@ -192,12 +191,14 @@
             <i class="fa-solid fa-users text-slate-500"></i> Aktar
           </button>
 
+          <!-- ARŞİV BUTONU -->
           <button onclick="openArchiveModal()" class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 font-bold rounded-lg transition flex items-center gap-1.5" title="Geçmiş Kayıtlar & Snapshot Havuzu">
             <i class="fa-solid fa-box-archive text-amber-600"></i>
             <span>Arşiv</span>
             <span id="archiveCountBadge" class="bg-amber-200 text-amber-900 text-[10px] px-1 rounded-full font-bold">0</span>
           </button>
 
+          <!-- MANUEL KAYDET BUTONU -->
           <button onclick="saveCurrentMonth()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1.5" title="Listeyi ve Arşivi Onaylayıp Kaydet">
             <i class="fa-solid fa-floppy-disk text-xs"></i> Kaydet
           </button>
@@ -374,7 +375,6 @@
       });
     };
 
-    // ÖZEL SERVİS AÇILIR MENÜ KONTROLLERİ (Beyazlama Karşıtı)
     function refreshServiceOptions() {
       const savedServices = JSON.parse(localStorage.getItem('nobet_known_services') || '["Acil Servis", "Dahiliye", "Çocuk Cerrahisi", "Genel Cerrahi", "Anestezi", "Kardiyoloji"]');
       const listContainer = document.getElementById('serviceCustomList');
@@ -1345,6 +1345,7 @@
       }
     }
 
+    // TABLO RENDER (İSİM SÜTUNU DARALTILDI, SAĞ İSTATİSTİK SÜTUNLARI GENİŞLETİLDİ)
     function renderOnly() {
       const table = document.getElementById('rosterTable');
       if (!table) return;
@@ -1356,7 +1357,7 @@
       const dayNames = ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'];
 
       let html = `<thead class="bg-slate-50 sticky top-0 z-20 border-b"><tr>`;
-      html += `<th class="p-2 border text-left bg-slate-100 min-w-[140px] max-w-[140px]">Hekim Adı</th>`;
+      html += `<th class="p-2 border text-left bg-slate-100 w-[115px] min-w-[115px] max-w-[115px]">Hekim Adı</th>`;
       html += `<th class="p-1 border bg-amber-50 text-amber-900 w-12 min-w-[48px] max-w-[48px]">Hedef</th>`;
 
       for (let d = 1; d <= daysInMonth; d++) {
@@ -1370,10 +1371,10 @@
         </th>`;
       }
 
-      html += `<th class="p-2 border bg-blue-50 text-blue-900 w-12 min-w-[48px]">Standart</th>`;
-      html += `<th class="p-2 border bg-amber-100 text-amber-900 w-14 min-w-[56px]">Ek Mesai</th>`;
-      html += `<th class="p-2 border bg-emerald-50 text-emerald-900 w-12 min-w-[48px]">Toplam</th>`;
-      html += `<th class="p-2 border bg-purple-50 text-purple-900 w-12 min-w-[48px]" title="Toplam Nöbet Sayısı">N. Sayısı</th>`;
+      html += `<th class="p-2 border bg-blue-50 text-blue-900 w-[58px] min-w-[58px]">Standart</th>`;
+      html += `<th class="p-2 border bg-amber-100 text-amber-900 w-[70px] min-w-[70px]">Ek Mesai</th>`;
+      html += `<th class="p-2 border bg-emerald-50 text-emerald-900 w-[60px] min-w-[60px]">Toplam</th>`;
+      html += `<th class="p-2 border bg-purple-50 text-purple-900 w-[55px] min-w-[55px]" title="Toplam Nöbet Sayısı">N. Sayısı</th>`;
       html += `<th class="p-1 border bg-slate-100 w-6 min-w-[24px] no-print"></th>`;
       html += `</tr></thead><tbody>`;
 
@@ -1382,8 +1383,8 @@
         const shiftCount = countDoctorShifts(doc);
         html += `<tr>`;
         
-        html += `<td class="p-1 border text-left bg-white min-w-[140px] max-w-[140px]">
-          <input type="text" value="${escapeHtml(doc.name)}" class="w-full bg-transparent border-0 focus:ring-1 focus:ring-blue-500 rounded px-1.5 py-0.5 font-medium text-slate-800 text-xs" oninput="updateDoctorName('${doc.id}', this.value)" placeholder="İsim Girin">
+        html += `<td class="p-1 border text-left bg-white w-[115px] min-w-[115px] max-w-[115px]">
+          <input type="text" value="${escapeHtml(doc.name)}" class="w-full bg-transparent border-0 focus:ring-1 focus:ring-blue-500 rounded px-1 py-0.5 font-medium text-slate-800 text-xs" oninput="updateDoctorName('${doc.id}', this.value)" placeholder="İsim Girin">
         </td>`;
 
         html += `<td class="p-1 border bg-amber-50/30 w-12 min-w-[48px]">
@@ -1424,10 +1425,10 @@
           diffBadge = `<span class="text-[10px] text-rose-500 font-bold ml-0.5">(${stats.diff})</span>`;
         }
 
-        html += `<td class="p-1 border bg-blue-50/40 font-semibold w-12">${stats.standardHours}s</td>`;
-        html += `<td class="p-1 border bg-amber-50/60 font-bold text-amber-700 w-14">${stats.earnedOvertime}s ${diffBadge}</td>`;
-        html += `<td class="p-1 border bg-emerald-50/40 font-black text-emerald-700 w-12">${stats.totalHours}s</td>`;
-        html += `<td class="p-1 border bg-purple-50/50 font-bold text-purple-800 text-center w-12">${shiftCount}</td>`;
+        html += `<td class="p-1 border bg-blue-50/40 font-semibold w-[58px]">${stats.standardHours}s</td>`;
+        html += `<td class="p-1 border bg-amber-50/60 font-bold text-amber-700 w-[70px]">${stats.earnedOvertime}s ${diffBadge}</td>`;
+        html += `<td class="p-1 border bg-emerald-50/40 font-black text-emerald-700 w-[60px]">${stats.totalHours}s</td>`;
+        html += `<td class="p-1 border bg-purple-50/50 font-bold text-purple-800 text-center w-[55px]">${shiftCount}</td>`;
         
         html += `<td class="p-1 border bg-white text-center no-print w-6">
           <button onclick="deleteDoctor('${doc.id}')" class="text-slate-300 hover:text-red-500 font-bold px-1">&times;</button>
