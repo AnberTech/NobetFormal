@@ -8,7 +8,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    /* Sabit Hücre Renkleri ve Katı Genişlikler */
     .day-col {
       width: 32px !important;
       min-width: 32px !important;
@@ -31,7 +30,6 @@
       transition: transform 0.05s ease-out;
     }
 
-    /* PDF ve Yazdırmada Renkleri Kesinlikle Koru */
     @media print {
       * {
         -webkit-print-color-adjust: exact !important;
@@ -53,7 +51,7 @@
     <!-- Üst Bar ve Kontrol Bloğu -->
     <header class="bg-white rounded-xl shadow-sm border border-slate-200 p-2.5 space-y-2 no-print">
       
-      <!-- 1. Satır: Marka ve Üst Minimalist Butonlar -->
+      <!-- 1. Satır: Marka ve Üst Butonlar -->
       <div class="flex justify-between items-center border-b border-slate-100 pb-2">
         <div class="flex items-center gap-2">
           <div class="w-7 h-7 bg-blue-600 text-white rounded-lg flex items-center justify-center font-black text-sm shadow-sm shadow-blue-200">
@@ -70,7 +68,7 @@
           <!-- Zoom Araçları -->
           <div class="flex items-center bg-slate-50 border border-slate-200 rounded-lg p-0.5 text-slate-600 mr-1">
             <button onclick="changeZoom(-0.05)" class="w-6 h-6 hover:bg-white rounded flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold transition">-</button>
-            <span id="zoomLabel" class="font-bold text-[10px] min-w-[32px] text-center">--%</span>
+            <span id="zoomLabel" class="font-bold text-[10px] min-w-[34px] text-center">100%</span>
             <button onclick="changeZoom(0.05)" class="w-6 h-6 hover:bg-white rounded flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold transition">+</button>
             <button onclick="autoFitZoom()" class="px-2 py-0.5 hover:bg-white rounded text-[10px] font-bold text-blue-600 transition" title="Ekrana Tam Sığdır">Sığdır</button>
           </div>
@@ -167,9 +165,10 @@
             <i class="fa-solid fa-floppy-disk text-xs"></i> Kaydet
           </button>
 
+          <!-- NÖBETLERİ ÜRET BUTONU -->
           <button id="btnDistribute" onclick="distributeRoster()" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-xs rounded-lg shadow-md shadow-blue-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-blue-400/30">
             <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
-            <span>Nöbetleri Üret</span>
+            <span id="btnDistributeText">Nöbetleri Üret</span>
           </button>
 
           <button onclick="clearOnlyGenerated()" id="btnClearGenerated" class="hidden px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-medium rounded-lg transition" title="Sadece algoritmanın atadığı nöbetleri geri al">
@@ -187,7 +186,7 @@
       <span id="toastMessage">Değişiklikler başarıyla kaydedildi!</span>
     </div>
 
-    <!-- Tablo Alanı (Sabit Layout & Sıfır Titreme) -->
+    <!-- Tablo Alanı -->
     <div id="tableOuterWrapper" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto max-h-[76vh] relative">
       <div id="tableContainer">
         <table id="rosterTable" class="w-full border-collapse" style="table-layout: fixed;"></table>
@@ -307,10 +306,199 @@
 
     function applyZoom() {
       const container = document.getElementById('tableContainer');
-      container.style.transform = `scale(${currentZoom})`;       container.style.width = `${100 / currentZoom}%`;
-      document.getElementById('zoomLabel').innerText = `${Math.round(currentZoom * 100)}\%`;     }      function getSelectedPeriodString() {       return `${document.getElementById('selectYear').value}-${document.getElementById('selectMonth').value}`;     }      function onFilterChanged() {       isUserZoomed = false;       loadActiveRoster();     }      function getStorageKey(monthStr, serviceName) {       const srvClean = (serviceName \vert{}\vert{} 'Genel').trim().toLowerCase().replace(/\s+/g, '_');       return `nobet_roster_${monthStr}_${srvClean}`;     }      function refreshServiceOptions() {       const savedServices = JSON.parse(localStorage.getItem('nobet_known_services') \vert{}\vert{} '["Acil Servis", "Dahiliye", "Çocuk Cerrahisi", "Genel Cerrahi"]');       const datalist = document.getElementById('serviceOptions');       datalist.innerHTML = '';       savedServices.forEach(srv => {         const opt = document.createElement('option');         opt.value = srv;         datalist.appendChild(opt);       });     }      function registerServiceName(srv) {       if (!srv) return;       let saved = JSON.parse(localStorage.getItem('nobet_known_services') \vert{}\vert{} '["Acil Servis", "Dahiliye", "Çocuk Cerrahisi", "Genel Cerrahi"]');       if (!saved.includes(srv.trim())) {         saved.push(srv.trim());         localStorage.setItem('nobet_known_services', JSON.stringify(saved));         refreshServiceOptions();       }     }      function refreshDoctorAutocompletePool() {       const savedPool = JSON.parse(localStorage.getItem('nobet_doctor_pool') \vert{}\vert{} '[]');       const datalist = document.getElementById('doctorAutocompletePool');       datalist.innerHTML = '';       savedPool.forEach(name => {         const opt = document.createElement('option');         opt.value = name;         datalist.appendChild(opt);       });     }      function registerDoctorsToPool(nameList) {       let pool = JSON.parse(localStorage.getItem('nobet_doctor_pool') \vert{}\vert{} '[]');       let updated = false;       nameList.forEach(n => {         const trimName = n.trim();         if (trimName && !pool.includes(trimName)) {           pool.push(trimName);           updated = true;         }       });       if (updated) {         pool.sort();         localStorage.setItem('nobet_doctor_pool', JSON.stringify(pool));         refreshDoctorAutocompletePool();       }     }      function getPreviousMonthString(curMonthStr) {       const [y, m] = curMonthStr.split('-').map(Number);       const prevDate = new Date(y, m - 2, 1);       const py = prevDate.getFullYear();       const pm = String(prevDate.getMonth() + 1).padStart(2, '0');       return `${py}-${pm}`;     }      function getPreviousMonthTailShifts(docName) {       const curMonth = getSelectedPeriodString();       const curService = document.getElementById('selectedService').value;       const prevMonth = getPreviousMonthString(curMonth);       const raw = localStorage.getItem(getStorageKey(prevMonth, curService));       if (!raw) return { lastDayShift: false, secondLastDayShift: false };        try {         const parsed = JSON.parse(raw);         const prevDoc = parsed.doctors.find(d => d.name.trim().toLowerCase() === docName.trim().toLowerCase());         if (!prevDoc) return { lastDayShift: false, secondLastDayShift: false };          const [py, pm] = prevMonth.split('-').map(Number);         const prevTotalDays = new Date(py, pm, 0).getDate();         const prevGrid = parsed.grid[prevDoc.id] \vert{}\vert{} {};          const lastSt = prevGrid[prevTotalDays];         const secLastSt = prevGrid[prevTotalDays - 1];          return {           lastDayShift: (lastSt === 'N_FIXED' \vert{}\vert{} lastSt === 'N_AUTO'),           secondLastDayShift: (secLastSt === 'N_FIXED' \vert{}\vert{} secLastSt === 'N_AUTO')         };       } catch (e) {         return { lastDayShift: false, secondLastDayShift: false };       }     }      function showToast(msg) {       const toast = document.getElementById('saveToast');       document.getElementById('toastMessage').innerText = msg;       toast.classList.remove('hidden');       setTimeout(() => toast.classList.add('hidden'), 2500);     }      function shareLink() {       if (navigator.clipboard) {         navigator.clipboard.writeText(window.location.href);         showToast("Bağlantı panoya kopyalandı!");       } else {         alert("Bağlantı: " + window.location.href);       }     }      function saveCurrentMonth() {       const monthStr = getSelectedPeriodString();       const srvName = document.getElementById('selectedService').value;              registerServiceName(srvName);       registerDoctorsToPool(doctors.map(d => d.name));        const payload = {         doctors,         grid,         serviceName: srvName,         maxLimit: document.getElementById('maxShiftLimit').value,         lastDayRule: document.getElementById('lastDayShiftRule').value,         timestamp: Date.now()       };       localStorage.setItem(getStorageKey(monthStr, srvName), JSON.stringify(payload));       showToast("Değişiklikler başarıyla kaydedildi!");     }      function loadActiveRoster() {       const monthStr = getSelectedPeriodString();       const srvName = document.getElementById('selectedService').value;       const raw = localStorage.getItem(getStorageKey(monthStr, srvName));        if (raw) {         try {           const parsed = JSON.parse(raw);           doctors = parsed.doctors \vert{}\vert{} [];           grid = parsed.grid \vert{}\vert{} {};           if (parsed.maxLimit) document.getElementById('maxShiftLimit').value = parsed.maxLimit;           if (parsed.lastDayRule) document.getElementById('lastDayShiftRule').value = parsed.lastDayRule;           isGenerated = true;           updateButtons();         } catch (e) {           initDefaultDoctors(10);         }       } else {         const prevMonth = getPreviousMonthString(monthStr);         const prevRaw = localStorage.getItem(getStorageKey(prevMonth, srvName));         if (prevRaw) {           try {             const prevData = JSON.parse(prevRaw);             doctors = prevData.doctors.map(d => ({ id: 'd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), name: d.name, targetOvertime: d.targetOvertime }));             grid = {};             doctors.forEach(d => grid[d.id] = {});           } catch(e) { initDefaultDoctors(10); }         } else {           initDefaultDoctors(10);         }         isGenerated = false;         updateButtons();       }       initCalendar();     }      function copyPreviousMonthStaff() {       const curMonth = getSelectedPeriodString();       const curService = document.getElementById('selectedService').value;       const prevMonth = getPreviousMonthString(curMonth);       const prevRaw = localStorage.getItem(getStorageKey(prevMonth, curService));       if (!prevRaw) return alert(`${curService} servisine ait önceki ayda (${prevMonth}) kayıtlı arşiv bulunamadı.`);
+      if (container) {
+        container.style.transform = `scale(${currentZoom})`;
+        container.style.width = `${100 / currentZoom}%`;
+      }
+      const label = document.getElementById('zoomLabel');
+      if (label) {
+        label.innerText = `${Math.round(currentZoom * 100)}%`;
+      }
+    }
 
-      if (confirm(`Önceki ayın (${prevMonth})${curService} kadrosu bu aya aktarılsın mı?`)) {
+    function getSelectedPeriodString() {
+      return `${document.getElementById('selectYear').value}-${document.getElementById('selectMonth').value}`;
+    }
+
+    function onFilterChanged() {
+      isUserZoomed = false;
+      loadActiveRoster();
+    }
+
+    function getStorageKey(monthStr, serviceName) {
+      const srvClean = (serviceName || 'Genel').trim().toLowerCase().replace(/\s+/g, '_');
+      return `nobet_roster_${monthStr}_${srvClean}`;
+    }
+
+    function refreshServiceOptions() {
+      const savedServices = JSON.parse(localStorage.getItem('nobet_known_services') || '["Acil Servis", "Dahiliye", "Çocuk Cerrahisi", "Genel Cerrahi"]');
+      const datalist = document.getElementById('serviceOptions');
+      datalist.innerHTML = '';
+      savedServices.forEach(srv => {
+        const opt = document.createElement('option');
+        opt.value = srv;
+        datalist.appendChild(opt);
+      });
+    }
+
+    function registerServiceName(srv) {
+      if (!srv) return;
+      let saved = JSON.parse(localStorage.getItem('nobet_known_services') || '["Acil Servis", "Dahiliye", "Çocuk Cerrahisi", "Genel Cerrahi"]');
+      if (!saved.includes(srv.trim())) {
+        saved.push(srv.trim());
+        localStorage.setItem('nobet_known_services', JSON.stringify(saved));
+        refreshServiceOptions();
+      }
+    }
+
+    function refreshDoctorAutocompletePool() {
+      const savedPool = JSON.parse(localStorage.getItem('nobet_doctor_pool') || '[]');
+      const datalist = document.getElementById('doctorAutocompletePool');
+      datalist.innerHTML = '';
+      savedPool.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        datalist.appendChild(opt);
+      });
+    }
+
+    function registerDoctorsToPool(nameList) {
+      let pool = JSON.parse(localStorage.getItem('nobet_doctor_pool') || '[]');
+      let updated = false;
+      nameList.forEach(n => {
+        const trimName = n.trim();
+        if (trimName && !pool.includes(trimName)) {
+          pool.push(trimName);
+          updated = true;
+        }
+      });
+      if (updated) {
+        pool.sort();
+        localStorage.setItem('nobet_doctor_pool', JSON.stringify(pool));
+        refreshDoctorAutocompletePool();
+      }
+    }
+
+    function getPreviousMonthString(curMonthStr) {
+      const [y, m] = curMonthStr.split('-').map(Number);
+      const prevDate = new Date(y, m - 2, 1);
+      const py = prevDate.getFullYear();
+      const pm = String(prevDate.getMonth() + 1).padStart(2, '0');
+      return `${py}-${pm}`;
+    }
+
+    function getPreviousMonthTailShifts(docName) {
+      const curMonth = getSelectedPeriodString();
+      const curService = document.getElementById('selectedService').value;
+      const prevMonth = getPreviousMonthString(curMonth);
+      const raw = localStorage.getItem(getStorageKey(prevMonth, curService));
+      if (!raw) return { lastDayShift: false, secondLastDayShift: false };
+
+      try {
+        const parsed = JSON.parse(raw);
+        const prevDoc = parsed.doctors.find(d => d.name.trim().toLowerCase() === docName.trim().toLowerCase());
+        if (!prevDoc) return { lastDayShift: false, secondLastDayShift: false };
+
+        const [py, pm] = prevMonth.split('-').map(Number);
+        const prevTotalDays = new Date(py, pm, 0).getDate();
+        const prevGrid = parsed.grid[prevDoc.id] || {};
+
+        const lastSt = prevGrid[prevTotalDays];
+        const secLastSt = prevGrid[prevTotalDays - 1];
+
+        return {
+          lastDayShift: (lastSt === 'N_FIXED' || lastSt === 'N_AUTO'),
+          secondLastDayShift: (secLastSt === 'N_FIXED' || secLastSt === 'N_AUTO')
+        };
+      } catch (e) {
+        return { lastDayShift: false, secondLastDayShift: false };
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('saveToast');
+      document.getElementById('toastMessage').innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2500);
+    }
+
+    function shareLink() {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(window.location.href);
+        showToast("Bağlantı panoya kopyalandı!");
+      } else {
+        alert("Bağlantı: " + window.location.href);
+      }
+    }
+
+    function saveCurrentMonth() {
+      const monthStr = getSelectedPeriodString();
+      const srvName = document.getElementById('selectedService').value;
+      
+      registerServiceName(srvName);
+      registerDoctorsToPool(doctors.map(d => d.name));
+
+      const payload = {
+        doctors,
+        grid,
+        serviceName: srvName,
+        maxLimit: document.getElementById('maxShiftLimit').value,
+        lastDayRule: document.getElementById('lastDayShiftRule').value,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(getStorageKey(monthStr, srvName), JSON.stringify(payload));
+      showToast("Değişiklikler başarıyla kaydedildi!");
+    }
+
+    function loadActiveRoster() {
+      const monthStr = getSelectedPeriodString();
+      const srvName = document.getElementById('selectedService').value;
+      const raw = localStorage.getItem(getStorageKey(monthStr, srvName));
+
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          doctors = (parsed.doctors && parsed.doctors.length > 0) ? parsed.doctors : createDefaultDoctors(10);
+          grid = parsed.grid || {};
+          if (parsed.maxLimit) document.getElementById('maxShiftLimit').value = parsed.maxLimit;
+          if (parsed.lastDayRule) document.getElementById('lastDayShiftRule').value = parsed.lastDayRule;
+          isGenerated = true;
+          updateButtons();
+        } catch (e) {
+          doctors = createDefaultDoctors(10);
+          grid = {};
+        }
+      } else {
+        const prevMonth = getPreviousMonthString(monthStr);
+        const prevRaw = localStorage.getItem(getStorageKey(prevMonth, srvName));
+        if (prevRaw) {
+          try {
+            const prevData = JSON.parse(prevRaw);
+            doctors = prevData.doctors.map(d => ({ id: 'd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), name: d.name, targetOvertime: d.targetOvertime }));
+            grid = {};
+            doctors.forEach(d => grid[d.id] = {});
+          } catch(e) { 
+            doctors = createDefaultDoctors(10); 
+            grid = {};
+          }
+        } else {
+          doctors = createDefaultDoctors(10);
+          grid = {};
+        }
+        isGenerated = false;
+        updateButtons();
+      }
+      initCalendar();
+    }
+
+    function copyPreviousMonthStaff() {
+      const curMonth = getSelectedPeriodString();
+      const curService = document.getElementById('selectedService').value;
+      const prevMonth = getPreviousMonthString(curMonth);
+      const prevRaw = localStorage.getItem(getStorageKey(prevMonth, curService));
+      if (!prevRaw) return alert(`${curService} servisine ait önceki ayda (${prevMonth}) kayıtlı arşiv bulunamadı.`);
+
+      if (confirm(`Önceki ayın (${prevMonth}) ${curService} kadrosu bu aya aktarılsın mı?`)) {
         const prevData = JSON.parse(prevRaw);
         doctors = prevData.doctors.map(d => ({ id: 'd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), name: d.name, targetOvertime: d.targetOvertime }));
         grid = {};
@@ -319,14 +507,12 @@
       }
     }
 
-    function initDefaultDoctors(count) {
-      doctors = [];
-      grid = {};
+    function createDefaultDoctors(count) {
+      const list = [];
       for (let i = 1; i <= count; i++) {
-        const id = 'd_' + Date.now() + '_' + i;
-        doctors.push({ id, name: `Dr. Hekim ${i}`, targetOvertime: 80 });
-        grid[id] = {};
+        list.push({ id: 'd_' + Date.now() + '_' + i, name: `Dr. Hekim ${i}`, targetOvertime: 80 });
       }
+      return list;
     }
 
     function isHoliday(year, month, day) {
@@ -354,7 +540,8 @@
         daysMeta.push({ day: d, dayOfWeek, isWeekend, isHoliday: hol.holiday, holidayName: hol.name });
       }
 
-      document.getElementById('statWorkdays').innerText = `${workdays}`;       document.getElementById('statStandardHours').innerText = `${workdays * 8}s`;
+      document.getElementById('statWorkdays').innerText = `${workdays}`;
+      document.getElementById('statStandardHours').innerText = `${workdays * 8}s`;
 
       doctors.forEach(doc => {
         if (!grid[doc.id]) grid[doc.id] = {};
@@ -366,8 +553,8 @@
     }
 
     function addDoctorRow() {
-      const id = 'd_' + Date.now();
-      doctors.push({ id, name: ``, targetOvertime: 80 });
+      const id = 'd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+      doctors.push({ id, name: `Dr. Hekim ${doctors.length + 1}`, targetOvertime: 80 });
       grid[id] = {};
       for (let d = 1; d <= daysInMonth; d++) grid[id][d] = '';
       renderOnly();
@@ -465,7 +652,6 @@
       return '';
     }
 
-    // Tıklamada SIFIR TİTREME (Zoom tetiklenmez, sadece hücreler güncellenir)
     function toggleDay(docId, day) {
       const cur = grid[docId][day] || '';
 
@@ -512,16 +698,14 @@
     }
 
     function updateButtons() {
-      const btn = document.getElementById('btnDistribute');
+      const btnText = document.getElementById('btnDistributeText');
       const btnClear = document.getElementById('btnClearGenerated');
       if (isGenerated) {
-        btn.innerHTML = `<i class="fa-solid fa-arrows-rotate text-amber-300"></i> Yeniden Üret`;
-        btn.className = "px-4 py-1.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:to-purple-800 text-white font-black text-xs rounded-lg shadow-md shadow-purple-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-purple-400/30";
-        btnClear.classList.remove('hidden');
+        if (btnText) btnText.innerText = "Yeniden Üret (Farklı Dağıt)";
+        if (btnClear) btnClear.classList.remove('hidden');
       } else {
-        btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> Nöbetleri Üret`;
-        btn.className = "px-4 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-xs rounded-lg shadow-md shadow-blue-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-blue-400/30";
-        btnClear.classList.add('hidden');
+        if (btnText) btnText.innerText = "Nöbetleri Üret";
+        if (btnClear) btnClear.classList.add('hidden');
       }
     }
 
@@ -535,7 +719,7 @@
     }
 
     // =========================================================================
-    // YÜKSEK PERFORMANSLI DİNAMİK OPTİMİZASYON MOTORU
+    // YENİ ÇÖZÜCÜ: STOKASTİK (HER TIKLAMADA ALTERNATİF ÜRETEN) MOTOR
     // =========================================================================
     function distributeRoster() {
       if (doctors.length === 0) return alert("Lütfen önce hekim ekleyin.");
@@ -549,8 +733,13 @@
         }
       });
 
-      // 2. AŞAMA 1: SIFIR GÜN YASAĞI (Her gün en az 1 nöbetçi garanti edilir)
-      for (let d = 1; d <= daysInMonth; d++) {
+      // Rastgelelik için günlerin sırasını hafifçe karıştırarak tara (farklı çözümler keşfetsin)
+      let randomizedDays = [];
+      for (let d = 1; d <= daysInMonth; d++) randomizedDays.push(d);
+      randomizedDays.sort(() => Math.random() - 0.5);
+
+      // 2. AŞAMA 1: SIFIR GÜN YASAĞI (Her günde en az 1 nöbetçi garanti)
+      for (let d of randomizedDays) {
         const otVal = getOvertimeEarned(daysMeta[d - 1], d);
         let assigned = doctors.filter(doc => grid[doc.id][d] === 'N_FIXED' || grid[doc.id][d] === 'N_AUTO').map(doc => doc.id);
 
@@ -559,22 +748,26 @@
           if (candidates.length === 0) candidates = getEligibleCandidates(d, assigned, maxLimit, otVal, false);
 
           if (candidates.length > 0) {
+            // Küçük rastgele pertürbasyon (aynı ihtiyacı olanlar arasında alternatif seçsin)
             candidates.sort((a, b) => {
-              const needA = a.targetOvertime - calculateDocStats(a).earnedOvertime;
-              const needB = b.targetOvertime - calculateDocStats(b).earnedOvertime;
-              return needB - needA;
+              const scoreA = (a.targetOvertime - calculateDocStats(a).earnedOvertime) + (Math.random() * 4 - 2);
+              const scoreB = (b.targetOvertime - calculateDocStats(b).earnedOvertime) + (Math.random() * 4 - 2);
+              return scoreB - scoreA;
             });
             grid[candidates[0].id][d] = 'N_AUTO';
           }
         }
       }
 
-      // 3. AŞAMA 2: HEDEF SAATLERİ DOLDURMA (Açgözlü değil, hedef aralığına göre nokta atışı)
-      let sortedDocs = [...doctors].sort((a, b) => b.targetOvertime - a.targetOvertime);
+      // 3. AŞAMA 2: HEDEF SAATLERİ DOLDURMA (Rastgele varyasyonlarla hedefleri tuttur)
+      let sortedDocs = [...doctors].sort((a, b) => {
+        const diff = (b.targetOvertime - calculateDocStats(b).earnedOvertime) - (a.targetOvertime - calculateDocStats(a).earnedOvertime);
+        return diff !== 0 ? diff : (Math.random() - 0.5);
+      });
 
       for (let doc of sortedDocs) {
         let attempts = 0;
-        while (attempts < 25) {
+        while (attempts < 30) {
           attempts++;
           let curStats = calculateDocStats(doc);
           let missingHours = doc.targetOvertime - curStats.earnedOvertime;
@@ -587,7 +780,7 @@
             const otVal = getOvertimeEarned(daysMeta[d - 1], d);
             let assigned = doctors.filter(dc => grid[dc.id][d] === 'N_FIXED' || grid[dc.id][d] === 'N_AUTO').map(dc => dc.id);
 
-            // Kural: Hedef + 8'i aşamaz
+            // Kural: Hedef + 8'i asla aşamaz
             if (curStats.earnedOvertime + otVal <= doc.targetOvertime + 8) {
               if (getEligibleCandidates(d, assigned, maxLimit, otVal, false).some(c => c.id === doc.id)) {
                 feasibleDays.push({ day: d, otVal, assignedCount: assigned.length });
@@ -597,25 +790,29 @@
 
           if (feasibleDays.length === 0) break;
 
-          // Eksik saate en yakın olanı ve klinikte en az nöbetçi olan günü öncelikle seç
+          // Eksik saate en yakın olanı seçerken eşitliklerde rastgelelik ekle
           feasibleDays.sort((a, b) => {
             const diffA = Math.abs(missingHours - a.otVal);
             const diffB = Math.abs(missingHours - b.otVal);
             if (diffA !== diffB) return diffA - diffB;
-            return a.assignedCount - b.assignedCount;
+            return (a.assignedCount - b.assignedCount) + (Math.random() * 0.8 - 0.4);
           });
 
           grid[doc.id][feasibleDays[0].day] = 'N_AUTO';
         }
       }
 
-      // 4. AŞAMA 3: TAKAS & ONARIM (SWAP ENGINE)
-      for (let iter = 0; iter < 12; iter++) {
+      // 4. AŞAMA 3: DİNAMİK TAKAS & İYİLEŞTİRME
+      for (let iter = 0; iter < 15; iter++) {
         let deficientDoc = doctors.find(d => (d.targetOvertime - calculateDocStats(d).earnedOvertime) > 0 && countDoctorShifts(d) < maxLimit);
         if (!deficientDoc) break;
 
         let swapped = false;
-        for (let d = 1; d <= daysInMonth; d++) {
+        let dayIndices = [];
+        for (let d = 1; d <= daysInMonth; d++) dayIndices.push(d);
+        dayIndices.sort(() => Math.random() - 0.5);
+
+        for (let d of dayIndices) {
           const otVal = getOvertimeEarned(daysMeta[d - 1], d);
           if (grid[deficientDoc.id][d] !== '') continue;
 
@@ -744,9 +941,9 @@
       };
     }
 
-    // YALNIZCA HTML RENDER (Zoom hesaplamaz, ekranda titreme yapmaz)
     function renderOnly() {
       const table = document.getElementById('rosterTable');
+      if (!table) return;
       if (doctors.length === 0) {
         table.innerHTML = `<tr><td class="p-8 text-slate-400">Liste boş. "Hekim Ekle" veya "Toplu İsim" butonuna tıklayın.</td></tr>`;
         return;
@@ -852,23 +1049,19 @@
       table.innerHTML = html;
     }
 
-    // SAYFA AÇILDIĞINDA VEYA FİLTRE DEĞİŞTİĞİNDE AUTO-FIT'Lİ RENDER
     function renderWithAutoFit() {
       renderOnly();
-      if (!isUserZoomed) {
-        setTimeout(autoFitZoom, 40);
-      } else {
-        applyZoom();
-      }
+      applyZoom();
+      setTimeout(() => {
+        if (!isUserZoomed) autoFitZoom();
+      }, 50);
     }
 
-    // RENKLİ EXCEL DIŞA AKTARMA (HTML XML Raporu - Birebir Renkleri Taşır)
     function exportToStyledExcel() {
       const curMonth = getSelectedPeriodString();
       const curService = document.getElementById('selectedService').value;
       const table = document.getElementById('rosterTable');
       
-      // Renkleri doğrudan Excel HTML formatı ile dışa aktarır (Arka plan renkleri aynen korunur)
       const excelHtml = `
         <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
         <head>
