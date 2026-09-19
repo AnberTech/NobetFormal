@@ -46,13 +46,44 @@
       color: #ffffff !important;
     }
 
+    /* Zıplayan Top Animasyonu */
+    @keyframes bounceBall {
+      0%, 100% {
+        transform: translateY(0) scale(1.15, 0.85);
+        animation-timing-function: cubic-bezier(0.2, 0.8, 0.4, 1);
+      }
+      50% {
+        transform: translateY(-45px) scale(0.9, 1.1);
+        animation-timing-function: cubic-bezier(0.8, 0.2, 1, 0.4);
+      }
+    }
+
+    @keyframes shadowPulse {
+      0%, 100% {
+        transform: scale(1.2);
+        opacity: 0.6;
+      }
+      50% {
+        transform: scale(0.6);
+        opacity: 0.2;
+      }
+    }
+
+    .bouncing-ball {
+      animation: bounceBall 0.6s infinite alternate;
+    }
+
+    .ball-shadow {
+      animation: shadowPulse 0.6s infinite alternate;
+    }
+
     @media print {
       * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
       body { background: white !important; padding: 0 !important; font-size: 8px !important; }
-      header, .no-print, #warningPanel, #pasteModal, #archiveModal { display: none !important; }
+      header, .no-print, #warningPanel, #pasteModal, #archiveModal, #optimizingOverlay { display: none !important; }
       #tableOuterWrapper { max-height: none !important; overflow: visible !important; border: none !important; }
       #tableContainer { transform: scale(1) !important; width: 100% !important; }
       table { width: 100% !important; border-collapse: collapse !important; border: 1px solid #94a3b8 !important; }
@@ -92,17 +123,17 @@
         <div class="flex items-center bg-slate-50 border border-slate-300/80 rounded-lg p-0.5 shadow-sm">
           <span class="text-[9px] font-bold text-slate-400 uppercase px-1.5 hidden md:inline">Kadro:</span>
           
-          <button onclick="addDoctorRow()" class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1 shadow-2xs" title="Tek yeni hekim satırı ekle">
+          <button onclick="addDoctorRow()" class="lockable-ui px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1 shadow-2xs" title="Tek yeni hekim satırı ekle">
             <i class="fa-solid fa-plus text-blue-600"></i>
             <span>Kişi Ekle</span>
           </button>
 
-          <button onclick="copyPreviousMonthStaff()" class="px-2.5 py-1 hover:bg-white text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1" title="Önceki aydan hekim kadrosunu kopyala">
+          <button onclick="copyPreviousMonthStaff()" class="lockable-ui px-2.5 py-1 hover:bg-white text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1" title="Önceki aydan hekim kadrosunu kopyala">
             <i class="fa-solid fa-users text-indigo-600"></i>
             <span>Kişileri Aktar</span>
           </button>
 
-          <button onclick="openPasteModal()" class="px-2.5 py-1 hover:bg-white text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1" title="Excel'den isim ve hedef saatleri toplu yapıştır">
+          <button onclick="openPasteModal()" class="lockable-ui px-2.5 py-1 hover:bg-white text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1" title="Excel'den isim ve hedef saatleri toplu yapıştır">
             <i class="fa-solid fa-clipboard-list text-emerald-600"></i>
             <span>Toplu Gir</span>
           </button>
@@ -114,35 +145,35 @@
 
           <!-- Zoom Araçları -->
           <div class="flex items-center bg-slate-50 border border-slate-200 rounded-lg p-0.5 text-slate-600 mr-1">
-            <button onclick="changeZoom(-0.05)" class="w-6 h-6 hover:bg-white rounded flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold transition">-</button>
+            <button onclick="changeZoom(-0.05)" class="lockable-ui w-6 h-6 hover:bg-white rounded flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold transition">-</button>
             <span id="zoomLabel" class="font-bold text-[10px] min-w-[34px] text-center">100%</span>
-            <button onclick="changeZoom(0.05)" class="w-6 h-6 hover:bg-white rounded flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold transition">+</button>
-            <button onclick="autoFitZoom()" class="px-2 py-0.5 hover:bg-white rounded text-[10px] font-bold text-blue-600 transition" title="Ekrana Tam Sığdır">Sığdır</button>
+            <button onclick="changeZoom(0.05)" class="lockable-ui w-6 h-6 hover:bg-white rounded flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold transition">+</button>
+            <button onclick="autoFitZoom()" class="lockable-ui px-2 py-0.5 hover:bg-white rounded text-[10px] font-bold text-blue-600 transition" title="Ekrana Tam Sığdır">Sığdır</button>
           </div>
 
           <!-- ARŞİV BUTONU -->
-          <button onclick="openArchiveModal()" class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 font-bold rounded-lg transition flex items-center gap-1.5 shadow-2xs" title="Geçmiş Kayıtlar & Snapshot Havuzu">
+          <button onclick="openArchiveModal()" class="lockable-ui px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 font-bold rounded-lg transition flex items-center gap-1.5 shadow-2xs" title="Geçmiş Kayıtlar & Snapshot Havuzu">
             <i class="fa-solid fa-box-archive text-amber-600"></i>
             <span>Arşiv</span>
             <span id="archiveCountBadge" class="bg-amber-200 text-amber-900 text-[10px] px-1 rounded-full font-bold">0</span>
           </button>
 
           <!-- MANUEL KAYDET BUTONU -->
-          <button onclick="saveCurrentMonth()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1.5" title="Bu listeyi tarayıcınızın yerel hafızasına (Local Storage) kalıcı olarak kaydeder ve arşive ekler">
+          <button onclick="saveCurrentMonth()" class="lockable-ui px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1.5" title="Bu listeyi tarayıcınızın yerel hafızasına (Local Storage) kalıcı olarak kaydeder ve arşive ekler">
             <i class="fa-solid fa-floppy-disk text-xs"></i>
             <span>Kaydet</span>
           </button>
 
-          <button onclick="exportStateBackup()" class="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-medium rounded-lg transition" title="Veritabanı Yedeği Al (JSON İndir)">
+          <button onclick="exportStateBackup()" class="lockable-ui px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-medium rounded-lg transition" title="Veritabanı Yedeği Al (JSON İndir)">
             <i class="fa-solid fa-download text-slate-500"></i>
           </button>
 
-          <button onclick="window.print()" class="px-2.5 py-1.5 bg-slate-50 hover:bg-rose-50 hover:text-rose-600 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Renkli PDF Çıktısı Al">
+          <button onclick="window.print()" class="lockable-ui px-2.5 py-1.5 bg-slate-50 hover:bg-rose-50 hover:text-rose-600 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Renkli PDF Çıktısı Al">
             <i class="fa-solid fa-file-pdf text-rose-500"></i>
             <span class="hidden sm:inline">PDF</span>
           </button>
           
-          <button onclick="exportToStyledExcel()" class="px-2.5 py-1.5 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Renkli Excel Olarak İndir (.xlsx)">
+          <button onclick="exportToStyledExcel()" class="lockable-ui px-2.5 py-1.5 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Renkli Excel Olarak İndir (.xlsx)">
             <i class="fa-solid fa-file-excel text-emerald-600"></i>
             <span class="hidden sm:inline">Excel</span>
           </button>
@@ -157,14 +188,14 @@
           
           <!-- Yıl / Ay -->
           <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
-            <select id="selectYear" class="bg-transparent font-bold text-slate-800 text-xs focus:outline-none cursor-pointer" onchange="onFilterChanged()">
+            <select id="selectYear" class="lockable-ui bg-transparent font-bold text-slate-800 text-xs focus:outline-none cursor-pointer" onchange="onFilterChanged()">
               <option value="2025">2025</option>
               <option value="2026" selected>2026</option>
               <option value="2027">2027</option>
               <option value="2028">2028</option>
             </select>
             <span class="text-slate-300">/</span>
-            <select id="selectMonth" class="bg-transparent font-bold text-slate-800 text-xs focus:outline-none cursor-pointer" onchange="onFilterChanged()">
+            <select id="selectMonth" class="lockable-ui bg-transparent font-bold text-slate-800 text-xs focus:outline-none cursor-pointer" onchange="onFilterChanged()">
               <option value="01">Ocak</option>
               <option value="02">Şubat</option>
               <option value="03">Mart</option>
@@ -182,7 +213,7 @@
 
           <!-- Servis Seçici (Beyazlama Karşıtı Menü) -->
           <div class="relative inline-block" id="serviceDropdownWrapper">
-            <div class="flex items-center gap-1 bg-indigo-50/70 border border-indigo-200 rounded-lg px-2 py-1 cursor-pointer" onclick="toggleServiceDropdown(event)">
+            <div class="lockable-ui flex items-center gap-1 bg-indigo-50/70 border border-indigo-200 rounded-lg px-2 py-1 cursor-pointer" onclick="toggleServiceDropdown(event)">
               <i class="fa-solid fa-stethoscope text-indigo-600 text-[10px]"></i>
               <input type="text" id="selectedService" value="Acil Servis" placeholder="Servis..." 
                 class="bg-transparent font-bold text-indigo-950 text-xs w-24 focus:outline-none cursor-pointer" 
@@ -197,7 +228,7 @@
           <!-- Ay Sonu Kuralı -->
           <div class="flex items-center gap-1 bg-amber-50/60 border border-amber-200 rounded-lg px-2 py-1" title="Ay sonu nöbet saati katsayısı">
             <span class="text-[10px] font-bold text-amber-800">Ay Sonu:</span>
-            <select id="lastDayShiftRule" class="bg-transparent font-bold text-amber-900 text-xs focus:outline-none cursor-pointer" onchange="renderOnly()">
+            <select id="lastDayShiftRule" class="lockable-ui bg-transparent font-bold text-amber-900 text-xs focus:outline-none cursor-pointer" onchange="renderOnly()">
               <option value="auto">Oto</option>
               <option value="16" selected>16s</option>
               <option value="24">24s</option>
@@ -208,7 +239,7 @@
           <!-- Maks Nöbet Sınırı -->
           <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1" title="Bir hekime yazılabilecek azami nöbet sayısı">
             <span class="text-[10px] font-bold text-blue-600">Maks. Nöbet:</span>
-            <input type="number" id="maxShiftLimit" value="8" min="1" max="15" class="w-8 text-center font-bold bg-white border border-blue-200 rounded text-xs text-blue-700 py-0.5">
+            <input type="number" id="maxShiftLimit" value="8" min="1" max="15" class="lockable-ui w-8 text-center font-bold bg-white border border-blue-200 rounded text-xs text-blue-700 py-0.5">
           </div>
 
           <!-- Gün / Mesai İstatistiği -->
@@ -223,26 +254,26 @@
         <!-- Sağ: Süre Seçimi ve Nöbet Üretici Butonu -->
         <div class="flex items-center gap-1.5 ml-auto">
           
-          <!-- OPTİMİZASYON SÜRESİ SEÇİCİ -->
+          <!-- OPTİMİZASYON SÜRESİ SEÇİCİ (5, 10, 15, 20, 30 sn) -->
           <div class="flex items-center gap-1 bg-indigo-50 border border-indigo-200 rounded-lg px-2 py-1" title="Algoritmanın en iyi olasılığı aramak için harcayacağı süre">
             <i class="fa-solid fa-stopwatch text-indigo-600 text-[11px]"></i>
             <span class="text-[10px] font-bold text-indigo-900">Süre:</span>
-            <select id="selectOptimizationTime" class="bg-transparent font-black text-indigo-700 text-xs focus:outline-none cursor-pointer">
+            <select id="selectOptimizationTime" class="lockable-ui bg-transparent font-black text-indigo-700 text-xs focus:outline-none cursor-pointer">
+              <option value="5">5 sn</option>
               <option value="10">10 sn</option>
+              <option value="15" selected>15 sn</option>
               <option value="20">20 sn</option>
-              <option value="30" selected>30 sn</option>
-              <option value="60">60 sn (1 dk)</option>
-              <option value="120">120 sn (2 dk)</option>
+              <option value="30">30 sn</option>
             </select>
           </div>
 
-          <!-- NÖBETLERİ ÜRET BUTONU (CANLI SAYAÇLI) -->
+          <!-- NÖBETLERİ ÜRET BUTONU -->
           <button id="btnDistribute" onclick="startTimedOptimization()" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-xs rounded-lg shadow-md shadow-blue-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-blue-400/30">
             <i id="btnDistributeIcon" class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
             <span id="btnDistributeText">Nöbetleri Üret</span>
           </button>
 
-          <button onclick="clearOnlyGenerated()" id="btnClearGenerated" class="hidden px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-medium rounded-lg transition" title="Sadece algoritmanın atadığı nöbetleri geri al">
+          <button onclick="clearOnlyGenerated()" id="btnClearGenerated" class="lockable-ui hidden px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-medium rounded-lg transition" title="Sadece algoritmanın atadığı nöbetleri geri al">
             <i class="fa-solid fa-rotate-left"></i>
           </button>
         </div>
@@ -255,6 +286,41 @@
     <div id="saveToast" class="hidden fixed top-4 right-4 bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-xl z-50 text-xs font-bold flex items-center gap-2">
       <i class="fa-solid fa-circle-check text-sm"></i>
       <span id="toastMessage">Değişiklikler başarıyla kaydedildi!</span>
+    </div>
+
+    <!-- ZIPLAYAN TOP & OPTİMİZASYON EKRAN MODALI -->
+    <div id="optimizingOverlay" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-2xl p-6 shadow-2xl flex flex-col items-center justify-center space-y-4 max-w-xs w-full text-center border border-slate-100">
+        
+        <!-- Zıplayan Top Sahnesi -->
+        <div class="h-20 w-24 flex flex-col items-center justify-end relative">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-500 to-amber-300 shadow-md shadow-indigo-300 bouncing-ball flex items-center justify-center text-white text-xs font-black">
+            <i class="fa-solid fa-wand-magic-sparkles text-[10px] text-amber-200"></i>
+          </div>
+          <div class="w-10 h-2 bg-slate-300 rounded-full ball-shadow mt-1"></div>
+        </div>
+
+        <div class="space-y-1">
+          <h4 class="font-black text-slate-900 text-sm tracking-tight">En İyi Olasılık Aranıyor...</h4>
+          <p class="text-[11px] text-slate-500 leading-snug">Hedef saat sapması en düşük adil liste hesaplanıyor.</p>
+        </div>
+
+        <!-- Canlı İstatistik Göstergeleri -->
+        <div class="w-full bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 grid grid-cols-2 gap-2 text-[11px]">
+          <div class="text-left border-r border-slate-200 pr-1">
+            <div class="text-slate-400 text-[9px] uppercase font-bold">Kalan Süre</div>
+            <div id="overlayCountdown" class="font-mono font-black text-indigo-700 text-sm">-- sn</div>
+          </div>
+          <div class="text-left pl-1">
+            <div class="text-slate-400 text-[9px] uppercase font-bold">Taranan Liste</div>
+            <div id="overlayListCount" class="font-mono font-black text-emerald-600 text-sm">0</div>
+          </div>
+        </div>
+
+        <div class="text-[10px] text-slate-400 italic">
+          Hedef saat farkları 0'a en yakın liste seçilecek...
+        </div>
+      </div>
     </div>
 
     <!-- Tablo Alanı -->
@@ -278,7 +344,7 @@
       <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-800 border border-red-950 inline-block"></span> <strong>🔒 N (Kilitli):</strong> Sabit nöbet</div>
       <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-slate-900 inline-block"></span> <strong>🔒 X (Kilitli):</strong> İzin / Rapor</div>
       <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-500 inline-block"></span> <strong>N (Oto):</strong> Algoritmanın ürettiği nöbet</div>
-      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-yellow-200 border border-yellow-400 inline-block"></span> <strong>N-İzni:</strong> Nöbet ertesi dinlenme</div>
+      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-yellow-200 border border-yellow-400 inline-block"></span> <strong>N.E.:</strong> Nöbet ertesi dinlenme</div>
       <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-100 border border-red-300 inline-block"></span> <strong>Kırmızı Sütun:</strong> Resmi Tatil (+24 Saat)</div>
     </div>
   </div>
@@ -425,12 +491,14 @@
 
     function toggleServiceDropdown(e) {
       if (e) e.stopPropagation();
+      if (isOptimizing) return;
       const menu = document.getElementById('serviceCustomMenu');
       menu.classList.toggle('hidden');
     }
 
     function openServiceDropdown(e) {
       if (e) e.stopPropagation();
+      if (isOptimizing) return;
       document.getElementById('serviceCustomMenu').classList.remove('hidden');
     }
 
@@ -967,6 +1035,7 @@
     }
 
     function toggleDay(docId, day) {
+      if (isOptimizing) return;
       const cur = grid[docId][day] || '';
 
       if (cur === '' || cur === 'N_AUTO') {
@@ -1071,25 +1140,47 @@
     }
 
     // =========================================================================
-    // ZAMAN AYARLI ASENKRON OPTİMİZASYON MOTORU (TIME-BUDGETED OPTIMIZER)
+    // SÜRE AYARLI ASENKRON ÇÖZÜCÜ (SAAT SAPMASINI SIFIRA İNDİREN MOTOR)
     // =========================================================================
     let isOptimizing = false;
+
+    function setUILocked(locked) {
+      const lockables = document.querySelectorAll('.lockable-ui');
+      lockables.forEach(el => {
+        el.disabled = locked;
+        if (locked) {
+          el.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+        } else {
+          el.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+        }
+      });
+
+      const tableWrapper = document.getElementById('tableOuterWrapper');
+      if (locked) tableWrapper.classList.add('pointer-events-none', 'opacity-60');
+      else tableWrapper.classList.remove('pointer-events-none', 'opacity-60');
+    }
 
     function startTimedOptimization() {
       if (isOptimizing) return;
       if (doctors.length === 0) return alert("Lütfen önce hekim ekleyin.");
 
-      const allocatedSeconds = parseInt(document.getElementById('selectOptimizationTime').value) || 30;
+      const allocatedSeconds = parseInt(document.getElementById('selectOptimizationTime').value) || 15;
       const maxLimit = parseInt(document.getElementById('maxShiftLimit').value) || 8;
       
       const btn = document.getElementById('btnDistribute');
       const btnText = document.getElementById('btnDistributeText');
       const btnIcon = document.getElementById('btnDistributeIcon');
+      const overlay = document.getElementById('optimizingOverlay');
+      const countdownEl = document.getElementById('overlayCountdown');
+      const listCountEl = document.getElementById('overlayListCount');
 
       isOptimizing = true;
       btn.disabled = true;
-      btn.classList.add('opacity-80', 'cursor-not-allowed');
+      btn.classList.add('opacity-75', 'cursor-not-allowed');
       btnIcon.className = "fa-solid fa-spinner fa-spin text-amber-300";
+
+      setUILocked(true);
+      overlay.classList.remove('hidden');
 
       let baseGrid = {};
       doctors.forEach(doc => {
@@ -1110,9 +1201,11 @@
       function step() {
         const now = Date.now();
         const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
-        btnText.innerText = `Optimizasyon: ${remaining}s (${iterationsCount} liste)`;
+        
+        btnText.innerText = `Aranıyor: ${remaining}s`;
+        countdownEl.innerText = `${remaining} sn`;
+        listCountEl.innerText = `${iterationsCount}`;
 
-        // Tek frame'de tarayıcıyı dondurmadan küçük bir parti (batch) çözüm üret
         const batchStart = Date.now();
         while (Date.now() - batchStart < 25 && Date.now() < endTime) {
           iterationsCount++;
@@ -1131,19 +1224,25 @@
                 globalBestCost = cost;
                 globalBestSolution = trialGrid;
                 globalBestSeed = trialSeed;
+
+                // MÜKEMMEL ÇÖZÜM: Bütün hekimlerin farkı tam 0 olduysa erken tamamla
+                if (cost === 0) {
+                  break;
+                }
               }
             }
           }
         }
 
-        if (Date.now() < endTime) {
-          setTimeout(step, 10);
-        } else {
-          // SÜRE DOLDU: En iyi listeyi uygula
+        // Eğer tam 0 sapmalı mükemmel liste bulunduysa süreyi beklemeden bitir
+        if (globalBestCost === 0 || Date.now() >= endTime) {
           isOptimizing = false;
           btn.disabled = false;
-          btn.classList.remove('opacity-80', 'cursor-not-allowed');
+          btn.classList.remove('opacity-75', 'cursor-not-allowed');
           btnIcon.className = "fa-solid fa-wand-magic-sparkles text-amber-300";
+
+          overlay.classList.add('hidden');
+          setUILocked(false);
 
           if (globalBestSolution) {
             grid = globalBestSolution;
@@ -1153,9 +1252,9 @@
             updateButtons();
             renderOnly();
             runIndependentValidation();
-            showToast(`${allocatedSeconds} saniyede ${iterationsCount} liste tarandı, en optimal çözüm uygulandı!`);
+            const note = globalBestCost === 0 ? "Mükemmel sıfır sapmalı liste bulundu!" : "En adil ve hedeflere en yakın çizelge uygulandı!";
+            showToast(`${iterationsCount} alternatif tarandı. ${note}`);
           } else {
-            // Hiç valid bulunamazsa son fallback
             let fallbackGrid = JSON.parse(JSON.stringify(baseGrid));
             constructFeasibleRoster(fallbackGrid, maxLimit, Math.random, true);
             grid = fallbackGrid;
@@ -1165,6 +1264,8 @@
             runIndependentValidation();
             showToast("Belirtilen sürede tam geçerli çözüm arandı, en yakın liste hazırlandı.");
           }
+        } else {
+          setTimeout(step, 8);
         }
       }
 
@@ -1246,7 +1347,7 @@
     function scoreCandidateChoice(doc, day, otVal, workGrid) {
       let stats = calculateDocStats(doc, workGrid);
       let missing = doc.targetOvertime - stats.earnedOvertime;
-      let score = (missing > 0) ? (missing - Math.abs(missing - otVal)) : -50;
+      let score = (missing > 0) ? (missing - Math.abs(missing - otVal)) : -100;
 
       if (day + 1 <= daysInMonth && getOvertimeEarned(daysMeta[day], day + 1) >= 16) score -= 10;
       if (day + 2 <= daysInMonth && getOvertimeEarned(daysMeta[day + 1], day + 2) >= 16) score -= 8;
@@ -1254,30 +1355,39 @@
       return score;
     }
 
+    // SAAT FARKLARINI (EKSİ / ARTI) SIFIRA İNDİREN YEREL ARAMA
     function refineRosterLocally(workGrid, maxLimit, rng) {
-      for (let step = 0; step < 20; step++) {
-        let needy = doctors.find(d => (d.targetOvertime - calculateDocStats(d, workGrid).earnedOvertime) > 0 && countDoctorShifts(d, workGrid) < maxLimit);
-        if (!needy) break;
+      // 1. Fazla Nöbetleri Eksik Saati Olanlara Devret (Move & Swap)
+      for (let step = 0; step < 30; step++) {
+        let needyDocs = doctors.filter(d => (d.targetOvertime - calculateDocStats(d, workGrid).earnedOvertime) > 0 && countDoctorShifts(d, workGrid) < maxLimit);
+        let surplusDocs = doctors.filter(d => (calculateDocStats(d, workGrid).earnedOvertime - d.targetOvertime) > 0);
+
+        if (needyDocs.length === 0 || surplusDocs.length === 0) break;
+
+        let needy = needyDocs[Math.floor(rng() * needyDocs.length)];
+        let surplus = surplusDocs[Math.floor(rng() * surplusDocs.length)];
 
         for (let d = 1; d <= daysInMonth; d++) {
-          const otVal = getOvertimeEarned(daysMeta[d - 1], d);
-          if (workGrid[needy.id][d] !== '') continue;
-
-          let candidateToGive = doctors.find(other => workGrid[other.id][d] === 'N_AUTO');
-          if (candidateToGive) {
+          if (workGrid[surplus.id][d] === 'N_AUTO' && workGrid[needy.id][d] === '') {
+            const otVal = getOvertimeEarned(daysMeta[d - 1], d);
             let assigned = doctors.filter(dc => workGrid[dc.id][d] === 'N_FIXED' || workGrid[dc.id][d] === 'N_AUTO').map(dc => dc.id);
             let curNeedyStats = calculateDocStats(needy, workGrid);
             
             if (curNeedyStats.earnedOvertime + otVal <= needy.targetOvertime + 8) {
-              if (getEligibleCandidates(d, assigned.filter(id => id !== candidateToGive.id), maxLimit, otVal, false, workGrid).some(c => c.id === needy.id)) {
-                workGrid[candidateToGive.id][d] = '';
+              if (getEligibleCandidates(d, assigned.filter(id => id !== surplus.id), maxLimit, otVal, false, workGrid).some(c => c.id === needy.id)) {
+                // Deneme Transferi
+                workGrid[surplus.id][d] = '';
                 workGrid[needy.id][d] = 'N_AUTO';
 
-                if (calculateDocStats(candidateToGive, workGrid).earnedOvertime >= candidateToGive.targetOvertime) {
-                  break;
+                let oldCost = Math.abs(calculateDocStats(surplus, workGrid).diff + otVal) + Math.abs(calculateDocStats(needy, workGrid).diff - otVal);
+                let newCost = Math.abs(calculateDocStats(surplus, workGrid).diff) + Math.abs(calculateDocStats(needy, workGrid).diff);
+
+                if (newCost <= oldCost) {
+                  break; // İyileşti, devir onaylandı
                 } else {
+                  // Geri al
                   workGrid[needy.id][d] = '';
-                  workGrid[candidateToGive.id][d] = 'N_AUTO';
+                  workGrid[surplus.id][d] = 'N_AUTO';
                 }
               }
             }
@@ -1285,6 +1395,7 @@
         }
       }
 
+      // 2. Ağır Gün Dengesi (Cumartesi Dağılımını Eşitle)
       let doctorsWithSaturdays = [...doctors].sort((a, b) => calculateDocStats(b, workGrid).saturdayCount - calculateDocStats(a, workGrid).saturdayCount);
       if (doctorsWithSaturdays.length >= 2) {
         let maxSatDoc = doctorsWithSaturdays[0];
@@ -1305,20 +1416,27 @@
       }
     }
 
+    // EN İYİ LİSTE KALİTE SKORU (HEDEFE SIFIR SAPMA MERKEZLİ)
     function evaluateQualityCost(workGrid) {
-      let targetDeviation = 0;
+      let targetDeviationSum = 0;
+      let targetQuadraticPenalty = 0;
       let saturdayCounts = [];
 
       doctors.forEach(doc => {
         let stats = calculateDocStats(doc, workGrid);
-        targetDeviation += Math.abs(stats.earnedOvertime - doc.targetOvertime);
+        let diff = Math.abs(stats.earnedOvertime - doc.targetOvertime);
+        
+        targetDeviationSum += diff;
+        targetQuadraticPenalty += Math.pow(diff, 2); // Büyük farkları ağır cezalandır
         saturdayCounts.push(stats.saturdayCount);
       });
 
+      // Cumartesi dağılım varyansı
       let avgSat = saturdayCounts.reduce((a, b) => a + b, 0) / (saturdayCounts.length || 1);
       let satVariance = saturdayCounts.reduce((sum, val) => sum + Math.pow(val - avgSat, 2), 0);
 
-      return (targetDeviation * 100) + (satVariance * 10);
+      // Ana hedef saat farkını 0 yapmak: Sapma katsayısı en büyüktür!
+      return (targetDeviationSum * 1000) + (targetQuadraticPenalty * 100) + (satVariance * 10);
     }
 
     function getEligibleCandidates(d, assignedToday, maxLimit, otVal, checkTargetCap, workGrid = grid) {
@@ -1490,8 +1608,10 @@
         }
 
         let diffBadge = '';
-        if (stats.earnedOvertime >= doc.targetOvertime) {
-          diffBadge = `<span class="text-emerald-600 font-bold ml-0.5">✓${stats.diff > 0 ? '(+' + stats.diff + ')' : ''}</span>`;
+        if (stats.diff === 0) {
+          diffBadge = `<span class="text-emerald-600 font-black ml-0.5">✓(0)</span>`;
+        } else if (stats.diff > 0) {
+          diffBadge = `<span class="text-blue-600 font-bold ml-0.5">(+${stats.diff})</span>`;
         } else {
           diffBadge = `<span class="text-[10px] text-rose-500 font-bold ml-0.5">(${stats.diff})</span>`;
         }
@@ -1532,7 +1652,6 @@
       }, 50);
     }
 
-    // SheetJS ile Gerçek İkili .XLSX İndirme
     function exportToStyledExcel() {
       const curMonth = getSelectedPeriodString();
       const curService = document.getElementById('selectedService').value;
@@ -1564,7 +1683,7 @@
           if (meta.isHoliday) label = 'T';
 
           if (st === 'N_FIXED' || st === 'N_AUTO') label = 'N';
-          else if (st === 'N_IZNI') label = 'N-İzni';
+          else if (st === 'N_IZNI') label = 'N.E.';
           else if (st === 'OFF') label = 'X';
 
           row.push(label);
@@ -1616,7 +1735,7 @@
             fill = { fgColor: { rgb: 'EF4444' } };
             fontColor = 'FFFFFF';
             isBold = true;
-          } else if (val === 'N-İzni') {
+          } else if (val === 'N.E.') {
             fill = { fgColor: { rgb: 'FEF08A' } };
             fontColor = '854D0E';
             isBold = true;
