@@ -21,28 +21,42 @@
       transform-origin: top left;
       transition: transform 0.15s ease-out;
     }
+
+    @media print {
+      body { background: white !important; padding: 0 !important; font-size: 9px !important; }
+      header, .no-print, #tableControls, #pasteModal { display: none !important; }
+      #tableContainer { transform: scale(1) !important; width: 100% !important; }
+      .max-h-\[76vh\] { max-height: none !important; overflow: visible !important; }
+      table { width: 100% !important; border: 1px solid #000 !important; }
+      th, td { border: 1px solid #ccc !important; padding: 2px !important; }
+      @page { size: landscape; margin: 5mm; }
+    }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 p-3 min-h-screen text-xs">
   <div class="max-w-[99%] mx-auto space-y-3">
     
     <!-- Üst Kontrol Paneli -->
-    <header class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-3">
+    <header class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-3 no-print">
       <div class="flex items-center gap-3">
         <div class="p-2.5 bg-blue-50 text-blue-600 rounded-lg text-lg">
           <i class="fa-solid fa-calendar-check"></i>
         </div>
         <div>
           <h1 class="text-base font-bold text-slate-900 leading-tight">Akıllı Nöbet & Ek Mesai Dağıtıcı</h1>
-          <p class="text-[11px] text-slate-500">🔒 Kilitli Günler (Elle girilen N ve X) yeniden dağıtımda asla bozulmaz</p>
+          <p class="text-[11px] text-slate-500">🔒 N ve X kilitlidir • Nöbet silindiğinde ertesi gün izni anında kalkar</p>
         </div>
       </div>
 
-      <!-- Ay Seçimi & İstatistikler -->
+      <!-- Ay ve Nöbet Sınırı Ayarları -->
       <div class="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
         <div>
           <label class="block text-[10px] font-bold text-slate-500 uppercase">Dönem</label>
           <input type="month" id="selectedMonth" class="bg-white border border-slate-300 rounded px-2 py-0.5 text-xs font-semibold" onchange="initCalendar()">
+        </div>
+        <div class="border-l pl-3">
+          <label class="block text-[10px] font-bold text-blue-600 uppercase" title="Her hekimin ayda alabileceği maksimum nöbet">Maks. Nöbet / Ay</label>
+          <input type="number" id="maxShiftLimit" value="8" min="1" max="15" class="w-14 text-center font-bold bg-white border border-blue-300 rounded px-1 py-0.5 text-xs text-blue-700">
         </div>
         <div class="border-l pl-3">
           <span class="block text-[10px] font-bold text-slate-500 uppercase">İş Günü</span>
@@ -72,15 +86,17 @@
           <i class="fa-solid fa-plus mr-1"></i> Hekim Ekle
         </button>
         
-        <!-- Dinamik Buton: Nöbetleri Dağıt / Yeniden Dağıt -->
         <button id="btnDistribute" onclick="distributeRoster()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm transition">
           <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Nöbetleri Dağıt
         </button>
 
-        <button onclick="clearOnlyGenerated()" id="btnClearGenerated" class="hidden px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-medium rounded-lg transition" title="Kilitli nöbet ve izinlerinize dokunmadan sadece algoritmanın atadıklarını temizler">
-          <i class="fa-solid fa-rotate-left mr-1"></i> Dağıtımı Geri Al
+        <button onclick="clearOnlyGenerated()" id="btnClearGenerated" class="hidden px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-medium rounded-lg transition">
+          <i class="fa-solid fa-rotate-left mr-1"></i> Geri Al
         </button>
 
+        <button onclick="window.print()" class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white font-medium rounded-lg transition">
+          <i class="fa-solid fa-file-pdf mr-1"></i> PDF / Yazdır
+        </button>
         <button onclick="exportToExcel()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition">
           <i class="fa-solid fa-file-excel mr-1"></i> Excel
         </button>
@@ -91,18 +107,27 @@
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto max-h-[76vh] relative">
       <div id="tableContainer">
         <table id="rosterTable" class="w-full border-collapse">
-          <!-- JS Dinamik Üretir -->
+          <!-- Dinamik Render -->
         </table>
       </div>
     </div>
 
+    <!-- Matematiksel Uyarı Paneli -->
+    <div id="warningPanel" class="hidden bg-amber-50 border-l-4 border-amber-500 p-3 rounded-lg shadow-sm no-print space-y-1">
+      <div class="flex items-center gap-2 font-bold text-amber-900 text-xs">
+        <i class="fa-solid fa-triangle-exclamation text-amber-600 text-sm"></i>
+        <span>Matematiksel Fizibilite & Hedef Bildirimi:</span>
+      </div>
+      <ul id="warningList" class="list-disc list-inside text-[11px] text-amber-800 space-y-0.5"></ul>
+    </div>
+
     <!-- Lejant -->
-    <div class="flex flex-wrap gap-4 text-[11px] bg-white p-3 rounded-lg border border-slate-200 text-slate-600">
-      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-800 border border-red-950 inline-block"></span> <strong>🔒 N (Kilitli Kesin):</strong> Sizin seçtiğiniz sabit nöbet (Asla silinmez)</div>
-      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-slate-900 inline-block"></span> <strong>🔒 X (Kilitli OFF):</strong> İzin / Rapor (Asla nöbet yazılamaz)</div>
-      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-500 inline-block"></span> <strong>N (Oto):</strong> Algoritmanın dağıttığı nöbet ("Yeniden Dağıt"ta alternatif aranır)</div>
-      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-yellow-200 border border-yellow-400 inline-block"></span> <strong>N-İzni:</strong> Nöbet ertesi dinlenme</div>
-      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-100 border border-red-300 inline-block"></span> <strong>Kırmızı Sütun:</strong> Resmi Tatil (+24 Saat)</div>
+    <div class="flex flex-wrap gap-4 text-[11px] bg-white p-3 rounded-lg border border-slate-200 text-slate-600 no-print">
+      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-800 border border-red-950 inline-block"></span> <strong>🔒 N (Kilitli Sabit):</strong> Sizin belirlediğiniz nöbet (Dağıtımda bozulmaz)</div>
+      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-slate-900 inline-block"></span> <strong>🔒 X (Kilitli OFF):</strong> İzin / Rapor (Nöbet yazılamaz)</div>
+      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-500 inline-block"></span> <strong>N (Oto):</strong> Algoritmanın doldurduğu nöbet</div>
+      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-yellow-200 border border-yellow-400 inline-block"></span> <strong>N-İzni:</strong> Nöbetin ertesi günündeki dinamik dinlenme günü</div>
+      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-100 border border-red-300 inline-block"></span> <strong>Kırmızı Sütun:</strong> Resmi Tatil (+24 Saat Ek Mesai)</div>
     </div>
   </div>
 
@@ -114,7 +139,7 @@
         <button onclick="closePasteModal()" class="text-slate-400 hover:text-slate-600">&times;</button>
       </div>
       <p class="text-[11px] text-slate-500">İsimleri alt alta yapıştırın:</p>
-      <textarea id="bulkNames" rows="10" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono" placeholder="Dr. Ahmet Yılmaz&#10;Dr. Ayşe Kaya&#10;Dr. Mehmet Demir..."></textarea>
+      <textarea id="bulkNames" rows="10" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono" placeholder="Dr. Ahmet Yılmaz&#10;Dr. Ayşe Kaya..."></textarea>
       <div class="flex justify-end gap-2 pt-1">
         <button onclick="closePasteModal()" class="px-3 py-1.5 border rounded-lg text-xs font-medium text-slate-600">İptal</button>
         <button onclick="applyBulkNames()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold">Listeyi Yükle</button>
@@ -135,7 +160,7 @@
     let doctors = [];
     let daysInMonth = 30;
     let daysMeta = [];
-    let grid = {}; 
+    let grid = {}; // docId -> { day: 'N_FIXED' | 'N_AUTO' | 'OFF' | '' }
     let currentZoom = 1.0;
     let isGenerated = false;
 
@@ -246,29 +271,32 @@
       initCalendar();
     }
 
-    // Tıklamayla Hücreyi Kilitleme (N_FIXED veya OFF)
-    function toggleDay(docId, day) {
-      const cur = grid[docId][day];
-      const hasNextDay = (day + 1 <= daysInMonth);
+    // Bir günün fiili durumunu belirler (Önceki günde N varsa N-İzni dinamik üretilir)
+    function getEffectiveStatus(docId, day) {
+      const cur = grid[docId][day] || '';
+      if (cur === 'N_FIXED' || cur === 'N_AUTO' || cur === 'OFF') {
+        return cur;
+      }
+      // Bir önceki gün nöbet tutulmuşsa ertesi gün dinamik olarak N-İzni'dir
+      if (day > 1) {
+        const prev = grid[docId][day - 1];
+        if (prev === 'N_FIXED' || prev === 'N_AUTO') {
+          return 'N_IZNI';
+        }
+      }
+      return '';
+    }
 
-      // Otomatik N ise tıklayınca Kilitli Sabit N yap
-      if (cur === 'N_AUTO') {
+    // Tıklamayla Döngü: Boş -> N_FIXED -> OFF -> Boş
+    function toggleDay(docId, day) {
+      const cur = grid[docId][day] || '';
+
+      if (cur === '' || cur === 'N_AUTO') {
         grid[docId][day] = 'N_FIXED';
-      } 
-      // Boş veya Mesai ise -> Kilitli N yap ve ertesi günü izin yap
-      else if (cur === '' || cur === 'M' || cur === 'N_IZNI') {
-        grid[docId][day] = 'N_FIXED';
-        if (hasNextDay) grid[docId][day + 1] = 'N_IZNI';
-      } 
-      // Kilitli N ise -> Kilitli OFF (X) yap
-      else if (cur === 'N_FIXED') {
+      } else if (cur === 'N_FIXED') {
         grid[docId][day] = 'OFF';
-        if (hasNextDay && grid[docId][day + 1] === 'N_IZNI') grid[docId][day + 1] = '';
-      } 
-      // OFF ise -> Temizle
-      else if (cur === 'OFF') {
+      } else if (cur === 'OFF') {
         grid[docId][day] = '';
-        if (hasNextDay && grid[docId][day + 1] === 'N_IZNI') grid[docId][day + 1] = '';
       }
 
       render();
@@ -286,18 +314,14 @@
       return 8;
     }
 
-    // Sadece otomatik atananları temizleme (Kilitli N_FIXED ve OFF kalır)
     function clearOnlyGenerated() {
       doctors.forEach(doc => {
         for (let d = 1; d <= daysInMonth; d++) {
           if (grid[doc.id][d] === 'N_AUTO') grid[doc.id][d] = '';
-          // Sadece otomatik nöbetin ertesi günündeki N-İzni'ni temizle
-          if (grid[doc.id][d] === 'N_IZNI' && d > 1 && grid[doc.id][d - 1] !== 'N_FIXED') {
-            grid[doc.id][d] = '';
-          }
         }
       });
       isGenerated = false;
+      document.getElementById('warningPanel').classList.add('hidden');
       updateButtons();
       render();
     }
@@ -316,31 +340,31 @@
       }
     }
 
-    // Nöbet Dağıtım Motoru (Kilitli hücreleri asla bozmaz, rastgelelik katarak alternatif üretir)
+    function countDoctorShifts(doc) {
+      let count = 0;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const s = grid[doc.id][d];
+        if (s === 'N_FIXED' || s === 'N_AUTO') count++;
+      }
+      return count;
+    }
+
+    // Dağıtım Motoru
     function distributeRoster() {
       if (doctors.length === 0) return alert("Lütfen önce hekim ekleyin.");
 
-      // 1. Önceki otomatik atamaları temizle
+      const maxLimit = parseInt(document.getElementById('maxShiftLimit').value) || 8;
+
+      // 1. Önceki otomatik nöbetleri temizle
       doctors.forEach(doc => {
         for (let d = 1; d <= daysInMonth; d++) {
           if (grid[doc.id][d] === 'N_AUTO') grid[doc.id][d] = '';
-          if (grid[doc.id][d] === 'N_IZNI' && d > 1 && grid[doc.id][d - 1] !== 'N_FIXED') grid[doc.id][d] = '';
-        }
-      });
-
-      // Kilitli N_FIXED günlerin iznini garantiye al
-      doctors.forEach(doc => {
-        for (let d = 1; d <= daysInMonth; d++) {
-          if (grid[doc.id][d] === 'N_FIXED' && d + 1 <= daysInMonth && grid[doc.id][d + 1] !== 'OFF') {
-            grid[doc.id][d + 1] = 'N_IZNI';
-          }
         }
       });
 
       let totalTarget = doctors.reduce((acc, d) => acc + d.targetOvertime, 0);
       let dailyTargetDocs = Math.max(1, Math.round(totalTarget / (daysInMonth * 12)));
 
-      // Günleri karıştırıp dağıtmak yerine alternatif permütasyonlar için aday seçiminde kontrollü rastgelelik
       for (let d = 1; d <= daysInMonth; d++) {
         const meta = daysMeta[d - 1];
         const otVal = getOvertimeEarned(meta);
@@ -350,15 +374,22 @@
         while (assignedToday.length < dailyTargetDocs) {
           const candidates = doctors.filter(doc => {
             if (assignedToday.includes(doc.id)) return false;
-            // 🔒 Kilitli Gün Kontrolü
-            if (grid[doc.id][d] === 'OFF' || grid[doc.id][d] === 'N_IZNI' || grid[doc.id][d] === 'N_FIXED') return false;
+            if (grid[doc.id][d] === 'OFF' || grid[doc.id][d] === 'N_FIXED') return false;
 
-            // Gün aşırı nöbet yasağı (En az 2 gün ara)
+            // Nöbet ertesi günüyse (dün nöbetçiyse) bugün izinlidir, nöbet alamaz
             if (d > 1 && (grid[doc.id][d - 1] === 'N_FIXED' || grid[doc.id][d - 1] === 'N_AUTO')) return false;
+
+            // Gün aşırı dinlenme kuralı (En az 2 gün aralık: d-2 gününde nöbet varsa bugün yazılmaz)
             if (d > 2 && (grid[doc.id][d - 2] === 'N_FIXED' || grid[doc.id][d - 2] === 'N_AUTO')) return false;
 
+            // Ertesi gün veya sonraki gün sabit kilitli nöbeti varsa aralık bozulmasın
             if (d + 1 <= daysInMonth && grid[doc.id][d + 1] === 'N_FIXED') return false;
+            if (d + 2 <= daysInMonth && grid[doc.id][d + 2] === 'N_FIXED') return false;
 
+            // Maksimum nöbet limiti
+            if (countDoctorShifts(doc) >= maxLimit) return false;
+
+            // Hedef mesai aşım kontrolü
             const curStats = calculateDocStats(doc);
             if (curStats.earnedOvertime + otVal > doc.targetOvertime + 8) return false;
 
@@ -367,7 +398,6 @@
 
           if (candidates.length === 0) break;
 
-          // Eşit veya yakın saatlerde olanlar arasında ufak bir rastgelelik katarak her defasında farklı ve dengeli liste üretir
           candidates.sort((a, b) => {
             const needA = a.targetOvertime - calculateDocStats(a).earnedOvertime + (Math.random() * 2 - 1);
             const needB = b.targetOvertime - calculateDocStats(b).earnedOvertime + (Math.random() * 2 - 1);
@@ -377,16 +407,45 @@
           const chosen = candidates[0];
           assignedToday.push(chosen.id);
           grid[chosen.id][d] = 'N_AUTO';
-
-          if (d + 1 <= daysInMonth && grid[chosen.id][d + 1] === '') {
-            grid[chosen.id][d + 1] = 'N_IZNI';
-          }
         }
       }
 
       isGenerated = true;
       updateButtons();
+      checkFeasibility(maxLimit);
       render();
+    }
+
+    function checkFeasibility(maxLimit) {
+      const panel = document.getElementById('warningPanel');
+      const list = document.getElementById('warningList');
+      list.innerHTML = '';
+      let warnings = [];
+
+      doctors.forEach(doc => {
+        const stats = calculateDocStats(doc);
+        const shiftCount = countDoctorShifts(doc);
+        const missing = doc.targetOvertime - stats.earnedOvertime;
+
+        if (missing > 8) {
+          if (shiftCount >= maxLimit) {
+            warnings.push(`<strong>${doc.name}</strong>: Hedef ${doc.targetOvertime}s iken maksimum nöbet sınırına (${maxLimit} nöbet) ulaşıldığı için en fazla <strong>${stats.earnedOvertime}s</strong> üretilebildi (${missing}s eksik kaldı). Bu nöbet sayısı tavanıyla bu mesai saatine ulaşılması matematiksel olarak mümkün değildir.`);
+          } else {
+            warnings.push(`<strong>${doc.name}</strong>: Hedef ${doc.targetOvertime}s iken ${shiftCount} nöbet atanabildi (${missing}s eksik). Gün aşırı dinlenme kuralı veya izinli/OFF günlerinin sıklığı sebebiyle boş gün bulunamadı.`);
+          }
+        }
+      });
+
+      if (warnings.length > 0) {
+        warnings.forEach(w => {
+          const li = document.createElement('li');
+          li.innerHTML = w;
+          list.appendChild(li);
+        });
+        panel.classList.remove('hidden');
+      } else {
+        panel.classList.add('hidden');
+      }
     }
 
     function calculateDocStats(doc) {
@@ -396,7 +455,7 @@
 
       for (let d = 1; d <= daysInMonth; d++) {
         const meta = daysMeta[d - 1];
-        const status = grid[doc.id][d];
+        const status = getEffectiveStatus(doc.id, d);
 
         if (!meta.isWeekend && !meta.isHoliday) {
           totalWorkdays++;
@@ -444,7 +503,7 @@
       html += `<th class="p-2 border bg-blue-50 text-blue-900 min-w-[55px]">Standart</th>`;
       html += `<th class="p-2 border bg-amber-100 text-amber-900 min-w-[65px]">Ek Mesai</th>`;
       html += `<th class="p-2 border bg-emerald-50 text-emerald-900 min-w-[55px]">Toplam</th>`;
-      html += `<th class="p-1 border bg-slate-100 w-8"></th>`;
+      html += `<th class="p-1 border bg-slate-100 w-8 no-print"></th>`;
       html += `</tr></thead><tbody>`;
 
       doctors.forEach(doc => {
@@ -461,19 +520,18 @@
 
         for (let d = 1; d <= daysInMonth; d++) {
           const meta = daysMeta[d - 1];
-          const st = grid[doc.id][d];
+          const st = getEffectiveStatus(doc.id, d);
           let cellClass = meta.isWeekend ? 'cell-hs' : 'cell-m';
           let label = meta.isWeekend ? '-' : '8';
-          let titleTooltip = "Tıkla: N (Kilitli) / X (İzin)";
 
           if (meta.isHoliday) { cellClass = 'cell-holiday'; label = 'T'; }
 
-          if (st === 'N_FIXED') { cellClass = 'cell-fixed-n'; label = '🔒 N'; titleTooltip = "Kilitli Sabit Nöbet"; }
-          else if (st === 'N_AUTO') { cellClass = 'cell-auto-n'; label = 'N'; titleTooltip = "Algoritmanın atadığı nöbet (Tıklayarak kilitleyebilirsiniz)"; }
+          if (st === 'N_FIXED') { cellClass = 'cell-fixed-n'; label = '🔒 N'; }
+          else if (st === 'N_AUTO') { cellClass = 'cell-auto-n'; label = 'N'; }
           else if (st === 'N_IZNI') { cellClass = 'cell-ni'; label = 'N-İzni'; }
-          else if (st === 'OFF') { cellClass = 'cell-off'; label = '🔒 X'; titleTooltip = "Kilitli İzin / Rapor"; }
+          else if (st === 'OFF') { cellClass = 'cell-off'; label = '🔒 X'; }
 
-          html += `<td class="p-1 border cursor-pointer select-none text-[11px] ${cellClass}" title="${titleTooltip}" onclick="toggleDay('${doc.id}', ${d})">${label}</td>`;
+          html += `<td class="p-1 border cursor-pointer select-none text-[11px] ${cellClass}" onclick="toggleDay('${doc.id}', ${d})">${label}</td>`;
         }
 
         const diffBadge = stats.diff === 0 
@@ -484,24 +542,25 @@
         html += `<td class="p-1 border bg-amber-50/60 font-bold text-amber-700">${stats.earnedOvertime}s ${diffBadge}</td>`;
         html += `<td class="p-1 border bg-emerald-50/40 font-black text-emerald-700">${stats.totalHours}s</td>`;
         
-        html += `<td class="p-1 border bg-white text-center">
-          <button onclick="deleteDoctor('${doc.id}')" class="text-slate-300 hover:text-red-500 font-bold px-1" title="Satırı Sil">&times;</button>
+        html += `<td class="p-1 border bg-white text-center no-print">
+          <button onclick="deleteDoctor('${doc.id}')" class="text-slate-300 hover:text-red-500 font-bold px-1">&times;</button>
         </td>`;
         
         html += `</tr>`;
       });
 
+      // Alt Kontrol Satırı
       html += `</tbody><tfoot class="bg-slate-100 font-bold border-t-2"><tr>`;
       html += `<td colspan="2" class="p-2 border text-left">Günlük Nöbetçi Toplamı</td>`;
       for (let d = 1; d <= daysInMonth; d++) {
         let count = 0;
         doctors.forEach(doc => {
-          const s = grid[doc.id][d];
+          const s = getEffectiveStatus(doc.id, d);
           if (s === 'N_FIXED' || s === 'N_AUTO') count++;
         });
         html += `<td class="p-1 border text-blue-700 font-bold">${count}</td>`;
       }
-      html += `<td colspan="4" class="border"></td></tr></tfoot>`;
+      html += `<td colspan="3" class="border"></td><td class="no-print border"></td></tr></tfoot>`;
 
       table.innerHTML = html;
       applyZoom();
