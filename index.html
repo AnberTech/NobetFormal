@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>AnberTech - Formal Nöbet Çözücü V1.0</title>
+  <title>AnberTech >Formal Nöbet Çözücü V1.0</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <!-- Tarayıcı Sekme Logosu (Favicon) -->
@@ -34,6 +34,15 @@
       transform-origin: top left;
       transition: transform 0.05s ease-out;
     }
+
+    /* Satir uzerine gelince yesil vurgu (hucre renkleri !important oldugu icin box-shadow kullaniyoruz) */
+    #rosterTable tbody tr:hover td {
+      box-shadow: inset 0 0 0 9999px rgba(16, 185, 129, 0.20);
+    }
+    #rosterTable tbody tr:hover td:first-child {
+      box-shadow: inset 4px 0 0 0 #059669, inset 0 0 0 9999px rgba(16, 185, 129, 0.20);
+    }
+    #rosterTable tbody tr:hover { outline: 2px solid #10b981; outline-offset: -2px; }
 
     .service-dropdown-item {
       color: #1e293b !important;
@@ -235,7 +244,7 @@
           <div class="flex items-center gap-1 bg-amber-50/60 border border-amber-200 rounded-lg px-2 py-1" title="Ay sonu nöbet saati katsayısı">
             <span class="text-[10px] font-bold text-amber-800">Ay Sonu:</span>
             <select id="lastDayShiftRule" class="lockable-ui bg-transparent font-bold text-amber-900 text-xs focus:outline-none cursor-pointer" onchange="markDirty(); buildSimulationCaches(); renderOnly();">
-              <option value="auto">Oto</option>
+              <option value="auto">Oto (8s)</option>
               <option value="16" selected>16s</option>
               <option value="24">24s</option>
               <option value="8">8s</option>
@@ -243,15 +252,15 @@
           </div>
 
           <!-- Maks Nöbet Sınırı -->
-          <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1" title="Bir hekime yazılabilecek azami nöbet sayısı">
-            <span class="text-[10px] font-bold text-blue-600">Maks. Nöbet:</span>
-            <input type="number" id="maxShiftLimit" value="8" min="1" max="15" class="lockable-ui w-8 text-center font-bold bg-white border border-blue-200 rounded text-xs text-blue-700 py-0.5" onchange="markDirty();">
+          <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1" title="KATI KURAL: Bir hekime bu sayıdan fazla nöbet asla yazılamaz">
+            <span class="text-[10px] font-bold text-blue-600">Maks. Nöbet <i class="fa-solid fa-lock text-[8px]"></i>:</span>
+            <input type="number" id="maxShiftLimit" value="8" min="1" max="15" class="lockable-ui w-8 text-center font-bold bg-white border border-blue-200 rounded text-xs text-blue-700 py-0.5" onchange="markDirty(); renderOnly(); runIndependentValidation();">
           </div>
 
           <!-- Gün Başı Maks Nöbetçi -->
-          <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1" title="Herhangi bir güne yazılabilecek azami nöbetçi tavanı (Boş bırakılırsa otomatik hesaplanır)">
-            <span class="text-[10px] font-bold text-slate-600">Gün Tavanı:</span>
-            <input type="number" id="customDailyCeiling" placeholder="Oto" min="1" max="25" class="lockable-ui w-9 text-center font-bold bg-white border border-slate-300 rounded text-xs text-slate-700 py-0.5" onchange="markDirty();">
+          <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1" title="KATI KURAL: Bir güne bu sayıdan fazla nöbetçi asla yazılamaz (Boş bırakılırsa sınır yoktur)">
+            <span class="text-[10px] font-bold text-slate-600">Günlük Maks <i class="fa-solid fa-lock text-[8px]"></i>:</span>
+            <input type="number" id="customDailyCeiling" placeholder="Yok" min="1" max="25" class="lockable-ui w-9 text-center font-bold bg-white border border-slate-300 rounded text-xs text-slate-700 py-0.5" onchange="markDirty(); buildSimulationCaches(); renderOnly(); runIndependentValidation();">
           </div>
 
           <!-- Gün / Mesai İstatistiği -->
@@ -715,6 +724,13 @@
 
     let prevTailShiftsCache = {};
     let cachedLastDayRuleVal = 16;
+    let hardDailyCeiling = 0;   // 0 = sinir yok. KATI KURAL olarak uygulanir.
+
+    function getHardDailyCeiling() {
+      const el = document.getElementById('customDailyCeiling');
+      const v = el ? parseInt(el.value) : NaN;
+      return (!isNaN(v) && v > 0) ? v : 0;
+    }
 
     function buildSimulationCaches() {
       prevTailShiftsCache = {};
@@ -723,6 +739,17 @@
       });
       const rule = document.getElementById('lastDayShiftRule').value;
       cachedLastDayRuleVal = (rule === 'auto') ? 8 : parseInt(rule);
+      hardDailyCeiling = getHardDailyCeiling();
+    }
+
+    // Bir gune o an atanmis nobetci sayisi (grid'den dogrudan sayar)
+    function countAssignedOnDay(d, gridRef) {
+      let c = 0;
+      for (const dc of doctors) {
+        const st = gridRef[dc.id] ? gridRef[dc.id][d] : '';
+        if (st === 'N_FIXED' || st === 'N_AUTO') c++;
+      }
+      return c;
     }
 
     function getPreviousMonthTailShifts(doc) {
@@ -1250,6 +1277,7 @@
       let totalWorkdays = 0;
       let saturdayCount = 0;
       let heavyDayCount = 0;
+      let weekendCount = 0;
 
       for (let d = 1; d <= daysInMonth; d++) {
         const meta = daysMeta[d - 1] || { isWeekend: false, isHoliday: false, dayOfWeek: 1 };
@@ -1265,6 +1293,7 @@
           const ot = getOvertimeEarned(meta, d);
           earnedOvertime += ot;
           if (meta.dayOfWeek === 6) saturdayCount++;
+          if (meta.dayOfWeek === 6 || meta.dayOfWeek === 0 || meta.isHoliday) weekendCount++;
           if (ot >= 16) heavyDayCount++;
         }
       }
@@ -1276,7 +1305,8 @@
         diff: earnedOvertime - doc.targetOvertime,
         totalHours: standardHours + earnedOvertime,
         saturdayCount,
-        heavyDayCount
+        heavyDayCount,
+        weekendCount
       };
     }
 
@@ -1311,24 +1341,30 @@
     // DÖRT DÖRTLÜK GERÇEKÇİ FİZİBİLİTE ÖN DENETİMİ (3 GÜN ARALIK KONTROLLÜ)
     // =========================================================================
     function checkDoctorFeasibility(maxLimit) {
-      // 3 gün dinlenme kuralına uyan en ağır gün kombinasyonunu greedy hesapla
-      let dayOts = [];
-      for (let d = 1; d <= daysInMonth; d++) {
-        dayOts.push({ day: d, ot: getOvertimeEarned(daysMeta[d - 1], d) });
+      // GERCEK OPTIMUM (Dinamik Programlama)
+      // Eski greedy yontem bazi aylarda mumkun olan hedefi "imkansiz" ilan ediyordu.
+      // Ornek: Mart 2025 / 6 nobet -> greedy 128s diyordu, gercek optimum 136s.
+      const otByDay = [0];
+      for (let d = 1; d <= daysInMonth; d++) otByDay.push(getOvertimeEarned(daysMeta[d - 1], d));
+
+      const NEG = -1;
+      let dp = [];
+      for (let d = 0; d <= daysInMonth; d++) {
+        dp.push(new Array(maxLimit + 1).fill(NEG));
+        dp[d][0] = 0;
       }
-      dayOts.sort((a, b) => b.ot - a.ot);
-
-      let chosenDays = [];
-      let theoreticalMaxOt = 0;
-
-      for (let item of dayOts) {
-        if (chosenDays.length >= maxLimit) break;
-        // Seçilen günlerle arasında en az 3 gün mesafe var mı? (|d1 - d2| >= 3)
-        let conflict = chosenDays.some(cd => Math.abs(cd - item.day) < 3);
-        if (!conflict) {
-          chosenDays.push(item.day);
-          theoreticalMaxOt += item.ot;
+      for (let d = 1; d <= daysInMonth; d++) {
+        for (let k = 1; k <= maxLimit; k++) {
+          const skip = dp[d - 1][k];
+          // Bu gune nobet yazilirsa, bir onceki nobet en gec (d-3). gunde olabilir.
+          const prev = (d - 3 >= 0) ? dp[d - 3][k - 1] : ((k - 1 === 0) ? 0 : NEG);
+          const take = (prev === NEG) ? NEG : prev + otByDay[d];
+          dp[d][k] = (take > skip) ? take : skip;
         }
+      }
+      let theoreticalMaxOt = 0;
+      for (let k = 0; k <= maxLimit; k++) {
+        if (dp[daysInMonth][k] > theoreticalMaxOt) theoreticalMaxOt = dp[daysInMonth][k];
       }
 
       for (let doc of doctors) {
@@ -1340,9 +1376,9 @@
         }
       }
 
-      // Gün Tavanı Kontrolü
-      const customCeil = parseInt(document.getElementById('customDailyCeiling').value);
-      if (!isNaN(customCeil) && customCeil > 0) {
+      // KATI KURAL: Gunluk Maks nobetci tavani kapasite kontrolu
+      const customCeil = getHardDailyCeiling();
+      if (customCeil > 0) {
         let totalMaxCapacity = 0;
         for (let d = 1; d <= daysInMonth; d++) {
           totalMaxCapacity += customCeil * getOvertimeEarned(daysMeta[d - 1], d);
@@ -1351,9 +1387,18 @@
         if (totalDemand > totalMaxCapacity) {
           return {
             possible: false,
-            message: `Belirlediğiniz gün başı ${customCeil} nöbetçi tavanı ile ayın toplam kapasitesi (${totalMaxCapacity}s), hekimlerin toplam talebini (${totalDemand}s) karşılayamaz. Lütfen gün tavanını artırın veya boş bırakarak otomatik moda alın.`
+            message: `KATI KURAL ÇAKIŞMASI — Günlük Maks: Gün başı ${customCeil} nöbetçi sınırı ile ayın toplam kapasitesi ${totalMaxCapacity}s, hekimlerin toplam talebi ise ${totalDemand}s. Lütfen "Günlük Maks" değerini artırın veya boş bırakın.`
           };
         }
+      }
+
+      // KATI KURAL: Toplam nobet kapasitesi kontrolu (her gun en az 1 nobetci zorunlu)
+      const totalShiftCapacity = doctors.length * maxLimit;
+      if (totalShiftCapacity < daysInMonth) {
+        return {
+          possible: false,
+          message: `KATI KURAL ÇAKIŞMASI — Maks. Nöbet: ${doctors.length} hekim × ${maxLimit} nöbet = ${totalShiftCapacity} nöbet, ancak ayın ${daysInMonth} gününün her birine en az 1 nöbetçi gerekiyor. Lütfen "Maks. Nöbet" değerini en az ${Math.ceil(daysInMonth / doctors.length)} yapın veya hekim ekleyin.`
+        };
       }
 
       return { possible: true };
@@ -1669,9 +1714,15 @@
           const scoredDays = feasibleDays.map(f => {
             const hourGap = Math.abs(missing - f.otVal);
             const fillRatio = f.assignedCount / (quotas[f.day] || 1);
+            const meta = daysMeta[f.day - 1] || {};
+            // DENGE cezalari (dusuk skor = tercih edilir)
+            let balancePenalty = 0;
+            if (f.otVal >= 16) balancePenalty += stats.heavyDayCount * 4;
+            if (meta.dayOfWeek === 6 || meta.dayOfWeek === 0 || meta.isHoliday) balancePenalty += stats.weekendCount * 3;
+            if (meta.dayOfWeek === 6) balancePenalty += stats.saturdayCount * 3;
             return {
               item: f,
-              score: (hourGap * 20) + (fillRatio * 8) + (rng() * 0.4 - 0.2)
+              score: (hourGap * 20) + (fillRatio * 8) + balancePenalty + (rng() * 0.4 - 0.2)
             };
           });
           scoredDays.sort((a, b) => a.score - b.score);
@@ -1695,6 +1746,10 @@
           }
           extraDays.sort((a, b) => a.otVal - b.otVal);
           for (let ed of extraDays) {
+            // GUNCEL DURUM KONTROLU: onceki atama bu gunu uygunsuz hale getirmis olabilir
+            // (liste dongu basinda bir kez hesaplandigi icin 2 gun dinlenme kurali kiriliyordu)
+            const assignedNow = doctors.filter(dc => workGrid[dc.id][ed.day] === 'N_FIXED' || workGrid[dc.id][ed.day] === 'N_AUTO').map(dc => dc.id);
+            if (!getEligibleCandidates(ed.day, assignedNow, maxLimit, ed.otVal, false, workGrid, quotas, true).some(c => c.id === doc.id)) continue;
             workGrid[doc.id][ed.day] = 'N_AUTO';
             stats = calculateDocStats(doc, workGrid);
             if (stats.earnedOvertime >= doc.targetOvertime || countDoctorShifts(doc, workGrid) >= maxLimit) break;
@@ -1702,25 +1757,29 @@
         }
       }
 
-      // FAZ 4: Gerekirse maxShiftLimit'i Aşarak Saati Tamamlama (Son Çare)
+      // FAZ 4: Son Tamamlama Turu
+      // NOT: Eskiden maxLimit'i 15'e kadar esnetiyordu. Artik KATI KURAL:
+      // secilen Maks. Nobet sayisi ASLA asilamaz.
       for (let doc of doctors) {
         let stats = calculateDocStats(doc, workGrid);
         let missing = doc.targetOvertime - stats.earnedOvertime;
-        if (missing > 0) {
+        if (missing > 0 && countDoctorShifts(doc, workGrid) < maxLimit) {
           let emergencyDays = [];
           for (let d = 1; d <= daysInMonth; d++) {
             const otVal = getOvertimeEarned(daysMeta[d - 1], d);
             let assignedToday = doctors.filter(dc => workGrid[dc.id][d] === 'N_FIXED' || workGrid[dc.id][d] === 'N_AUTO').map(dc => dc.id);
-            // maxLimit sınırı 15'e kadar esnetilir
-            if (getEligibleCandidates(d, assignedToday, 15, otVal, false, workGrid, quotas, true).some(c => c.id === doc.id)) {
+            if (getEligibleCandidates(d, assignedToday, maxLimit, otVal, false, workGrid, quotas, true).some(c => c.id === doc.id)) {
               emergencyDays.push({ day: d, otVal });
             }
           }
-          emergencyDays.sort((a, b) => a.otVal - b.otVal);
+          // En yuksek saatli gunu once dene ki daha az nobetle hedefe ulasilsin
+          emergencyDays.sort((a, b) => b.otVal - a.otVal);
           for (let ed of emergencyDays) {
+            const assignedNow = doctors.filter(dc => workGrid[dc.id][ed.day] === 'N_FIXED' || workGrid[dc.id][ed.day] === 'N_AUTO').map(dc => dc.id);
+            if (!getEligibleCandidates(ed.day, assignedNow, maxLimit, ed.otVal, false, workGrid, quotas, true).some(c => c.id === doc.id)) continue;
             workGrid[doc.id][ed.day] = 'N_AUTO';
             stats = calculateDocStats(doc, workGrid);
-            if (stats.earnedOvertime >= doc.targetOvertime) break;
+            if (stats.earnedOvertime >= doc.targetOvertime || countDoctorShifts(doc, workGrid) >= maxLimit) break;
           }
         }
       }
@@ -1735,7 +1794,18 @@
     function scoreCandidateChoice(doc, day, otVal, workGrid) {
       let stats = calculateDocStats(doc, workGrid);
       let missing = doc.targetOvertime - stats.earnedOvertime;
-      return (missing > 0) ? (missing - Math.abs(missing - otVal)) : -100;
+      if (missing <= 0) return -100;
+
+      let score = missing - Math.abs(missing - otVal);
+
+      // DENGE: agir gunleri (16s/24s) ve hafta sonu/tatilleri hekimler arasinda esitle.
+      // Halihazirda cok agir gunu olan hekim bir agir gunu daha almasin.
+      const meta = daysMeta[day - 1] || {};
+      if (otVal >= 16) score -= stats.heavyDayCount * 4;
+      if (meta.dayOfWeek === 6 || meta.dayOfWeek === 0 || meta.isHoliday) score -= stats.weekendCount * 3;
+      if (meta.dayOfWeek === 6) score -= stats.saturdayCount * 3;
+
+      return score;
     }
 
     // =========================================================================
@@ -1834,6 +1904,98 @@
         }
         if (!moved && step > 10) break;
       }
+
+      // 3. Ağır gün / hafta sonu dengesini eşitle
+      balanceHeavyDays(workGrid, maxLimit, quotas);
+    }
+
+    // =========================================================================
+    // DENGE MOTORU: AĞIR GÜN / HAFTA SONU EŞİTLEME
+    // =========================================================================
+
+    // Hedefin ALTINA düşmeden çıkarılabilecek nöbetleri temizler.
+    function trimSurplusDays(g, doc, preferHeavy) {
+      let guard = 0;
+      while (guard++ < 40) {
+        const stats = calculateDocStats(doc, g);
+        let best = null;
+        for (let d = 1; d <= daysInMonth; d++) {
+          if (g[doc.id][d] !== 'N_AUTO') continue;
+          const ot = getOvertimeEarned(daysMeta[d - 1], d);
+          if (stats.earnedOvertime - ot < doc.targetOvertime) continue;   // KATI: hedefin altina inemez
+          if (countAssignedOnDay(d, g) <= 1) continue;                    // KATI: gun bos kalamaz
+          const isHeavy = ot >= 16 ? 1 : 0;
+          const rank = preferHeavy ? (1 - isHeavy) : isHeavy;
+          if (!best || rank < best.rank || (rank === best.rank && ot < best.ot)) best = { d, rank, ot };
+        }
+        if (!best) break;
+        g[doc.id][best.d] = '';
+      }
+    }
+
+    // Hedefe ulaşana kadar uygun gün ekler (tüm katı kurallara uyarak).
+    function fillDeficitDays(g, doc, maxLimit, quotas, preferLight) {
+      let guard = 0;
+      while (guard++ < 40) {
+        const stats = calculateDocStats(doc, g);
+        if (stats.earnedOvertime >= doc.targetOvertime) break;
+        if (countDoctorShifts(doc, g) >= maxLimit) break;                 // KATI: maks nobet
+        let cands = [];
+        for (let d = 1; d <= daysInMonth; d++) {
+          const ot = getOvertimeEarned(daysMeta[d - 1], d);
+          const assigned = doctors.filter(dc => g[dc.id][d] === 'N_FIXED' || g[dc.id][d] === 'N_AUTO').map(dc => dc.id);
+          if (!getEligibleCandidates(d, assigned, maxLimit, ot, false, g, quotas, true).some(c => c.id === doc.id)) continue;
+          cands.push({ d, ot, heavy: ot >= 16 ? 1 : 0 });
+        }
+        if (!cands.length) break;
+        cands.sort((a, b) => preferLight ? (a.heavy - b.heavy || a.ot - b.ot) : (b.ot - a.ot));
+        g[doc.id][cands[0].d] = 'N_AUTO';
+      }
+    }
+
+    // Ağır gün (16s/24s) yükü en fazla olan hekimden, en az olana devreder.
+    // Saatler korunur: veren hekim hafif günlerle tamamlanır, alan hekimin fazlası budanır.
+    // Sadece hem GEÇERLİ hem de DAHA DENGELİ sonuç veren takaslar kabul edilir.
+    function balanceHeavyDays(workGrid, maxLimit, quotas) {
+      for (let step = 0; step < 30; step++) {
+        let list = doctors.map(doc => ({ doc, h: calculateDocStats(doc, workGrid).heavyDayCount }));
+        list.sort((a, b) => b.h - a.h);
+        const rich = list[0];
+        const poor = list[list.length - 1];
+        if (!rich || !poor || rich.doc.id === poor.doc.id) break;
+        if (rich.h - poor.h < 2) break;   // zaten dengeli
+
+        const baseCost = evaluateQualityCost(workGrid, quotas);
+        let heavyDays = [];
+        for (let d = 1; d <= daysInMonth; d++) {
+          if (workGrid[rich.doc.id][d] === 'N_AUTO' && getOvertimeEarned(daysMeta[d - 1], d) >= 16) heavyDays.push(d);
+        }
+        heavyDays.sort((a, b) => getOvertimeEarned(daysMeta[b - 1], b) - getOvertimeEarned(daysMeta[a - 1], a));
+
+        let accepted = false;
+        for (const X of heavyDays) {
+          const trial = JSON.parse(JSON.stringify(workGrid));
+          trial[rich.doc.id][X] = '';
+
+          const assigned = doctors.filter(dc => trial[dc.id][X] === 'N_FIXED' || trial[dc.id][X] === 'N_AUTO').map(dc => dc.id);
+          const otX = getOvertimeEarned(daysMeta[X - 1], X);
+          if (!getEligibleCandidates(X, assigned, maxLimit, otX, false, trial, quotas, true).some(c => c.id === poor.doc.id)) continue;
+          trial[poor.doc.id][X] = 'N_AUTO';
+
+          trimSurplusDays(trial, poor.doc, false);                       // alanin fazla HAFIF gunlerini at
+          fillDeficitDays(trial, rich.doc, maxLimit, quotas, true);      // vereni HAFIF gunlerle tamamla
+          trimSurplusDays(trial, rich.doc, true);
+
+          const val = validateRoster(trial, maxLimit, quotas);
+          if (!val.valid) continue;
+          if (evaluateQualityCost(trial, quotas) >= baseCost) continue;
+
+          for (const doc of doctors) for (let d = 1; d <= daysInMonth; d++) workGrid[doc.id][d] = trial[doc.id][d];
+          accepted = true;
+          break;
+        }
+        if (!accepted) break;
+      }
     }
 
     // =========================================================================
@@ -1843,6 +2005,9 @@
       let deficitPenalty = 0;
       let surplusPenalty = 0;
       let saturdayCounts = [];
+      let heavyCounts = [];
+      let weekendCounts = [];
+      let shiftCounts = [];
 
       doctors.forEach(doc => {
         let stats = calculateDocStats(doc, workGrid);
@@ -1852,7 +2017,20 @@
           surplusPenalty += stats.diff * 50;
         }
         saturdayCounts.push(stats.saturdayCount);
+        heavyCounts.push(stats.heavyDayCount);
+        weekendCounts.push(stats.weekendCount);
+        shiftCounts.push(countDoctorShifts(doc, workGrid));
       });
+
+      function varianceOf(arr) {
+        if (!arr.length) return 0;
+        const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
+        return arr.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0);
+      }
+      function spreadOf(arr) {
+        if (!arr.length) return 0;
+        return Math.max.apply(null, arr) - Math.min.apply(null, arr);
+      }
 
       let dayCounts = [];
       let quotaDeviation = 0;
@@ -1864,10 +2042,25 @@
 
       let spread = Math.max(...dayCounts) - Math.min(...dayCounts);
 
-      let avgSat = saturdayCounts.reduce((a, b) => a + b, 0) / (saturdayCounts.length || 1);
-      let satVariance = saturdayCounts.reduce((sum, val) => sum + Math.pow(val - avgSat, 2), 0);
+      // DENGE: hekimler arasi agir gun / hafta sonu / cumartesi / nobet sayisi esitligi
+      const satVariance     = varianceOf(saturdayCounts);
+      const heavyVariance   = varianceOf(heavyCounts);
+      const weekendVariance = varianceOf(weekendCounts);
+      const shiftVariance   = varianceOf(shiftCounts);
+      // Tek bir hekimin cok fazla agir gun almasini ayrica cezalandir
+      const heavySpread   = spreadOf(heavyCounts);
+      const weekendSpread = spreadOf(weekendCounts);
 
-      return deficitPenalty + surplusPenalty + (quotaDeviation * 200) + (Math.pow(spread, 2) * 150) + (satVariance * 20);
+      return deficitPenalty
+           + surplusPenalty
+           + (quotaDeviation * 200)
+           + (Math.pow(spread, 2) * 150)
+           + (satVariance * 120)
+           + (heavyVariance * 200)
+           + (weekendVariance * 160)
+           + (shiftVariance * 60)
+           + (Math.pow(heavySpread, 2) * 250)
+           + (Math.pow(weekendSpread, 2) * 200);
     }
 
     // =========================================================================
@@ -1875,6 +2068,11 @@
     // =========================================================================
     function getEligibleCandidates(d, assignedToday, maxLimit, otVal, checkTargetCap, workGrid, quotas, isFallback = false) {
       const q = (quotas && quotas[d]) ? quotas[d] : 99;
+
+      // === KATI KURAL 1: Gunluk Maks nobetci tavani ASLA asilamaz (fallback dahil) ===
+      if (hardDailyCeiling > 0 && countAssignedOnDay(d, workGrid) >= hardDailyCeiling) return [];
+
+      // Hedef kontenjan (yumusak): sadece normal modda bagladir
       if (!isFallback && assignedToday.length >= q) return [];
 
       return doctors.filter(doc => {
@@ -1919,6 +2117,9 @@
         });
         if (count === 0) {
           hardViolations.push(`Ayın ${d}. gününde hiç nöbetçi yok (Sıfır Gün İhlali).`);
+        } else if (hardDailyCeiling > 0 && count > hardDailyCeiling) {
+          // KATI KURAL: Gunluk Maks nobetci tavani
+          hardViolations.push(`[KRİTİK İHLAL] Ayın ${d}. gününde ${count} nöbetçi var, "Günlük Maks" sınırı ${hardDailyCeiling}.`);
         } else if (Math.abs(count - (qMap[d] || 1)) >= 2) {
           softWarnings.push(`Ayın ${d}. gününde ${count} nöbetçi var (Hedef kontenjan: ${qMap[d] || 1}). Günlük denge hafif sapmış.`);
         }
@@ -1954,8 +2155,9 @@
           softWarnings.push(`${doc.name}: Hedef ${doc.targetOvertime}s iken ${stats.earnedOvertime}s yazıldı (+8 tavanı saat kurtarma amacıyla aşıldı).`);
         }
 
+        // KATI KURAL: Maks. Nobet sinirini asmak SERT ihlaldir
         if (shifts.length > maxLimit) {
-          softWarnings.push(`${doc.name}: Maksimum ${maxLimit} nöbet sınırı saat hedefini tamamlamak amacıyla aşıldı (${shifts.length} nöbet).`);
+          hardViolations.push(`[KRİTİK İHLAL] ${doc.name}: Maksimum ${maxLimit} nöbet sınırı aşıldı (${shifts.length} nöbet yazılmış).`);
         }
       });
 
@@ -1969,6 +2171,7 @@
 
     function runIndependentValidation() {
       const maxLimit = parseInt(document.getElementById('maxShiftLimit').value) || 8;
+      hardDailyCeiling = getHardDailyCeiling();
       const quotas = buildDayQuotas();
       const res = validateRoster(grid, maxLimit, quotas);
       const panel = document.getElementById('warningPanel');
@@ -2116,9 +2319,7 @@
       });
 
       html += `</tbody><tfoot class="bg-slate-100 font-bold border-t-2"><tr>`;
-      html += `<td colspan="2" class="p-2 border text-left flex items-center justify-between">
-        <span>Günlük Nöbetçi</span>
-      </td>`;
+      html += `<td colspan="2" class="p-2 border text-left"><span>Günlük Nöbetçi</span></td>`;
       
       let allDayCounts = [];
       for (let d = 1; d <= daysInMonth; d++) {
