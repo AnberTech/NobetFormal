@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>AnberTech >Formal Nöbet Çözücü V1.0</title>
+  <title>AnberTech - Formal Nöbet Çözücü V1.0</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <!-- Tarayıcı Sekme Logosu (Favicon) -->
@@ -230,7 +230,7 @@
           <div class="relative inline-block" id="serviceDropdownWrapper">
             <div class="lockable-ui flex items-center gap-1 bg-indigo-50/70 border border-indigo-200 rounded-lg px-2 py-1 cursor-pointer" onclick="toggleServiceDropdown(event)">
               <i class="fa-solid fa-stethoscope text-indigo-600 text-[10px]"></i>
-              <input type="text" id="selectedService" value="Acil Servis" placeholder="Servis..." 
+              <input type="text" id="selectedService" value="" placeholder="Bölüm adı..." 
                 class="bg-transparent font-bold text-indigo-950 text-xs w-24 focus:outline-none cursor-pointer" 
                 onchange="onFilterChanged('service')" onfocus="openServiceDropdown(event)">
               <i class="fa-solid fa-chevron-down text-indigo-400 text-[9px] ml-0.5"></i>
@@ -513,6 +513,12 @@
 
     window.onload = () => {
       try {
+        // Dahili test modu:  index.html?test=1
+        if (/[?&]test=1/.test(window.location.search)) {
+          buildSolverConfig();
+          showSelfTestReport();
+          return;
+        }
         const now = new Date();
         const y = String(now.getFullYear());
         const m = String(now.getMonth() + 1).padStart(2, '0');
@@ -563,19 +569,71 @@
       loadActiveRoster();
     }
 
+    function getKnownServices() {
+      // Varsayilan bolum ismi YOK. Liste tamamen kullanicinin ekledikleridir.
+      try {
+        const raw = localStorage.getItem('nobet_known_services');
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      } catch (e) { return []; }
+    }
+
+    function saveKnownServices(arr) {
+      localStorage.setItem('nobet_known_services', JSON.stringify(arr));
+    }
+
     function refreshServiceOptions() {
-      const savedServices = JSON.parse(localStorage.getItem('nobet_known_services') || '["Acil Servis", "Dahiliye", "Çocuk Cerrahisi", "Genel Cerrahi", "Anestezi", "Kardiyoloji"]');
+      const savedServices = getKnownServices();
       const listContainer = document.getElementById('serviceCustomList');
       if (!listContainer) return;
       listContainer.innerHTML = '';
-      
+
+      if (savedServices.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = "px-2.5 py-1.5 text-[10px] text-slate-400 italic";
+        empty.innerText = "Henüz bölüm eklenmedi";
+        listContainer.appendChild(empty);
+      }
+
       savedServices.forEach(srv => {
         const item = document.createElement('div');
-        item.className = "service-dropdown-item";
-        item.innerText = srv;
-        item.onclick = () => selectServiceItem(srv);
+        item.className = "service-dropdown-item flex items-center justify-between gap-1";
+
+        const label = document.createElement('span');
+        label.innerText = srv;
+        label.style.flex = '1';
+        label.onclick = () => selectServiceItem(srv);
+
+        const del = document.createElement('span');
+        del.innerHTML = '&times;';
+        del.title = 'Bu bölümü listeden kaldır';
+        del.className = "text-slate-300 hover:text-red-500 font-bold px-1";
+        del.onclick = (e) => { e.stopPropagation(); removeServiceName(srv); };
+
+        item.appendChild(label);
+        item.appendChild(del);
         listContainer.appendChild(item);
       });
+
+      // "+ Yeni Bölüm Ekle"
+      const addBtn = document.createElement('div');
+      addBtn.className = "service-dropdown-item border-t border-slate-100 text-indigo-600";
+      addBtn.innerHTML = '<i class="fa-solid fa-plus text-[9px] mr-1"></i> Yeni Bölüm Ekle';
+      addBtn.onclick = (e) => { e.stopPropagation(); addNewServicePrompt(); };
+      listContainer.appendChild(addBtn);
+    }
+
+    function addNewServicePrompt() {
+      const name = (window.prompt('Yeni bölüm adı:') || '').trim();
+      if (!name) return;
+      registerServiceName(name);
+      selectServiceItem(name);
+    }
+
+    function removeServiceName(srv) {
+      const arr = getKnownServices().filter(s => trNormalize(s) !== trNormalize(srv));
+      saveKnownServices(arr);
+      refreshServiceOptions();
     }
 
     function toggleServiceDropdown(e) {
@@ -608,11 +666,11 @@
     }
 
     function registerServiceName(srv) {
-      if (!srv) return;
-      let saved = JSON.parse(localStorage.getItem('nobet_known_services') || '["Acil Servis", "Dahiliye", "Çocuk Cerrahisi", "Genel Cerrahi", "Anestezi", "Kardiyoloji"]');
+      if (!srv || !srv.trim()) return;
+      let saved = getKnownServices();
       if (!saved.some(s => trNormalize(s) === trNormalize(srv))) {
         saved.push(srv.trim());
-        localStorage.setItem('nobet_known_services', JSON.stringify(saved));
+        saveKnownServices(saved);
         refreshServiceOptions();
       }
     }
@@ -723,13 +781,43 @@
     }
 
     let prevTailShiftsCache = {};
-    let cachedLastDayRuleVal = 16;
-    let hardDailyCeiling = 0;   // 0 = sinir yok. KATI KURAL olarak uygulanir.
 
-    function getHardDailyCeiling() {
-      const el = document.getElementById('customDailyCeiling');
+    // =========================================================================
+    // ÇÖZÜCÜ YAPILANDIRMASI — TEK KAYNAK
+    // Çözücü fonksiyonlar DOM'u OKUMAZ. Arayüz bir kez okur, buraya yazar.
+    // Kuralları değiştirmek isteyen tek bu objeye bakar.
+    // =========================================================================
+    const DEFAULT_CFG = {
+      maxShifts: 8,        // KATI: hekim başına azami nöbet
+      restGap: 3,          // KATI: iki nöbet arası gün farkı (3 = arada 2 tam gün boş)
+      dailyCeiling: 0,     // KATI: gün başına azami nöbetçi (0 = sınır yok)
+      lastDayOt: 16,       // ay sonu katsayısı
+      otSatHoliday: 24,    // cumartesi + resmi/dini tatil
+      otFriSun: 16,        // cuma + pazar
+      otWeekday: 8         // normal hafta içi
+    };
+    let SOLVER_CFG = Object.assign({}, DEFAULT_CFG);
+
+    function readNumInput(id, fallback) {
+      const el = document.getElementById(id);
       const v = el ? parseInt(el.value) : NaN;
-      return (!isNaN(v) && v > 0) ? v : 0;
+      return isNaN(v) ? fallback : v;
+    }
+
+    function buildSolverConfig() {
+      const ruleEl = document.getElementById('lastDayShiftRule');
+      const rule = ruleEl ? ruleEl.value : '16';
+      const ceil = readNumInput('customDailyCeiling', 0);
+      SOLVER_CFG = {
+        maxShifts:    Math.max(1, readNumInput('maxShiftLimit', DEFAULT_CFG.maxShifts)),
+        restGap:      DEFAULT_CFG.restGap,
+        dailyCeiling: (ceil > 0 ? ceil : 0),
+        lastDayOt:    (rule === 'auto') ? DEFAULT_CFG.otWeekday : (parseInt(rule) || DEFAULT_CFG.otWeekday),
+        otSatHoliday: DEFAULT_CFG.otSatHoliday,
+        otFriSun:     DEFAULT_CFG.otFriSun,
+        otWeekday:    DEFAULT_CFG.otWeekday
+      };
+      return SOLVER_CFG;
     }
 
     function buildSimulationCaches() {
@@ -737,19 +825,72 @@
       doctors.forEach(doc => {
         prevTailShiftsCache[doc.id] = getPreviousMonthTailShiftsRaw(doc);
       });
-      const rule = document.getElementById('lastDayShiftRule').value;
-      cachedLastDayRuleVal = (rule === 'auto') ? 8 : parseInt(rule);
-      hardDailyCeiling = getHardDailyCeiling();
+      buildSolverConfig();
     }
 
-    // Bir gune o an atanmis nobetci sayisi (grid'den dogrudan sayar)
+    // ---- yardımcılar ----
+    function isShiftCell(g, docId, d) {
+      const st = g[docId] ? g[docId][d] : undefined;
+      return (st === 'N_FIXED' || st === 'N_AUTO');
+    }
+
     function countAssignedOnDay(d, gridRef) {
       let c = 0;
-      for (const dc of doctors) {
-        const st = gridRef[dc.id] ? gridRef[dc.id][d] : '';
-        if (st === 'N_FIXED' || st === 'N_AUTO') c++;
-      }
+      for (const dc of doctors) if (isShiftCell(gridRef, dc.id, d)) c++;
       return c;
+    }
+
+    // =========================================================================
+    // TEK KURAL MOTORU
+    // Liste KURULURKEN de DOĞRULANIRKEN de yalnızca burası kullanılır.
+    // Yeni bir katı kural eklemek için değiştirilecek tek yer.
+    // =========================================================================
+    const RULES = {
+      // Hücre dolu mu? (nöbet ya da "izinli" kilidi)
+      occupied(doc, d, g) {
+        const st = g[doc.id] ? g[doc.id][d] : undefined;
+        return (st === 'OFF' || st === 'N_FIXED' || st === 'N_AUTO');
+      },
+      // KATI: iki nöbet arasında en az cfg.restGap gün fark olmalı
+      restGap(doc, d, g, cfg) {
+        for (let k = 1; k < cfg.restGap; k++) {
+          if (d - k >= 1 && isShiftCell(g, doc.id, d - k)) return true;
+          if (d + k <= daysInMonth && isShiftCell(g, doc.id, d + k)) return true;
+        }
+        return false;
+      },
+      // KATI: önceki ayın son günlerindeki nöbet, ayın başına taşar
+      prevMonth(doc, d, cfg) {
+        const tail = getPreviousMonthTailShifts(doc);
+        if (tail.lastDayShift && d <= cfg.restGap - 1) return true;
+        if (tail.secondLastDayShift && d <= cfg.restGap - 2) return true;
+        return false;
+      },
+      // KATI: hekim başına azami nöbet sayısı
+      maxShifts(doc, d, g, cfg) {
+        return countDoctorShifts(doc, g) >= cfg.maxShifts;
+      },
+      // KATI: gün başına azami nöbetçi tavanı
+      dailyCeiling(doc, d, g, cfg) {
+        return cfg.dailyCeiling > 0 && countAssignedOnDay(d, g) >= cfg.dailyCeiling;
+      }
+    };
+
+    // "Bu hekim bu güne yazılabilir mi?" — tüm KATI kuralların tek kapısı
+    function canAssign(doc, d, g, cfg) {
+      if (!g[doc.id]) return false;
+      if (RULES.occupied(doc, d, g)) return false;
+      if (RULES.dailyCeiling(doc, d, g, cfg)) return false;
+      if (RULES.maxShifts(doc, d, g, cfg)) return false;
+      if (RULES.prevMonth(doc, d, cfg)) return false;
+      if (RULES.restGap(doc, d, g, cfg)) return false;
+      return true;
+    }
+
+    // Geçici olarak farklı bir maxShifts ile cfg türetir
+    function cfgWithLimit(maxLimit) {
+      if (maxLimit === SOLVER_CFG.maxShifts) return SOLVER_CFG;
+      return Object.assign({}, SOLVER_CFG, { maxShifts: maxLimit });
     }
 
     function getPreviousMonthTailShifts(doc) {
@@ -1221,14 +1362,12 @@
     }
 
     function getOvertimeEarned(dayMeta, dayNum) {
-      if (!dayMeta) return 8;
-      if (dayMeta.isHoliday || dayMeta.dayOfWeek === 6) return 24;
-      if (dayMeta.dayOfWeek === 0 || dayMeta.dayOfWeek === 5) return 16;
-
-      if (dayNum === daysInMonth) {
-        return cachedLastDayRuleVal;
-      }
-      return 8;
+      if (!dayMeta) return SOLVER_CFG.otWeekday;
+      const cfg = SOLVER_CFG;
+      if (dayMeta.isHoliday || dayMeta.dayOfWeek === 6) return cfg.otSatHoliday;
+      if (dayMeta.dayOfWeek === 0 || dayMeta.dayOfWeek === 5) return cfg.otFriSun;
+      if (dayNum === daysInMonth) return cfg.lastDayOt;
+      return cfg.otWeekday;
     }
 
     function clearOnlyGenerated() {
@@ -1356,8 +1495,9 @@
       for (let d = 1; d <= daysInMonth; d++) {
         for (let k = 1; k <= maxLimit; k++) {
           const skip = dp[d - 1][k];
-          // Bu gune nobet yazilirsa, bir onceki nobet en gec (d-3). gunde olabilir.
-          const prev = (d - 3 >= 0) ? dp[d - 3][k - 1] : ((k - 1 === 0) ? 0 : NEG);
+          // Bu gune nobet yazilirsa, bir onceki nobet en gec (d - restGap). gunde olabilir.
+          const gap = SOLVER_CFG.restGap;
+          const prev = (d - gap >= 0) ? dp[d - gap][k - 1] : ((k - 1 === 0) ? 0 : NEG);
           const take = (prev === NEG) ? NEG : prev + otByDay[d];
           dp[d][k] = (take > skip) ? take : skip;
         }
@@ -1377,7 +1517,7 @@
       }
 
       // KATI KURAL: Gunluk Maks nobetci tavani kapasite kontrolu
-      const customCeil = getHardDailyCeiling();
+      const customCeil = SOLVER_CFG.dailyCeiling;
       if (customCeil > 0) {
         let totalMaxCapacity = 0;
         for (let d = 1; d <= daysInMonth; d++) {
@@ -1436,8 +1576,8 @@
         remainingDemand -= minOt;
       }
 
-      const customCeil = parseInt(document.getElementById('customDailyCeiling').value);
-      if (!isNaN(customCeil) && customCeil > 0) {
+      const customCeil = SOLVER_CFG.dailyCeiling;
+      if (customCeil > 0) {
         for (let d = 1; d <= daysInMonth; d++) {
           quotas[d] = Math.min(quotas[d], customCeil);
         }
@@ -1456,7 +1596,7 @@
       if (!daysMeta || daysMeta.length === 0) initCalendar();
       buildSimulationCaches();
 
-      const maxLimit = parseInt(document.getElementById('maxShiftLimit').value) || 8;
+      const maxLimit = SOLVER_CFG.maxShifts;
       const feas = checkDoctorFeasibility(maxLimit);
       if (!feas.possible) {
         return alert(feas.message);
@@ -1529,7 +1669,7 @@
       buildSimulationCaches();
 
       const allocatedSeconds = parseInt(document.getElementById('selectOptimizationTime').value) || 15;
-      const maxLimit = parseInt(document.getElementById('maxShiftLimit').value) || 8;
+      const maxLimit = SOLVER_CFG.maxShifts;
 
       const feas = checkDoctorFeasibility(maxLimit);
       if (!feas.possible) {
@@ -1577,6 +1717,8 @@
       }
 
       let iterationsCount = 0;
+      let lnsRepairs = 0;
+      let improvements = 0;
       const startTime = Date.now();
       const endTime = startTime + (allocatedSeconds * 1000);
 
@@ -1594,7 +1736,15 @@
           const trialSeed = (iterationsCount === 1 && isSeedLocked) ? currentSeed : (Math.floor(Math.random() * 900000) + 100000);
           const rng = mulberry32(trialSeed);
 
-          let trialGrid = JSON.parse(JSON.stringify(baseGrid));
+          // LNS: elde geçerli bir çözüm varsa onu bozup onar; yoksa sıfırdan kur.
+          let trialGrid;
+          if (globalBestValidSolution && iterationsCount > 1) {
+            trialGrid = destroyPart(globalBestValidSolution, rng);
+            lnsRepairs++;
+          } else {
+            trialGrid = JSON.parse(JSON.stringify(baseGrid));
+          }
+
           let success = constructFeasibleRoster(trialGrid, maxLimit, quotas, rng);
 
           if (success) {
@@ -1606,8 +1756,21 @@
                 globalBestValidCost = cost;
                 globalBestValidSolution = trialGrid;
                 globalBestValidSeed = trialSeed;
+                improvements++;
 
                 if (cost === 0) break;
+              }
+            }
+          }
+
+          // Uzun süre iyileşme yoksa arada bir sıfırdan başla (yerel optimumdan kaçış)
+          if (iterationsCount % 400 === 0 && globalBestValidSolution) {
+            let fresh = JSON.parse(JSON.stringify(baseGrid));
+            if (constructFeasibleRoster(fresh, maxLimit, quotas, rng)) {
+              refineRosterLocally(fresh, maxLimit, quotas, rng);
+              if (validateRoster(fresh, maxLimit, quotas).valid) {
+                const c2 = evaluateQualityCost(fresh, quotas);
+                if (c2 < globalBestValidCost) { globalBestValidCost = c2; globalBestValidSolution = fresh; improvements++; }
               }
             }
           }
@@ -1633,7 +1796,7 @@
             updateButtons();
             renderOnly();
             runIndependentValidation();
-            showToast(`${iterationsCount} alternatif tarandı. Hekim saatleri eksiksiz tamamlandı ve dağılım optimize edildi!`);
+            showToast(`${iterationsCount} alternatif tarandı (${lnsRepairs} boz-onar, ${improvements} iyileştirme). Saatler tam, dağılım optimize edildi!`);
           } else {
             runIndependentValidation();
             alert(`Belirtilen ${allocatedSeconds} saniyede tüm hekimlerin saat hedeflerini eksiksiz karşılayan geçerli bir çözüm bulunamadı. Mevcut listeniz bozulmadan korunmuştur. Lütfen hedefleri veya Maksimum Nöbet sınırını gözden geçirin.`);
@@ -1910,6 +2073,61 @@
     }
 
     // =========================================================================
+    // LNS — BÜYÜK KOMŞULUK ARAMASI (Large Neighborhood Search)
+    // Her turda sıfırdan kurmak yerine, eldeki EN İYİ listenin bir parçasını
+    // bozup sadece o parçayı yeniden kurar. Geçerliden geçerliye ilerlediği
+    // için sıkışık aylarda rastgele yeniden başlatmadan çok daha etkilidir.
+    // =========================================================================
+    function destroyPart(bestGrid, rng) {
+      // Sadece N_AUTO hücreler bozulur; N_FIXED (kilitli nöbet) ve OFF (izin) korunur.
+      let g = {};
+      doctors.forEach(doc => {
+        g[doc.id] = {};
+        for (let d = 1; d <= daysInMonth; d++) g[doc.id][d] = bestGrid[doc.id][d];
+      });
+
+      const mode = rng();
+
+      if (mode < 0.40) {
+        // (a) Hekim bazlı: 1-2 hekimin tüm otomatik nöbetlerini sil
+        const howMany = (doctors.length > 3 && rng() < 0.5) ? 2 : 1;
+        let pool = doctors.slice();
+        for (let i = 0; i < howMany && pool.length; i++) {
+          const idx = Math.floor(rng() * pool.length);
+          const doc = pool.splice(idx, 1)[0];
+          for (let d = 1; d <= daysInMonth; d++) if (g[doc.id][d] === 'N_AUTO') g[doc.id][d] = '';
+        }
+      } else if (mode < 0.72) {
+        // (b) Takvim bazlı: ardışık 5-9 günlük bir pencereyi komple boşalt
+        const span = 5 + Math.floor(rng() * 5);
+        const start = 1 + Math.floor(rng() * Math.max(1, daysInMonth - span));
+        for (let d = start; d < start + span && d <= daysInMonth; d++) {
+          doctors.forEach(doc => { if (g[doc.id][d] === 'N_AUTO') g[doc.id][d] = ''; });
+        }
+      } else if (mode < 0.88) {
+        // (c) Dengesizlik bazlı: en çok ağır günü olan hekimin ağır nöbetlerini sil
+        let worst = null, worstH = -1;
+        for (const doc of doctors) {
+          const h = calculateDocStats(doc, g).heavyDayCount;
+          if (h > worstH) { worstH = h; worst = doc; }
+        }
+        if (worst) {
+          for (let d = 1; d <= daysInMonth; d++) {
+            if (g[worst.id][d] === 'N_AUTO' && getOvertimeEarned(daysMeta[d - 1], d) >= 16) g[worst.id][d] = '';
+          }
+        }
+      } else {
+        // (d) Rastgele: otomatik nöbetlerin ~%25'ini sil
+        doctors.forEach(doc => {
+          for (let d = 1; d <= daysInMonth; d++) {
+            if (g[doc.id][d] === 'N_AUTO' && rng() < 0.25) g[doc.id][d] = '';
+          }
+        });
+      }
+      return g;
+    }
+
+    // =========================================================================
     // DENGE MOTORU: AĞIR GÜN / HAFTA SONU EŞİTLEME
     // =========================================================================
 
@@ -2067,32 +2285,22 @@
     // GETELIGIBLECANDIDATES
     // =========================================================================
     function getEligibleCandidates(d, assignedToday, maxLimit, otVal, checkTargetCap, workGrid, quotas, isFallback = false) {
+      const cfg = cfgWithLimit(maxLimit);
       const q = (quotas && quotas[d]) ? quotas[d] : 99;
 
-      // === KATI KURAL 1: Gunluk Maks nobetci tavani ASLA asilamaz (fallback dahil) ===
-      if (hardDailyCeiling > 0 && countAssignedOnDay(d, workGrid) >= hardDailyCeiling) return [];
-
-      // Hedef kontenjan (yumusak): sadece normal modda bagladir
+      // Hedef kontenjan YUMUŞAK kuraldır: sadece normal modda bağlayıcı.
+      // (Katı kuralların tamamı canAssign içinde, fallback'te bile geçerli.)
       if (!isFallback && assignedToday.length >= q) return [];
 
       return doctors.filter(doc => {
         if (assignedToday.includes(doc.id)) return false;
-        if (!workGrid[doc.id] || workGrid[doc.id][d] === 'OFF' || workGrid[doc.id][d] === 'N_FIXED' || workGrid[doc.id][d] === 'N_AUTO') return false;
 
-        const prevTail = getPreviousMonthTailShifts(doc);
-        if (d === 1 && (prevTail.lastDayShift || prevTail.secondLastDayShift)) return false;
-        if (d === 2 && prevTail.lastDayShift) return false;
+        // >>> TEK KURAL MOTORU <<<
+        if (!canAssign(doc, d, workGrid, cfg)) return false;
 
-        if (d > 1 && (workGrid[doc.id][d - 1] === 'N_FIXED' || workGrid[doc.id][d - 1] === 'N_AUTO')) return false;
-        if (d > 2 && (workGrid[doc.id][d - 2] === 'N_FIXED' || workGrid[doc.id][d - 2] === 'N_AUTO')) return false;
-
-        if (d + 1 <= daysInMonth && (workGrid[doc.id][d + 1] === 'N_FIXED' || workGrid[doc.id][d + 1] === 'N_AUTO')) return false;
-        if (d + 2 <= daysInMonth && (workGrid[doc.id][d + 2] === 'N_FIXED' || workGrid[doc.id][d + 2] === 'N_AUTO')) return false;
-
-        if (countDoctorShifts(doc, workGrid) >= maxLimit) return false;
-
-        const curStats = calculateDocStats(doc, workGrid);
+        // Yumuşak: hedefi çoktan dolmuş hekime fazladan yazma
         if (checkTargetCap) {
+          const curStats = calculateDocStats(doc, workGrid);
           if (curStats.earnedOvertime + otVal > doc.targetOvertime + 8) return false;
           if (curStats.earnedOvertime >= doc.targetOvertime) return false;
         }
@@ -2108,6 +2316,7 @@
       let hardViolations = [];
       let softWarnings = [];
       const qMap = quotas || buildDayQuotas();
+      const cfg = cfgWithLimit(maxLimit);   // kurulumla AYNI yapılandırma
 
       // Gün doluluk kontrolleri
       for (let d = 1; d <= daysInMonth; d++) {
@@ -2117,9 +2326,9 @@
         });
         if (count === 0) {
           hardViolations.push(`Ayın ${d}. gününde hiç nöbetçi yok (Sıfır Gün İhlali).`);
-        } else if (hardDailyCeiling > 0 && count > hardDailyCeiling) {
+        } else if (cfg.dailyCeiling > 0 && count > cfg.dailyCeiling) {
           // KATI KURAL: Gunluk Maks nobetci tavani
-          hardViolations.push(`[KRİTİK İHLAL] Ayın ${d}. gününde ${count} nöbetçi var, "Günlük Maks" sınırı ${hardDailyCeiling}.`);
+          hardViolations.push(`[KRİTİK İHLAL] Ayın ${d}. gününde ${count} nöbetçi var, "Günlük Maks" sınırı ${cfg.dailyCeiling}.`);
         } else if (Math.abs(count - (qMap[d] || 1)) >= 2) {
           softWarnings.push(`Ayın ${d}. gününde ${count} nöbetçi var (Hedef kontenjan: ${qMap[d] || 1}). Günlük denge hafif sapmış.`);
         }
@@ -2131,19 +2340,19 @@
           if (workGrid[doc.id] && (workGrid[doc.id][d] === 'N_FIXED' || workGrid[doc.id][d] === 'N_AUTO')) shifts.push(d);
         }
 
+        // KATI KURAL: dinlenme aralığı — eşik TEK yerden (SOLVER_CFG.restGap) gelir
         for (let i = 0; i < shifts.length - 1; i++) {
-          if (shifts[i + 1] - shifts[i] < 3) {
-            hardViolations.push(`${doc.name}: ${shifts[i]} ve ${shifts[i+1]} günleri arasında yetersiz dinlenme (3 gün aralık şartı ihlal edildi).`);
+          if (shifts[i + 1] - shifts[i] < cfg.restGap) {
+            hardViolations.push(`${doc.name}: ${shifts[i]} ve ${shifts[i+1]} günleri arasında yetersiz dinlenme (en az ${cfg.restGap} gün aralık şartı ihlal edildi).`);
           }
         }
 
-        const prevTail = getPreviousMonthTailShifts(doc);
-        if (prevTail.lastDayShift && (shifts.includes(1) || shifts.includes(2))) {
-          hardViolations.push(`${doc.name}: Önceki ayın son günü nöbetçi olduğu halde ayın 1 veya 2'sine nöbet yazılmış.`);
-        }
-        if (prevTail.secondLastDayShift && shifts.includes(1)) {
-          hardViolations.push(`${doc.name}: Önceki ayın sondan 2. günü nöbetçi olduğu halde ayın 1'ine nöbet yazılmış.`);
-        }
+        // KATI KURAL: önceki aydan taşan nöbet — kurulumdaki RULES.prevMonth'un AYNISI
+        shifts.forEach(d => {
+          if (RULES.prevMonth(doc, d, cfg)) {
+            hardViolations.push(`${doc.name}: Önceki ayın sonundaki nöbeti nedeniyle ayın ${d}. gününe nöbet yazılamaz.`);
+          }
+        });
 
         let stats = calculateDocStats(doc, workGrid);
         // TAVİZSİZ: Eksik saat mutlak sert ihlaldir
@@ -2156,8 +2365,8 @@
         }
 
         // KATI KURAL: Maks. Nobet sinirini asmak SERT ihlaldir
-        if (shifts.length > maxLimit) {
-          hardViolations.push(`[KRİTİK İHLAL] ${doc.name}: Maksimum ${maxLimit} nöbet sınırı aşıldı (${shifts.length} nöbet yazılmış).`);
+        if (shifts.length > cfg.maxShifts) {
+          hardViolations.push(`[KRİTİK İHLAL] ${doc.name}: Maksimum ${cfg.maxShifts} nöbet sınırı aşıldı (${shifts.length} nöbet yazılmış).`);
         }
       });
 
@@ -2170,8 +2379,8 @@
     }
 
     function runIndependentValidation() {
-      const maxLimit = parseInt(document.getElementById('maxShiftLimit').value) || 8;
-      hardDailyCeiling = getHardDailyCeiling();
+      buildSolverConfig();
+      const maxLimit = SOLVER_CFG.maxShifts;
       const quotas = buildDayQuotas();
       const res = validateRoster(grid, maxLimit, quotas);
       const panel = document.getElementById('warningPanel');
@@ -2236,6 +2445,7 @@
       const quotas = buildDayQuotas();
 
       let html = `<thead class="bg-slate-50 sticky top-0 z-20 border-b"><tr>`;
+      html += `<th class="p-1 border bg-slate-200 text-slate-600 w-8 min-w-[32px] max-w-[32px]" title="Sıra No">#</th>`;
       html += `<th class="p-2 border text-left bg-slate-100 w-[115px] min-w-[115px] max-w-[115px]">Hekim Adı</th>`;
       html += `<th class="p-1 border bg-amber-50 text-amber-900 w-12 min-w-[48px] max-w-[48px]">Hedef</th>`;
 
@@ -2257,11 +2467,13 @@
       html += `<th class="p-1 border bg-slate-100 w-6 min-w-[24px] no-print"></th>`;
       html += `</tr></thead><tbody>`;
 
-      doctors.forEach(doc => {
+      doctors.forEach((doc, idx) => {
         const stats = calculateDocStats(doc);
         const shiftCount = countDoctorShifts(doc);
         html += `<tr>`;
-        
+
+        html += `<td class="p-1 border bg-slate-100 text-slate-500 font-bold text-[10px] text-center w-8 min-w-[32px] max-w-[32px]">${idx + 1}</td>`;
+
         html += `<td class="p-1 border text-left bg-white w-[115px] min-w-[115px] max-w-[115px]">
           <input type="text" value="${escapeHtml(doc.name)}" class="w-full bg-transparent border-0 focus:ring-1 focus:ring-blue-500 rounded px-1 py-0.5 font-medium text-slate-800 text-xs" oninput="updateDoctorName('${doc.id}', this.value)" placeholder="İsim Girin">
         </td>`;
@@ -2319,7 +2531,7 @@
       });
 
       html += `</tbody><tfoot class="bg-slate-100 font-bold border-t-2"><tr>`;
-      html += `<td colspan="2" class="p-2 border text-left"><span>Günlük Nöbetçi</span></td>`;
+      html += `<td colspan="3" class="p-2 border text-left text-[10px]"><span class="font-bold">Günlük Nöbetçi</span> <span class="text-slate-500 font-medium">(${doctors.length} hekim)</span></td>`;
       
       let allDayCounts = [];
       for (let d = 1; d <= daysInMonth; d++) {
@@ -2487,6 +2699,163 @@
       XLSX.utils.book_append_sheet(wb, ws, "Nöbet Çizelgesi");
       XLSX.writeFile(wb, `Nobet_${curService}_${curMonth}.xlsx`);
     }
+
+
+    // =========================================================================
+    // DAHİLİ TEST MODU — adres satırına  ?test=1  ekleyerek çalıştırılır
+    // Kural motorunu yüzlerce senaryoda sınar. Ekstra dosya / build gerekmez.
+    // =========================================================================
+    function buildTestMonth(year, month) {
+      daysInMonth = new Date(year, month, 0).getDate();
+      daysMeta = [];
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dt = new Date(year, month - 1, d);
+        const hol = isHoliday(year, month, d);
+        daysMeta.push({
+          day: d, dayOfWeek: dt.getDay(),
+          isWeekend: (dt.getDay() === 0 || dt.getDay() === 6),
+          isHoliday: hol.holiday, holidayName: hol.name
+        });
+      }
+    }
+
+    // Bir listeyi KATI kurallara göre bağımsız denetler (validateRoster'dan ayrı,
+    // kasıtlı olarak sıfırdan yazılmıştır ki iki taraf birbirini doğrulasın).
+    function auditRoster(g, cfg) {
+      const errs = [];
+      for (const doc of doctors) {
+        const shifts = [];
+        for (let d = 1; d <= daysInMonth; d++) if (isShiftCell(g, doc.id, d)) shifts.push(d);
+        for (let i = 0; i < shifts.length - 1; i++) {
+          if (shifts[i + 1] - shifts[i] < cfg.restGap) errs.push(`DİNLENME ${doc.name}: ${shifts[i]}→${shifts[i+1]}`);
+        }
+        if (shifts.length > cfg.maxShifts) errs.push(`MAKS NÖBET ${doc.name}: ${shifts.length}>${cfg.maxShifts}`);
+        if (calculateDocStats(doc, g).earnedOvertime < doc.targetOvertime) errs.push(`EKSİK SAAT ${doc.name}`);
+        const tail = getPreviousMonthTailShifts(doc);
+        if (tail.lastDayShift && shifts.some(d => d <= cfg.restGap - 1)) errs.push(`ÖNCEKİ AY ${doc.name}`);
+      }
+      for (let d = 1; d <= daysInMonth; d++) {
+        const c = countAssignedOnDay(d, g);
+        if (c === 0) errs.push(`BOŞ GÜN ${d}`);
+        if (cfg.dailyCeiling > 0 && c > cfg.dailyCeiling) errs.push(`GÜNLÜK MAKS ${d}: ${c}>${cfg.dailyCeiling}`);
+      }
+      return errs;
+    }
+
+    const TEST_SCENARIOS = [
+      { lbl: '6 hekim / Ekim 2026',     t: [120,120,120,112,112,104],           y: 2026, m: 10, max: 8, ceil: 0 },
+      { lbl: '8 hekim / Aralık 2026',   t: [96,96,88,88,88,80,80,72],           y: 2026, m: 12, max: 7, ceil: 0 },
+      { lbl: '6 hekim / Mart 2025',     t: [112,112,104,104,96,96],             y: 2025, m: 3,  max: 8, ceil: 0 },
+      { lbl: '7 hekim / Ekim 26 (tavan 2)', t: [104,104,96,96,96,88,88],        y: 2026, m: 10, max: 8, ceil: 2 },
+      { lbl: '10 hekim / Ocak 27 (tavan 3)', t: [80,80,80,72,72,72,64,64,64,56],y: 2027, m: 1,  max: 6, ceil: 3 },
+      { lbl: '4 hekim / Mayıs 2026',    t: [136,128,128,120],                   y: 2026, m: 5,  max: 9, ceil: 0 }
+    ];
+
+    function runSelfTests(iterPerScenario) {
+      const ITER = iterPerScenario || 60;
+      const backup = {
+        doctors: doctors, grid: grid, daysMeta: daysMeta,
+        daysInMonth: daysInMonth, cfg: SOLVER_CFG, cache: prevTailShiftsCache
+      };
+      const rows = [];
+      let totalErr = 0, totalOk = 0, totalRun = 0;
+
+      try {
+        for (const sc of TEST_SCENARIOS) {
+          doctors = sc.t.map((tv, i) => ({ id: i + 1, name: 'Dr' + (i + 1), targetOvertime: tv }));
+          buildTestMonth(sc.y, sc.m);
+          SOLVER_CFG = Object.assign({}, DEFAULT_CFG, { maxShifts: sc.max, dailyCeiling: sc.ceil });
+          prevTailShiftsCache = {};
+          doctors.forEach(doc => { prevTailShiftsCache[doc.id] = { lastDayShift: false, secondLastDayShift: false }; });
+          grid = {};
+          doctors.forEach(doc => { grid[doc.id] = {}; for (let d = 1; d <= daysInMonth; d++) grid[doc.id][d] = ''; });
+
+          const feas = checkDoctorFeasibility(sc.max);
+          if (!feas.possible) {
+            rows.push({ lbl: sc.lbl, skipped: true, msg: feas.message });
+            continue;
+          }
+
+          const quotas = buildDayQuotas();
+          let ok = 0, err = 0, firstErr = null, hSpread = 0, wSpread = 0;
+
+          for (let seed = 1; seed <= ITER; seed++) {
+            const rng = mulberry32(seed * 7919);
+            let wg = {};
+            doctors.forEach(doc => { wg[doc.id] = {}; for (let d = 1; d <= daysInMonth; d++) wg[doc.id][d] = ''; });
+            totalRun++;
+            if (!constructFeasibleRoster(wg, sc.max, quotas, rng)) continue;
+            refineRosterLocally(wg, sc.max, quotas, rng);
+            const e = auditRoster(wg, SOLVER_CFG);
+            if (e.length) { err++; if (!firstErr) firstErr = e.slice(0, 3).join(' · '); }
+            else {
+              ok++;
+              const hs = doctors.map(dc => calculateDocStats(dc, wg).heavyDayCount);
+              const ws = doctors.map(dc => calculateDocStats(dc, wg).weekendCount);
+              hSpread += Math.max.apply(null, hs) - Math.min.apply(null, hs);
+              wSpread += Math.max.apply(null, ws) - Math.min.apply(null, ws);
+            }
+          }
+          totalErr += err; totalOk += ok;
+          rows.push({
+            lbl: sc.lbl, iter: ITER, ok, err, firstErr,
+            h: ok ? (hSpread / ok).toFixed(2) : '-', w: ok ? (wSpread / ok).toFixed(2) : '-'
+          });
+        }
+      } finally {
+        doctors = backup.doctors; grid = backup.grid; daysMeta = backup.daysMeta;
+        daysInMonth = backup.daysInMonth; SOLVER_CFG = backup.cfg; prevTailShiftsCache = backup.cache;
+      }
+      return { rows, totalErr, totalOk, totalRun };
+    }
+
+    function showSelfTestReport() {
+      const started = Date.now();
+      const res = runSelfTests(60);
+      const secs = ((Date.now() - started) / 1000).toFixed(1);
+      const pass = res.totalErr === 0;
+
+      let html = `<div style="font-family:ui-sans-serif,system-ui;padding:24px;max-width:1000px;margin:0 auto">
+        <h1 style="font-size:20px;font-weight:800;margin-bottom:4px">Formal Nöbet Çözücü — Dahili Test</h1>
+        <p style="font-size:12px;color:#64748b;margin-bottom:16px">${res.totalRun} liste üretildi · ${secs} sn</p>
+        <div style="padding:12px 16px;border-radius:10px;margin-bottom:16px;font-weight:800;
+          background:${pass ? '#ecfdf5' : '#fef2f2'};color:${pass ? '#047857' : '#b91c1c'};
+          border:1px solid ${pass ? '#a7f3d0' : '#fecaca'}">
+          ${pass ? '✓ GEÇTİ — hiçbir katı kural ihlali bulunamadı' : '✗ KALDI — ' + res.totalErr + ' listede kural ihlali var'}
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="background:#f1f5f9;text-align:left">
+            <th style="padding:8px;border:1px solid #e2e8f0">Senaryo</th>
+            <th style="padding:8px;border:1px solid #e2e8f0">Kural ihlali</th>
+            <th style="padding:8px;border:1px solid #e2e8f0">Temiz liste</th>
+            <th style="padding:8px;border:1px solid #e2e8f0">Ağır gün farkı</th>
+            <th style="padding:8px;border:1px solid #e2e8f0">Hafta sonu farkı</th>
+          </tr></thead><tbody>`;
+
+      res.rows.forEach(r => {
+        if (r.skipped) {
+          html += `<tr><td style="padding:8px;border:1px solid #e2e8f0">${escapeHtml(r.lbl)}</td>
+            <td colspan="4" style="padding:8px;border:1px solid #e2e8f0;color:#b45309">Atlandı: ${escapeHtml(r.msg)}</td></tr>`;
+          return;
+        }
+        html += `<tr>
+          <td style="padding:8px;border:1px solid #e2e8f0">${escapeHtml(r.lbl)}</td>
+          <td style="padding:8px;border:1px solid #e2e8f0;font-weight:800;color:${r.err ? '#b91c1c' : '#047857'}">${r.err}${r.firstErr ? ' — ' + escapeHtml(r.firstErr) : ''}</td>
+          <td style="padding:8px;border:1px solid #e2e8f0">${r.ok}/${r.iter}</td>
+          <td style="padding:8px;border:1px solid #e2e8f0">${r.h}</td>
+          <td style="padding:8px;border:1px solid #e2e8f0">${r.w}</td>
+        </tr>`;
+      });
+
+      html += `</tbody></table>
+        <p style="font-size:11px;color:#94a3b8;margin-top:16px">
+          "Temiz liste" tek denemede kurulan geçerli liste oranıdır; süreli optimizasyon (LNS) bunun çok üzerine çıkar.
+          Normal ekrana dönmek için adresten <b>?test=1</b> kısmını silin.
+        </p></div>`;
+
+      document.body.innerHTML = html;
+    }
+
   </script>
 </body>
 </html>
