@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>AnberTech%Formal Nöbet Çözücü V1.0</title>
+  <title>AnberTech - Formal Nöbet Çözücü V1.0</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <!-- Tarayıcı Sekme Logosu (Favicon) -->
@@ -96,7 +96,7 @@
     <!-- Üst Kontrol Bloğu -->
     <header class="bg-white rounded-xl shadow-sm border border-slate-200 p-2.5 space-y-2.5 no-print">
       
-      <!-- 1. Satır: Sadece Marka Satırı -->
+      <!-- 1. Satır: Marka Satırı -->
       <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-slate-50 border border-slate-200/80 shadow-2xs shrink-0">
@@ -139,10 +139,13 @@
 
         <!-- Sağ: Seed, Zoom, Arşiv, Kaydet, Dışa Aktarma -->
         <div class="flex items-center gap-1.5 ml-auto">
-          <!-- Düzenlenebilir Seed Butonu -->
-          <div class="flex items-center bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5" title="Tohum kodunu değiştirmek için tıklayın">
+          <!-- Kilitlenebilir Seed Buton Alanı -->
+          <div class="flex items-center bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5" title="Tohum kodu (Kilit açıkken her üretimde yenilenir)">
             <span class="text-[10px] font-mono text-slate-500 mr-1 font-bold">Seed:</span>
             <input type="number" id="seedInput" value="1337" class="w-14 bg-transparent font-mono font-bold text-[10px] text-slate-800 text-center focus:outline-none" onchange="onSeedManuallyChanged(this.value)">
+            <button type="button" id="btnToggleSeedLock" onclick="toggleSeedLock()" class="ml-1 text-slate-400 hover:text-slate-700 text-[10px]" title="Seed kilidini aç/kapat">
+              <i id="seedLockIcon" class="fa-solid fa-lock-open"></i>
+            </button>
           </div>
 
           <!-- Zoom Araçları -->
@@ -170,12 +173,13 @@
             <i class="fa-solid fa-download text-slate-500"></i>
           </button>
 
-          <button type="button" onclick="window.print()" class="lockable-ui px-2.5 py-1.5 bg-slate-50 hover:bg-rose-50 hover:text-rose-600 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Renkli PDF Çıktısı Al">
+          <!-- GÜVENLİ PDF VE EXCEL ÇIKIŞ BUTONLARI -->
+          <button type="button" onclick="printRosterSafe()" class="lockable-ui px-2.5 py-1.5 bg-slate-50 hover:bg-rose-50 hover:text-rose-600 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Doğrulanmış Renkli PDF Çıktısı Al">
             <i class="fa-solid fa-file-pdf text-rose-500"></i>
             <span class="hidden sm:inline">PDF</span>
           </button>
           
-          <button type="button" onclick="exportToStyledExcel()" class="lockable-ui px-2.5 py-1.5 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Renkli Excel Olarak İndir (.xlsx)">
+          <button type="button" onclick="exportToStyledExcelSafe()" class="lockable-ui px-2.5 py-1.5 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Doğrulanmış Renkli Excel Olarak İndir (.xlsx)">
             <i class="fa-solid fa-file-excel text-emerald-600"></i>
             <span class="hidden sm:inline">Excel</span>
           </button>
@@ -244,7 +248,7 @@
             <input type="number" id="maxShiftLimit" value="8" min="1" max="15" class="lockable-ui w-8 text-center font-bold bg-white border border-blue-200 rounded text-xs text-blue-700 py-0.5" onchange="markDirty();">
           </div>
 
-          <!-- Gün Başı Maks Nöbetçi (İsteğe Bağlı Tavan) -->
+          <!-- Gün Başı Maks Nöbetçi -->
           <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1" title="Herhangi bir güne yazılabilecek azami nöbetçi tavanı (Boş bırakılırsa otomatik hesaplanır)">
             <span class="text-[10px] font-bold text-slate-600">Gün Tavanı:</span>
             <input type="number" id="customDailyCeiling" placeholder="Oto" min="1" max="25" class="lockable-ui w-9 text-center font-bold bg-white border border-slate-300 rounded text-xs text-slate-700 py-0.5" onchange="markDirty();">
@@ -263,7 +267,7 @@
         <div class="flex items-center gap-1.5 ml-auto">
           
           <!-- HIZLI ÜRET -->
-          <button type="button" id="btnInstant" onclick="distributeInstantRoster()" class="lockable-ui px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs rounded-lg transition flex items-center gap-1.5 shadow-2xs" title="Beklemeden hedef saatleri garanti eden listeyi anında üretir">
+          <button type="button" id="btnInstant" onclick="distributeInstantRoster()" class="lockable-ui px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs rounded-lg transition flex items-center gap-1.5 shadow-2xs" title="Beklemeden hedef saatleri tam garanti eden listeyi anında üretir">
             <i class="fa-solid fa-bolt text-amber-500"></i>
             <span id="btnInstantText">Hızlı Üret</span>
           </button>
@@ -282,7 +286,7 @@
           </div>
 
           <!-- SÜRELİ DERİN OPTİMİZASYON BUTONU -->
-          <button type="button" id="btnDistribute" onclick="startTimedOptimization()" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-xs rounded-lg shadow-md shadow-blue-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-blue-400/30" title="Hedef saatlerden taviz vermeden günler arası simetrisi en adil listeyi arar">
+          <button type="button" id="btnDistribute" onclick="startTimedOptimization()" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-xs rounded-lg shadow-md shadow-blue-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-blue-400/30" title="Hedef saatlerden asla taviz vermeden günler arası simetrisi en adil listeyi arar">
             <i id="btnDistributeIcon" class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
             <span id="btnDistributeText">Nöbetleri Üret</span>
           </button>
@@ -315,7 +319,7 @@
 
         <div class="space-y-1">
           <h4 class="font-black text-slate-900 text-sm tracking-tight">Dengeli Liste Optimize Ediliyor...</h4>
-          <p class="text-[11px] text-slate-500 leading-snug">Hafta sonu yığılmaları engelleniyor, günler arası simetri kuruluyor.</p>
+          <p class="text-[11px] text-slate-500 leading-snug">Hekim mesai saatleri garanti ediliyor, günler arası simetri kuruluyor.</p>
         </div>
 
         <div class="w-full bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 grid grid-cols-2 gap-2 text-[11px]">
@@ -330,7 +334,7 @@
         </div>
 
         <div class="text-[10px] text-slate-400 italic">
-          Doktor mesai saatlerinin altı kesinlikle olamaz kuralı aktiftir.
+          Doktor mesai saatinin altı kesinlikle olamaz kuralı tavizsiz uygulanmaktadır.
         </div>
       </div>
     </div>
@@ -435,6 +439,8 @@
     };
 
     let currentSeed = 1337;
+    let isSeedLocked = false;
+
     function mulberry32(a) {
       return function() {
         var t = a += 0x6D2B79F5;
@@ -516,6 +522,18 @@
         console.error("Yükleme hatası:", err);
       }
     };
+
+    function toggleSeedLock() {
+      isSeedLocked = !isSeedLocked;
+      const icon = document.getElementById('seedLockIcon');
+      if (isSeedLocked) {
+        icon.className = "fa-solid fa-lock text-blue-600";
+        showToast("Seed kilitlendi: Üretimlerde bu tohum sabit kalacak.");
+      } else {
+        icon.className = "fa-solid fa-lock-open text-slate-400";
+        showToast("Seed kilidi açıldı: Her üretimde yeni rastgele tohum atanacak.");
+      }
+    }
 
     function onFilterChanged(changedType) {
       if (isDirty) {
@@ -717,7 +735,7 @@
       if (!toast) return;
       document.getElementById('toastMessage').innerText = msg;
       toast.classList.remove('hidden');
-      setTimeout(() => toast.classList.add('hidden'), 2500);
+      setTimeout(() => toast.classList.add('hidden'), 2800);
     }
 
     function exportStateBackup() {
@@ -878,7 +896,6 @@
         }
         isGenerated = true;
         
-        // Aktif hafızaya da yaz
         const monthStr = getSelectedPeriodString();
         const srvName = document.getElementById('selectedService').value;
         try {
@@ -1291,7 +1308,59 @@
     }
 
     // =========================================================================
-    // A) KONTENJAN PLANI (buildDayQuotas)
+    // DÖRT DÖRTLÜK GERÇEKÇİ FİZİBİLİTE ÖN DENETİMİ (3 GÜN ARALIK KONTROLLÜ)
+    // =========================================================================
+    function checkDoctorFeasibility(maxLimit) {
+      // 3 gün dinlenme kuralına uyan en ağır gün kombinasyonunu greedy hesapla
+      let dayOts = [];
+      for (let d = 1; d <= daysInMonth; d++) {
+        dayOts.push({ day: d, ot: getOvertimeEarned(daysMeta[d - 1], d) });
+      }
+      dayOts.sort((a, b) => b.ot - a.ot);
+
+      let chosenDays = [];
+      let theoreticalMaxOt = 0;
+
+      for (let item of dayOts) {
+        if (chosenDays.length >= maxLimit) break;
+        // Seçilen günlerle arasında en az 3 gün mesafe var mı? (|d1 - d2| >= 3)
+        let conflict = chosenDays.some(cd => Math.abs(cd - item.day) < 3);
+        if (!conflict) {
+          chosenDays.push(item.day);
+          theoreticalMaxOt += item.ot;
+        }
+      }
+
+      for (let doc of doctors) {
+        if (doc.targetOvertime > theoreticalMaxOt) {
+          return {
+            possible: false,
+            message: `${doc.name} için belirlenen ${doc.targetOvertime}s hedefi, bu ayki resmi tatil/hafta sonu takvimi, 3 gün dinlenme kuralı ve azami ${maxLimit} nöbet sınırı altında matematiksel olarak imkansızdır (En fazla ${theoreticalMaxOt}s kazanılabilir). Lütfen hedefi düşürün veya Maks. Nöbet sınırını artırın.`
+          };
+        }
+      }
+
+      // Gün Tavanı Kontrolü
+      const customCeil = parseInt(document.getElementById('customDailyCeiling').value);
+      if (!isNaN(customCeil) && customCeil > 0) {
+        let totalMaxCapacity = 0;
+        for (let d = 1; d <= daysInMonth; d++) {
+          totalMaxCapacity += customCeil * getOvertimeEarned(daysMeta[d - 1], d);
+        }
+        let totalDemand = doctors.reduce((s, d) => s + d.targetOvertime, 0);
+        if (totalDemand > totalMaxCapacity) {
+          return {
+            possible: false,
+            message: `Belirlediğiniz gün başı ${customCeil} nöbetçi tavanı ile ayın toplam kapasitesi (${totalMaxCapacity}s), hekimlerin toplam talebini (${totalDemand}s) karşılayamaz. Lütfen gün tavanını artırın veya boş bırakarak otomatik moda alın.`
+          };
+        }
+      }
+
+      return { possible: true };
+    }
+
+    // =========================================================================
+    // KONTENJAN PLANI (buildDayQuotas)
     // =========================================================================
     function buildDayQuotas() {
       let quotas = {};
@@ -1299,12 +1368,10 @@
 
       let remainingDemand = doctors.reduce((sum, d) => sum + d.targetOvertime, 0);
 
-      // 1 slotun saatini düş
       for (let d = 1; d <= daysInMonth; d++) {
         remainingDemand -= getOvertimeEarned(daysMeta[d - 1], d);
       }
 
-      // Kalan talebi kotası en düşük güne, eşitlikte ot'si düşük olana dağıt
       while (remainingDemand > 0) {
         let bestDay = -1;
         let minQ = Infinity;
@@ -1324,7 +1391,6 @@
         remainingDemand -= minOt;
       }
 
-      // Kullanıcı elle bir tavan girdiyse kontrol et
       const customCeil = parseInt(document.getElementById('customDailyCeiling').value);
       if (!isNaN(customCeil) && customCeil > 0) {
         for (let d = 1; d <= daysInMonth; d++) {
@@ -1346,9 +1412,15 @@
       buildSimulationCaches();
 
       const maxLimit = parseInt(document.getElementById('maxShiftLimit').value) || 8;
-      const seedVal = parseInt(document.getElementById('seedInput').value);
-      currentSeed = (!isNaN(seedVal) && seedVal > 0) ? seedVal : Math.floor(Math.random() * 900000) + 100000;
-      document.getElementById('seedInput').value = currentSeed;
+      const feas = checkDoctorFeasibility(maxLimit);
+      if (!feas.possible) {
+        return alert(feas.message);
+      }
+
+      if (!isSeedLocked) {
+        currentSeed = Math.floor(Math.random() * 900000) + 100000;
+        document.getElementById('seedInput').value = currentSeed;
+      }
       randomFunc = mulberry32(currentSeed);
 
       const quotas = buildDayQuotas();
@@ -1367,24 +1439,38 @@
 
       if (success) {
         refineRosterLocally(trialGrid, maxLimit, quotas, randomFunc);
-        grid = trialGrid;
-      } else {
-        constructFeasibleRoster(trialGrid, maxLimit, quotas, randomFunc, true);
-        grid = trialGrid;
+        const val = validateRoster(trialGrid, maxLimit, quotas);
+        if (val.valid) {
+          grid = trialGrid;
+          markDirty();
+          isGenerated = true;
+          updateButtons();
+          renderOnly();
+          runIndependentValidation();
+          showToast("Hızlı liste tüm hekim saatleri eksiksiz tamamlanarak üretildi!");
+          return;
+        }
       }
 
-      markDirty();
-      isGenerated = true;
-      updateButtons();
-      renderOnly();
-      const val = validateRoster(grid, maxLimit, quotas);
+      let fallbackGrid = JSON.parse(JSON.stringify(baseGrid));
+      let fbSuccess = constructFeasibleRoster(fallbackGrid, maxLimit, quotas, randomFunc, true);
+      if (fbSuccess) {
+        refineRosterLocally(fallbackGrid, maxLimit, quotas, randomFunc);
+        const valFb = validateRoster(fallbackGrid, maxLimit, quotas);
+        if (valFb.valid) {
+          grid = fallbackGrid;
+          markDirty();
+          isGenerated = true;
+          updateButtons();
+          renderOnly();
+          runIndependentValidation();
+          showToast("Hızlı liste tüm hekim saatleri tamamlanarak üretildi!");
+          return;
+        }
+      }
+
       runIndependentValidation();
-
-      if (val.valid) {
-        showToast("Hızlı liste başarıyla oluşturuldu!");
-      } else {
-        showToast("Hızlı liste oluşturuldu ancak bazı kısıtlar sağlanamadı, Hakem Raporunu inceleyin.");
-      }
+      alert("Bu parametreler altında tüm hekimlerin saat hedeflerini eksiksiz karşılayan bir liste kurulamadı. Mevcut listeniz bozulmadan korunmuştur. Lütfen Hakem Raporunu inceleyin.");
     }
 
     // =========================================================================
@@ -1399,6 +1485,12 @@
 
       const allocatedSeconds = parseInt(document.getElementById('selectOptimizationTime').value) || 15;
       const maxLimit = parseInt(document.getElementById('maxShiftLimit').value) || 8;
+
+      const feas = checkDoctorFeasibility(maxLimit);
+      if (!feas.possible) {
+        return alert(feas.message);
+      }
+
       const quotas = buildDayQuotas();
 
       const btn = document.getElementById('btnDistribute');
@@ -1427,7 +1519,6 @@
         }
       });
 
-      // İYİLEŞTİRME: Mevcut geçerli liste varsa başlangıç adayı olarak koru
       let globalBestValidSolution = null;
       let globalBestValidCost = Infinity;
       let globalBestValidSeed = currentSeed;
@@ -1439,10 +1530,6 @@
           globalBestValidCost = evaluateQualityCost(grid, quotas);
         }
       }
-
-      let globalBestAnySolution = null;
-      let globalBestAnyCost = Infinity;
-      let globalBestAnySeed = 0;
 
       let iterationsCount = 0;
       const startTime = Date.now();
@@ -1459,7 +1546,7 @@
         const batchStart = Date.now();
         while (Date.now() - batchStart < 25 && Date.now() < endTime) {
           iterationsCount++;
-          const trialSeed = (iterationsCount === 1 && currentSeed) ? currentSeed : (Math.floor(Math.random() * 900000) + 100000);
+          const trialSeed = (iterationsCount === 1 && isSeedLocked) ? currentSeed : (Math.floor(Math.random() * 900000) + 100000);
           const rng = mulberry32(trialSeed);
 
           let trialGrid = JSON.parse(JSON.stringify(baseGrid));
@@ -1467,21 +1554,16 @@
 
           if (success) {
             refineRosterLocally(trialGrid, maxLimit, quotas, rng);
-            let cost = evaluateQualityCost(trialGrid, quotas);
-
-            if (cost < globalBestAnyCost) {
-              globalBestAnyCost = cost;
-              globalBestAnySolution = trialGrid;
-              globalBestAnySeed = trialSeed;
-            }
-
             let validation = validateRoster(trialGrid, maxLimit, quotas);
-            if (validation.valid && cost < globalBestValidCost) {
-              globalBestValidCost = cost;
-              globalBestValidSolution = trialGrid;
-              globalBestValidSeed = trialSeed;
+            if (validation.valid) {
+              let cost = evaluateQualityCost(trialGrid, quotas);
+              if (cost < globalBestValidCost) {
+                globalBestValidCost = cost;
+                globalBestValidSolution = trialGrid;
+                globalBestValidSeed = trialSeed;
 
-              if (cost === 0) break;
+                if (cost === 0) break;
+              }
             }
           }
         }
@@ -1497,34 +1579,19 @@
           if (overlay) overlay.classList.add('hidden');
           setUILocked(false);
 
-          let chosenSolution = globalBestValidSolution || globalBestAnySolution;
-          let chosenSeed = globalBestValidSolution ? globalBestValidSeed : globalBestAnySeed;
-
-          if (chosenSolution) {
-            grid = chosenSolution;
-            currentSeed = chosenSeed;
+          if (globalBestValidSolution) {
+            grid = globalBestValidSolution;
+            currentSeed = globalBestValidSeed;
             document.getElementById('seedInput').value = currentSeed;
             markDirty();
             isGenerated = true;
             updateButtons();
             renderOnly();
             runIndependentValidation();
-            
-            if (globalBestValidSolution) {
-              showToast(`${iterationsCount} alternatif tarandı. Mesai ve gün dengesi tam sağlandı!`);
-            } else {
-              showToast(`${iterationsCount} alternatif tarandı. En yakın liste uygulandı, eksikleri Hakem Raporundan inceleyin.`);
-            }
+            showToast(`${iterationsCount} alternatif tarandı. Hekim saatleri eksiksiz tamamlandı ve dağılım optimize edildi!`);
           } else {
-            let fallbackGrid = JSON.parse(JSON.stringify(baseGrid));
-            constructFeasibleRoster(fallbackGrid, maxLimit, quotas, Math.random, true);
-            grid = fallbackGrid;
-            markDirty();
-            isGenerated = true;
-            updateButtons();
-            renderOnly();
             runIndependentValidation();
-            showToast("Belirtilen sürede tam geçerli çözüm arandı, en yakın liste hazırlandı.");
+            alert(`Belirtilen ${allocatedSeconds} saniyede tüm hekimlerin saat hedeflerini eksiksiz karşılayan geçerli bir çözüm bulunamadı. Mevcut listeniz bozulmadan korunmuştur. Lütfen hedefleri veya Maksimum Nöbet sınırını gözden geçirin.`);
           }
         } else {
           setTimeout(step, 8);
@@ -1535,7 +1602,7 @@
     }
 
     // =========================================================================
-    // C) TERSİNE ÇEVRİLMİŞ FAZ 2 SKORLAMASI VE KONTENJANLI YERLEŞTİRME
+    // KESİN SAAT GARANTİLİ YERLEŞTİRME (FAZ 1, FAZ 2 VE FAZ 3)
     // =========================================================================
     function constructFeasibleRoster(workGrid, maxLimit, quotas, rng, isFallback = false) {
       let unfilledDays = [];
@@ -1551,7 +1618,7 @@
       });
       dayMetrics.sort((a, b) => a.count - b.count);
 
-      // Faz 1: Her günü en az 1 nöbetçiyle güvenceye al
+      // FAZ 1: Her günü en az 1 nöbetçiyle güvenceye al
       for (let item of dayMetrics) {
         const d = item.day;
         const otVal = getOvertimeEarned(daysMeta[d - 1], d);
@@ -1570,7 +1637,7 @@
         workGrid[scoredCandidates[0].doc.id][d] = 'N_AUTO';
       }
 
-      // Faz 2: Hedef tamamlama adımı
+      // FAZ 2: Normal Hedef Tamamlama (+8 Tavanı ve Kontenjan Önceliği ile)
       let sortedDocs = [...doctors].sort((a, b) => {
         let diffA = a.targetOvertime - calculateDocStats(a, workGrid).earnedOvertime;
         let diffB = b.targetOvertime - calculateDocStats(b, workGrid).earnedOvertime;
@@ -1591,7 +1658,7 @@
             const otVal = getOvertimeEarned(daysMeta[d - 1], d);
             if (stats.earnedOvertime + otVal <= doc.targetOvertime + 8) {
               let assignedToday = doctors.filter(dc => workGrid[dc.id][d] === 'N_FIXED' || workGrid[dc.id][d] === 'N_AUTO').map(dc => dc.id);
-              if (getEligibleCandidates(d, assignedToday, maxLimit, otVal, false, workGrid, quotas, isFallback).some(c => c.id === doc.id)) {
+              if (getEligibleCandidates(d, assignedToday, maxLimit, otVal, false, workGrid, quotas, true).some(c => c.id === doc.id)) {
                 feasibleDays.push({ day: d, otVal, assignedCount: assignedToday.length });
               }
             }
@@ -1599,13 +1666,12 @@
 
           if (feasibleDays.length === 0) break;
 
-          // Doluluk birincil, saat uyumu ikincil
           const scoredDays = feasibleDays.map(f => {
-            const fillRatio = f.assignedCount / (quotas[f.day] || 1);
             const hourGap = Math.abs(missing - f.otVal);
+            const fillRatio = f.assignedCount / (quotas[f.day] || 1);
             return {
               item: f,
-              score: (fillRatio * 1000) + (hourGap * 15) + (rng() * 0.4 - 0.2)
+              score: (hourGap * 20) + (fillRatio * 8) + (rng() * 0.4 - 0.2)
             };
           });
           scoredDays.sort((a, b) => a.score - b.score);
@@ -1614,9 +1680,54 @@
         }
       }
 
-      // İYİLEŞTİRME: Tüm hekimler saat hedefine ulaştı mı kontrol et
+      // FAZ 3: +8 Tavanını Feda Etme Turu (Hekim saati hala eksikse tavanı kaldırıp doldur)
+      for (let doc of doctors) {
+        let stats = calculateDocStats(doc, workGrid);
+        let missing = doc.targetOvertime - stats.earnedOvertime;
+        if (missing > 0 && countDoctorShifts(doc, workGrid) < maxLimit) {
+          let extraDays = [];
+          for (let d = 1; d <= daysInMonth; d++) {
+            const otVal = getOvertimeEarned(daysMeta[d - 1], d);
+            let assignedToday = doctors.filter(dc => workGrid[dc.id][d] === 'N_FIXED' || workGrid[dc.id][d] === 'N_AUTO').map(dc => dc.id);
+            if (getEligibleCandidates(d, assignedToday, maxLimit, otVal, false, workGrid, quotas, true).some(c => c.id === doc.id)) {
+              extraDays.push({ day: d, otVal });
+            }
+          }
+          extraDays.sort((a, b) => a.otVal - b.otVal);
+          for (let ed of extraDays) {
+            workGrid[doc.id][ed.day] = 'N_AUTO';
+            stats = calculateDocStats(doc, workGrid);
+            if (stats.earnedOvertime >= doc.targetOvertime || countDoctorShifts(doc, workGrid) >= maxLimit) break;
+          }
+        }
+      }
+
+      // FAZ 4: Gerekirse maxShiftLimit'i Aşarak Saati Tamamlama (Son Çare)
+      for (let doc of doctors) {
+        let stats = calculateDocStats(doc, workGrid);
+        let missing = doc.targetOvertime - stats.earnedOvertime;
+        if (missing > 0) {
+          let emergencyDays = [];
+          for (let d = 1; d <= daysInMonth; d++) {
+            const otVal = getOvertimeEarned(daysMeta[d - 1], d);
+            let assignedToday = doctors.filter(dc => workGrid[dc.id][d] === 'N_FIXED' || workGrid[dc.id][d] === 'N_AUTO').map(dc => dc.id);
+            // maxLimit sınırı 15'e kadar esnetilir
+            if (getEligibleCandidates(d, assignedToday, 15, otVal, false, workGrid, quotas, true).some(c => c.id === doc.id)) {
+              emergencyDays.push({ day: d, otVal });
+            }
+          }
+          emergencyDays.sort((a, b) => a.otVal - b.otVal);
+          for (let ed of emergencyDays) {
+            workGrid[doc.id][ed.day] = 'N_AUTO';
+            stats = calculateDocStats(doc, workGrid);
+            if (stats.earnedOvertime >= doc.targetOvertime) break;
+          }
+        }
+      }
+
+      // MUTLAK KURAL: Hekim saati eksik kaldıysa çözüm geçersizdir
       const anyDeficit = doctors.some(d => calculateDocStats(d, workGrid).earnedOvertime < d.targetOvertime);
-      if (anyDeficit && !isFallback) return false;
+      if (anyDeficit) return false;
 
       return true;
     }
@@ -1628,10 +1739,10 @@
     }
 
     // =========================================================================
-    // D) GELİŞMİŞ YEREL İYİLEŞTİRME (1->N DÖNÜŞÜMÜ, SWAP, KOTA DENGELEME)
+    // YEREL İYİLEŞTİRME (SAATİ ASLA EKSİLTMEZ)
     // =========================================================================
     function refineRosterLocally(workGrid, maxLimit, quotas, rng) {
-      // 1. 1->N DÖNÜŞÜMÜ: Cumartesi (24s) nöbetini alıp yerine 2-3 adet hafta içi nöbeti verme
+      // 1. 1->N Dönüşümü: Cumartesi (24s) nöbetini alıp yerine 2-3 adet hafta içi nöbeti verme
       for (let step = 0; step < 20; step++) {
         let crowdedSaturdays = [];
         for (let d = 1; d <= daysInMonth; d++) {
@@ -1647,10 +1758,8 @@
         let candDocs = doctors.filter(dc => workGrid[dc.id][sat] === 'N_AUTO');
 
         for (let doc of candDocs) {
-          // Cumartesi nöbetini geçici kaldır
           workGrid[doc.id][sat] = '';
 
-          // Uygun boş hafta içi günleri ara (8s veya 16s)
           let replacementDays = [];
           let accumulatedOt = 0;
 
@@ -1663,7 +1772,7 @@
               if (getEligibleCandidates(d, assigned, maxLimit, ot, false, workGrid, quotas, true).some(c => c.id === doc.id)) {
                 replacementDays.push(d);
                 accumulatedOt += ot;
-                workGrid[doc.id][d] = 'N_AUTO'; // Geçici koy
+                workGrid[doc.id][d] = 'N_AUTO';
                 if (accumulatedOt >= 24) break;
               }
             }
@@ -1672,18 +1781,17 @@
           let newStats = calculateDocStats(doc, workGrid);
           let shiftCount = countDoctorShifts(doc, workGrid);
 
-          // Başarılı mı? (Saat >= hedef, saat <= hedef+8 ve nöbet sınırı aşılmadı)
-          if (accumulatedOt >= 24 && newStats.earnedOvertime >= doc.targetOvertime && newStats.earnedOvertime <= doc.targetOvertime + 8 && shiftCount <= maxLimit) {
-            break; // Dönüşüm kabul edildi
+          // Üst sınır kilidi kaldırıldı; hedef saatin altına düşmüyorsa kabul
+          if (accumulatedOt >= 24 && newStats.earnedOvertime >= doc.targetOvertime && shiftCount <= maxLimit) {
+            break;
           } else {
-            // Geri al
             replacementDays.forEach(d => workGrid[doc.id][d] = '');
             workGrid[doc.id][sat] = 'N_AUTO';
           }
         }
       }
 
-      // 2. KOTAYI AŞAN GÜNDEN TENHA GÜNE DOĞRUDAN TAŞIMA (Eski nöbet kaldırılarak test edilir)
+      // 2. Kotayı Aşan Günden Tenha Güne Taşıma
       for (let step = 0; step < 25; step++) {
         let dayDiffs = [];
         for (let d = 1; d <= daysInMonth; d++) {
@@ -1704,7 +1812,6 @@
           const oldOt = getOvertimeEarned(daysMeta[crowded.day - 1], crowded.day);
           const newOt = getOvertimeEarned(daysMeta[starved.day - 1], starved.day);
 
-          // Eski nöbeti geçici olarak kaldır
           workGrid[doc.id][crowded.day] = '';
 
           let assignedStarved = doctors.filter(dc => workGrid[dc.id][starved.day] === 'N_FIXED' || workGrid[dc.id][starved.day] === 'N_AUTO').map(dc => dc.id);
@@ -1713,8 +1820,8 @@
             workGrid[doc.id][starved.day] = 'N_AUTO';
             let curStats = calculateDocStats(doc, workGrid);
 
-            // Alt ve üst sınır kontrolü
-            if (curStats.earnedOvertime >= doc.targetOvertime && curStats.earnedOvertime <= doc.targetOvertime + 8) {
+            // TAVİZSİZ: Hekim saati hedefinin altına DÜŞEMEZ!
+            if (curStats.earnedOvertime >= doc.targetOvertime) {
               moved = true;
               break;
             } else {
@@ -1727,45 +1834,10 @@
         }
         if (!moved && step > 10) break;
       }
-
-      // 3. AYNI GÜN İÇİNDE HEKİM TAKASI (SWAP)
-      for (let step = 0; step < 20; step++) {
-        let needyDocs = doctors.filter(d => calculateDocStats(d, workGrid).diff < 0 && countDoctorShifts(d, workGrid) < maxLimit);
-        let surplusDocs = doctors.filter(d => calculateDocStats(d, workGrid).diff > 0);
-
-        if (needyDocs.length === 0 || surplusDocs.length === 0) break;
-
-        let needy = needyDocs[Math.floor(rng() * needyDocs.length)];
-        let surplus = surplusDocs[Math.floor(rng() * surplusDocs.length)];
-
-        for (let d = 1; d <= daysInMonth; d++) {
-          if (workGrid[surplus.id][d] === 'N_AUTO' && workGrid[needy.id][d] === '') {
-            const otVal = getOvertimeEarned(daysMeta[d - 1], d);
-
-            workGrid[surplus.id][d] = '';
-            let assigned = doctors.filter(dc => workGrid[dc.id][d] === 'N_FIXED' || workGrid[dc.id][d] === 'N_AUTO').map(dc => dc.id);
-
-            if (getEligibleCandidates(d, assigned, maxLimit, otVal, false, workGrid, quotas, true).some(c => c.id === needy.id)) {
-              workGrid[needy.id][d] = 'N_AUTO';
-              let sStats = calculateDocStats(surplus, workGrid);
-              let nStats = calculateDocStats(needy, workGrid);
-
-              if (sStats.earnedOvertime >= surplus.targetOvertime && nStats.earnedOvertime <= needy.targetOvertime + 8) {
-                break;
-              } else {
-                workGrid[needy.id][d] = '';
-                workGrid[surplus.id][d] = 'N_AUTO';
-              }
-            } else {
-              workGrid[surplus.id][d] = 'N_AUTO';
-            }
-          }
-        }
-      }
     }
 
     // =========================================================================
-    // E) YENİ MALİYET FONKSİYONU
+    // MALİYET FONKSİYONU
     // =========================================================================
     function evaluateQualityCost(workGrid, quotas) {
       let deficitPenalty = 0;
@@ -1775,9 +1847,9 @@
       doctors.forEach(doc => {
         let stats = calculateDocStats(doc, workGrid);
         if (stats.diff < 0) {
-          deficitPenalty += Math.abs(stats.diff) * 10000;
+          deficitPenalty += Math.pow(Math.abs(stats.diff), 2) * 50000;
         } else if (stats.diff > 0) {
-          surplusPenalty += stats.diff * 100;
+          surplusPenalty += stats.diff * 50;
         }
         saturdayCounts.push(stats.saturdayCount);
       });
@@ -1792,21 +1864,18 @@
 
       let spread = Math.max(...dayCounts) - Math.min(...dayCounts);
 
-      // Cumartesi adalet varyansı
       let avgSat = saturdayCounts.reduce((a, b) => a + b, 0) / (saturdayCounts.length || 1);
       let satVariance = saturdayCounts.reduce((sum, val) => sum + Math.pow(val - avgSat, 2), 0);
 
-      return deficitPenalty + surplusPenalty + (quotaDeviation * 300) + (Math.pow(spread, 2) * 200) + (satVariance * 25);
+      return deficitPenalty + surplusPenalty + (quotaDeviation * 200) + (Math.pow(spread, 2) * 150) + (satVariance * 20);
     }
 
     // =========================================================================
-    // B) SERT GÜNLÜK TAVANLI GETELIGIBLECANDIDATES
+    // GETELIGIBLECANDIDATES
     // =========================================================================
     function getEligibleCandidates(d, assignedToday, maxLimit, otVal, checkTargetCap, workGrid, quotas, isFallback = false) {
       const q = (quotas && quotas[d]) ? quotas[d] : 99;
-      // Sert günlük tavan: Normal modda quota aşılmaz, fallback modunda en fazla quota+1
       if (!isFallback && assignedToday.length >= q) return [];
-      if (isFallback && assignedToday.length >= q + 1) return [];
 
       return doctors.filter(doc => {
         if (assignedToday.includes(doc.id)) return false;
@@ -1835,21 +1904,23 @@
     }
 
     // =========================================================================
-    // F) HAKEM RAPORU (validateRoster - GÜN KOTASI VE SAAT KONTROLÜ)
+    // HAKEM RAPORU (SERT VE YUMUŞAK İHLAL AYRIMI)
     // =========================================================================
     function validateRoster(workGrid, maxLimit, quotas) {
-      let violations = [];
+      let hardViolations = [];
+      let softWarnings = [];
       const qMap = quotas || buildDayQuotas();
 
+      // Gün doluluk kontrolleri
       for (let d = 1; d <= daysInMonth; d++) {
         let count = 0;
         doctors.forEach(doc => {
           if (workGrid[doc.id] && (workGrid[doc.id][d] === 'N_FIXED' || workGrid[doc.id][d] === 'N_AUTO')) count++;
         });
         if (count === 0) {
-          violations.push(`Ayın ${d}. gününde hiç nöbetçi yok (Sıfır Gün İhlali).`);
+          hardViolations.push(`Ayın ${d}. gününde hiç nöbetçi yok (Sıfır Gün İhlali).`);
         } else if (Math.abs(count - (qMap[d] || 1)) >= 2) {
-          violations.push(`Ayın ${d}. gününde ${count} nöbetçi var (Hedef kontenjan: ${qMap[d] || 1}). Dağılım aşırı sapmış.`);
+          softWarnings.push(`Ayın ${d}. gününde ${count} nöbetçi var (Hedef kontenjan: ${qMap[d] || 1}). Günlük denge hafif sapmış.`);
         }
       }
 
@@ -1861,34 +1932,38 @@
 
         for (let i = 0; i < shifts.length - 1; i++) {
           if (shifts[i + 1] - shifts[i] < 3) {
-            violations.push(`${doc.name}: ${shifts[i]} ve ${shifts[i+1]} günleri arasında yetersiz dinlenme.`);
+            hardViolations.push(`${doc.name}: ${shifts[i]} ve ${shifts[i+1]} günleri arasında yetersiz dinlenme (3 gün aralık şartı ihlal edildi).`);
           }
         }
 
         const prevTail = getPreviousMonthTailShifts(doc);
         if (prevTail.lastDayShift && (shifts.includes(1) || shifts.includes(2))) {
-          violations.push(`${doc.name}: Önceki ayın son günü nöbetçi olduğu halde ayın 1 veya 2'sine nöbet yazılmış.`);
+          hardViolations.push(`${doc.name}: Önceki ayın son günü nöbetçi olduğu halde ayın 1 veya 2'sine nöbet yazılmış.`);
         }
         if (prevTail.secondLastDayShift && shifts.includes(1)) {
-          violations.push(`${doc.name}: Önceki ayın sondan 2. günü nöbetçi olduğu halde ayın 1'ine nöbet yazılmış.`);
+          hardViolations.push(`${doc.name}: Önceki ayın sondan 2. günü nöbetçi olduğu halde ayın 1'ine nöbet yazılmış.`);
         }
 
         let stats = calculateDocStats(doc, workGrid);
+        // TAVİZSİZ: Eksik saat mutlak sert ihlaldir
         if (stats.earnedOvertime < doc.targetOvertime) {
-          violations.push(`${doc.name}: Hedef ${doc.targetOvertime}s iken ${stats.earnedOvertime}s yazıldı (${doc.targetOvertime - stats.earnedOvertime}s eksik).`);
+          hardViolations.push(`[KRİTİK İHLAL] ${doc.name}: Hedef ${doc.targetOvertime}s iken ${stats.earnedOvertime}s yazıldı (${doc.targetOvertime - stats.earnedOvertime}s EKSİK).`);
         }
+        // +8 aşımı yumuşak uyarıdır (saat kurtarmak için tolere edilebilir)
         if (stats.earnedOvertime > doc.targetOvertime + 8) {
-          violations.push(`${doc.name}: Hedef ${doc.targetOvertime}s iken ${stats.earnedOvertime}s yazıldı (+8 tavanı aşıldı).`);
+          softWarnings.push(`${doc.name}: Hedef ${doc.targetOvertime}s iken ${stats.earnedOvertime}s yazıldı (+8 tavanı saat kurtarma amacıyla aşıldı).`);
         }
 
         if (shifts.length > maxLimit) {
-          violations.push(`${doc.name}: Maksimum ${maxLimit} nöbet sınırı aşıldı (${shifts.length} nöbet).`);
+          softWarnings.push(`${doc.name}: Maksimum ${maxLimit} nöbet sınırı saat hedefini tamamlamak amacıyla aşıldı (${shifts.length} nöbet).`);
         }
       });
 
       return {
-        valid: violations.length === 0,
-        violations
+        valid: hardViolations.length === 0,
+        hardViolations,
+        softWarnings,
+        violations: [...hardViolations, ...softWarnings]
       };
     }
 
@@ -1901,10 +1976,17 @@
       if (!list || !panel) return;
       list.innerHTML = '';
 
-      if (!res.valid) {
-        res.violations.forEach(v => {
+      if (res.violations.length > 0) {
+        res.hardViolations.forEach(v => {
           const li = document.createElement('li');
+          li.className = "text-rose-700 font-bold";
           li.innerHTML = escapeHtml(v);
+          list.appendChild(li);
+        });
+        res.softWarnings.forEach(w => {
+          const li = document.createElement('li');
+          li.className = "text-amber-800 font-medium";
+          li.innerHTML = escapeHtml(w);
           list.appendChild(li);
         });
         panel.classList.remove('hidden');
@@ -1914,7 +1996,30 @@
     }
 
     // =========================================================================
-    // G) TABLO RENDER (DÜZELTİLMİŞ SAYISAL ORTALAMA VE KOTA RENKLENDİRMESİ)
+    // DIŞA AKTARMA GÜVENLİK KAPILARI (PDF & EXCEL GATEKEEPER)
+    // =========================================================================
+    function printRosterSafe() {
+      const maxLimit = parseInt(document.getElementById('maxShiftLimit').value) || 8;
+      const val = validateRoster(grid, maxLimit);
+      if (!val.valid) {
+        alert("DİKKAT: Çizelgede eksik mesai saati olan hekimler veya dinlenme kuralı ihlalleri var!\n\nPDF çıktısı alınabilmesi için lütfen hekimlerin saat hedeflerini tamamlayın veya 'Nöbetleri Üret' butonunu çalıştırın.");
+        return;
+      }
+      window.print();
+    }
+
+    function exportToStyledExcelSafe() {
+      const maxLimit = parseInt(document.getElementById('maxShiftLimit').value) || 8;
+      const val = validateRoster(grid, maxLimit);
+      if (!val.valid) {
+        alert("DİKKAT: Çizelgede eksik mesai saati olan hekimler veya dinlenme kuralı ihlalleri var!\n\nExcel çıktısı alınabilmesi için lütfen hekimlerin saat hedeflerini tamamlayın veya 'Nöbetleri Üret' butonunu çalıştırın.");
+        return;
+      }
+      exportToStyledExcel();
+    }
+
+    // =========================================================================
+    // TABLO RENDER
     // =========================================================================
     function renderOnly() {
       const table = document.getElementById('rosterTable');
