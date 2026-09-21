@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>AnberTech -* Formal Nöbet Çözücü V1.0</title>
+  <title>AnberTech - Formal Nöbet Çözücü V1.0</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <!-- Tarayıcı Sekme Logosu (Favicon) -->
@@ -31,16 +31,29 @@
     th, td { text-align: center; vertical-align: middle; white-space: nowrap; overflow: hidden; }
     
     #tableContainer {
-      transform-origin: top left;
-      transition: transform 0.05s ease-out;
+      zoom: 1;
+    }
+
+    /* Yapışkan gün başlığı: kaydırınca 1..31 satırı üstte kalır.
+       Safari dahil tüm tarayıcılar için sticky, thead yerine th hücrelerine verilir. */
+    #rosterTable thead th {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      box-shadow: inset 0 -1px 0 #cbd5e1;   /* border-collapse'ta kaybolan alt çizgi */
+    }
+
+    /* Zebra: çift satırlara çok hafif gri (nöbet/izin renkli hücreler olduğu gibi kalır) */
+    #rosterTable tbody tr:nth-child(even) td:not(:where(.cell-auto-n, .cell-fixed-n, .cell-off, .cell-ni)) {
+      box-shadow: inset 0 0 0 9999px rgba(15, 23, 42, 0.035);
     }
 
     /* Satir uzerine gelince yesil vurgu (hucre renkleri !important oldugu icin box-shadow kullaniyoruz) */
     #rosterTable tbody tr:hover td {
-      box-shadow: inset 0 0 0 9999px rgba(16, 185, 129, 0.20);
+      box-shadow: inset 0 0 0 9999px rgba(16, 185, 129, 0.20) !important;
     }
     #rosterTable tbody tr:hover td:first-child {
-      box-shadow: inset 4px 0 0 0 #059669, inset 0 0 0 9999px rgba(16, 185, 129, 0.20);
+      box-shadow: inset 4px 0 0 0 #059669, inset 0 0 0 9999px rgba(16, 185, 129, 0.20) !important;
     }
     #rosterTable tbody tr:hover { outline: 2px solid #10b981; outline-offset: -2px; }
 
@@ -91,7 +104,7 @@
       body { background: white !important; padding: 0 !important; font-size: 8px !important; }
       header, .no-print, #warningPanel, #pasteModal, #archiveModal, #optimizingOverlay { display: none !important; }
       #tableOuterWrapper { max-height: none !important; overflow: visible !important; border: none !important; }
-      #tableContainer { transform: scale(1) !important; width: 100% !important; }
+      #tableContainer { zoom: 1 !important; transform: none !important; width: 100% !important; }
       table { width: 100% !important; border-collapse: collapse !important; border: 1px solid #94a3b8 !important; }
       thead { display: table-header-group; }
       th, td { border: 1px solid #cbd5e1 !important; padding: 2px !important; font-size: 8px !important; }
@@ -118,6 +131,7 @@
           </div>
         </div>
         <div class="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
+          <span id="approvedIndicator" class="hidden text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded"><i class="fa-solid fa-circle-check text-[9px]"></i> ONAYLANDI</span>
           <span id="dirtyIndicator" class="hidden text-amber-600 font-bold bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">● Kaydedilmemiş Değişiklikler Var</span>
           <span class="hidden sm:inline">Hekim Çalışma ve Nöbet Optimizasyon Sistemi</span>
         </div>
@@ -126,7 +140,24 @@
       <!-- 2. Satır: Kadro Yönetimi Grubu (Sol) & Kaydet / Arşiv / İndirmeler (Sağ) -->
       <div class="flex flex-wrap justify-between items-center border-b border-slate-100 pb-2 gap-2">
         
-        <!-- Sol: Kadro Buton Grubu -->
+        <!-- Sol: Bölüm + Kadro -->
+        <div class="flex flex-wrap items-center gap-2">
+
+          <!-- Bölüm Seçici: YAZILAMAZ (ekleme/silme listenin içinde) -->
+          <div class="relative inline-block" id="serviceDropdownWrapper">
+            <div class="lockable-ui flex items-center gap-1 bg-indigo-50/70 border border-indigo-200 rounded-lg px-2 py-1 cursor-pointer select-none" onclick="toggleServiceDropdown(event)" title="Bölüm seçmek için tıklayın. Ekleme ve silme listenin içindedir.">
+              <i class="fa-solid fa-stethoscope text-indigo-600 text-[10px]"></i>
+              <input type="text" id="selectedService" value="" placeholder="Bölüm seçin..." readonly tabindex="-1" autocomplete="off"
+                class="bg-transparent font-bold text-indigo-950 text-xs w-28 focus:outline-none cursor-pointer select-none pointer-events-none"
+                style="caret-color: transparent; pointer-events: none;">
+              <i class="fa-solid fa-chevron-down text-indigo-400 text-[9px] ml-0.5"></i>
+            </div>
+            <div id="serviceCustomMenu" class="hidden absolute left-0 mt-1 w-44 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden py-1">
+              <div id="serviceCustomList"></div>
+            </div>
+          </div>
+
+          <!-- Kadro Buton Grubu -->
         <div class="flex items-center bg-slate-50 border border-slate-300/80 rounded-lg p-0.5 shadow-sm">
           <span class="text-[9px] font-bold text-slate-400 uppercase px-1.5 hidden md:inline">Kadro:</span>
           
@@ -144,6 +175,7 @@
             <i class="fa-solid fa-clipboard-list text-emerald-600"></i>
             <span>Toplu Gir</span>
           </button>
+        </div>
         </div>
 
         <!-- Sağ: Seed, Zoom, Arşiv, Kaydet, Dışa Aktarma -->
@@ -201,8 +233,9 @@
         <!-- Sol: Parametreler -->
         <div class="flex flex-wrap items-center gap-2">
           
-          <!-- Yıl / Ay -->
-          <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+          <!-- Tarih + Gün/Mesai (tek kutu) -->
+          <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+            <i class="fa-regular fa-calendar text-slate-500 text-[10px]"></i>
             <select id="selectYear" class="lockable-ui bg-transparent font-bold text-slate-800 text-xs focus:outline-none cursor-pointer" onchange="onFilterChanged('year')">
               <option value="2025">2025</option>
               <option value="2026" selected>2026</option>
@@ -224,50 +257,33 @@
               <option value="11">Kasım</option>
               <option value="12">Aralık</option>
             </select>
+            <span class="w-px h-4 bg-slate-300 mx-1"></span>
+            <span class="text-slate-500 font-medium text-[11px] whitespace-nowrap"><strong id="statWorkdays" class="text-slate-800">--</strong> Gün</span>
+            <span class="text-slate-300">•</span>
+            <span class="text-blue-600 font-bold text-[11px] whitespace-nowrap"><span id="statStandardHours">--</span> Mesai</span>
           </div>
 
-          <!-- Servis Seçici -->
-          <div class="relative inline-block" id="serviceDropdownWrapper">
-            <div class="lockable-ui flex items-center gap-1 bg-indigo-50/70 border border-indigo-200 rounded-lg px-2 py-1 cursor-pointer" onclick="toggleServiceDropdown(event)">
-              <i class="fa-solid fa-stethoscope text-indigo-600 text-[10px]"></i>
-              <input type="text" id="selectedService" value="" placeholder="Bölüm adı..." 
-                class="bg-transparent font-bold text-indigo-950 text-xs w-24 focus:outline-none cursor-pointer" 
-                onchange="onFilterChanged('service')" onfocus="openServiceDropdown(event)">
-              <i class="fa-solid fa-chevron-down text-indigo-400 text-[9px] ml-0.5"></i>
-            </div>
-            <div id="serviceCustomMenu" class="hidden absolute left-0 mt-1 w-44 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden py-1">
-              <div id="serviceCustomList"></div>
-            </div>
-          </div>
-
-          <!-- Ay Sonu Kuralı -->
-          <div class="flex items-center gap-1 bg-amber-50/60 border border-amber-200 rounded-lg px-2 py-1" title="Ay sonu nöbet saati katsayısı">
-            <span class="text-[10px] font-bold text-amber-800">Ay Sonu:</span>
-            <select id="lastDayShiftRule" class="lockable-ui bg-transparent font-bold text-amber-900 text-xs focus:outline-none cursor-pointer" onchange="markDirty(); buildSimulationCaches(); renderOnly();">
+          <!-- Kurallar: Ay Sonu + Maks. Nöbet + Günlük Maks (tek kutu) -->
+          <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+            <div class="flex items-center gap-1" title="Ay sonu nöbet saati katsayısı">
+              <span class="text-[10px] font-bold text-amber-800 whitespace-nowrap">Ay Sonu:</span>
+              <select id="lastDayShiftRule" class="lockable-ui bg-transparent font-bold text-amber-900 text-xs focus:outline-none cursor-pointer" onchange="markDirty(); buildSimulationCaches(); renderOnly();">
               <option value="auto">Oto (8s)</option>
               <option value="16" selected>16s</option>
               <option value="24">24s</option>
               <option value="8">8s</option>
             </select>
-          </div>
-
-          <!-- Maks Nöbet Sınırı -->
-          <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1" title="KATI KURAL: Bir hekime bu sayıdan fazla nöbet asla yazılamaz">
-            <span class="text-[10px] font-bold text-blue-600">Maks. Nöbet <i class="fa-solid fa-lock text-[8px]"></i>:</span>
-            <input type="number" id="maxShiftLimit" value="8" min="1" max="15" class="lockable-ui w-8 text-center font-bold bg-white border border-blue-200 rounded text-xs text-blue-700 py-0.5" onchange="markDirty(); renderOnly(); runIndependentValidation();">
-          </div>
-
-          <!-- Gün Başı Maks Nöbetçi -->
-          <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1" title="KATI KURAL: Bir güne bu sayıdan fazla nöbetçi asla yazılamaz (Boş bırakılırsa sınır yoktur)">
-            <span class="text-[10px] font-bold text-slate-600">Günlük Maks <i class="fa-solid fa-lock text-[8px]"></i>:</span>
-            <input type="number" id="customDailyCeiling" placeholder="Yok" min="1" max="25" class="lockable-ui w-9 text-center font-bold bg-white border border-slate-300 rounded text-xs text-slate-700 py-0.5" onchange="markDirty(); buildSimulationCaches(); renderOnly(); runIndependentValidation();">
-          </div>
-
-          <!-- Gün / Mesai İstatistiği -->
-          <div class="hidden lg:flex items-center gap-2 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px]">
-            <span class="text-slate-500 font-medium"><strong id="statWorkdays" class="text-slate-800">--</strong> Gün</span>
-            <span class="text-slate-300">•</span>
-            <span class="text-blue-600 font-bold"><span id="statStandardHours">--</span> Mesai</span>
+            </div>
+            <span class="w-px h-4 bg-slate-300"></span>
+            <div class="flex items-center gap-1" title="KATI KURAL: Bir hekime bu sayıdan fazla nöbet asla yazılamaz">
+              <span class="text-[10px] font-bold text-blue-600 whitespace-nowrap">Maks. Nöbet <i class="fa-solid fa-lock text-[8px]"></i>:</span>
+              <input type="number" id="maxShiftLimit" value="8" min="1" max="15" class="lockable-ui w-8 text-center font-bold bg-white border border-blue-200 rounded text-xs text-blue-700 py-0.5" onchange="markDirty(); renderOnly(); runIndependentValidation();">
+            </div>
+            <span class="w-px h-4 bg-slate-300"></span>
+            <div class="flex items-center gap-1" title="KATI KURAL: Bir güne bu sayıdan fazla nöbetçi asla yazılamaz (boş = sınır yok)">
+              <span class="text-[10px] font-bold text-slate-600 whitespace-nowrap">Günlük Maks <i class="fa-solid fa-lock text-[8px]"></i>:</span>
+              <input type="number" id="customDailyCeiling" placeholder="Yok" min="1" max="25" class="lockable-ui w-9 text-center font-bold bg-white border border-slate-300 rounded text-xs text-slate-700 py-0.5" onchange="markDirty(); buildSimulationCaches(); renderOnly(); runIndependentValidation();">
+            </div>
           </div>
 
         </div>
@@ -276,11 +292,6 @@
         <div class="flex items-center gap-1.5 ml-auto">
           
           <!-- HIZLI ÜRET -->
-          <button type="button" id="btnInstant" onclick="distributeInstantRoster()" class="lockable-ui px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs rounded-lg transition flex items-center gap-1.5 shadow-2xs" title="Beklemeden hedef saatleri tam garanti eden listeyi anında üretir">
-            <i class="fa-solid fa-bolt text-amber-500"></i>
-            <span id="btnInstantText">Hızlı Üret</span>
-          </button>
-
           <!-- OPTİMİZASYON SÜRESİ SEÇİCİ -->
           <div class="flex items-center gap-1 bg-indigo-50 border border-indigo-200 rounded-lg px-2 py-1" title="Algoritmanın en iyi olasılığı aramak için harcayacağı süre">
             <i class="fa-solid fa-stopwatch text-indigo-600 text-[11px]"></i>
@@ -298,6 +309,11 @@
           <button type="button" id="btnDistribute" onclick="startTimedOptimization()" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-xs rounded-lg shadow-md shadow-blue-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-blue-400/30" title="Hedef saatlerden asla taviz vermeden günler arası simetrisi en adil listeyi arar">
             <i id="btnDistributeIcon" class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
             <span id="btnDistributeText">Nöbetleri Üret</span>
+          </button>
+
+          <button type="button" onclick="approveRoster()" id="btnApprove" class="hidden px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-lg shadow-md shadow-emerald-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-emerald-400/30" title="Listeyi denetleyip onaylar ve otomatik olarak kaydeder">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Listeyi Onayla</span>
           </button>
 
           <button type="button" onclick="clearOnlyGenerated()" id="btnClearGenerated" class="lockable-ui hidden px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-medium rounded-lg transition" title="Sadece algoritmanın atadığı nöbetleri geri al">
@@ -492,8 +508,65 @@
     let isDirty = false;
     let activePreviousFilter = { year: '2026', month: '09', service: 'Acil Servis' };
 
+    let isApproved = false;
+    let approvedAtStr = '';
+
+    function renderApprovalBadge() {
+      const el = document.getElementById('approvedIndicator');
+      if (!el) return;
+      if (isApproved) {
+        el.innerHTML = `<i class="fa-solid fa-circle-check text-[9px]"></i> ONAYLANDI · ${escapeHtml(approvedAtStr)}`;
+        el.classList.remove('hidden');
+      } else {
+        el.classList.add('hidden');
+      }
+    }
+
+    // Listede herhangi bir değişiklik onayı düşürür.
+    function revokeApproval() {
+      if (!isApproved) return;
+      isApproved = false;
+      approvedAtStr = '';
+      renderApprovalBadge();
+    }
+
+    // Listeyi denetler, temizse onaylar ve OTOMATİK kaydeder.
+    function approveRoster() {
+      if (isOptimizing) return;
+      if (!doctors || doctors.length === 0) return alert("Onaylanacak bir liste yok.");
+
+      buildSolverConfig();
+      const quotas = buildDayQuotas();
+      const res = validateRoster(grid, SOLVER_CFG.maxShifts, quotas);
+
+      if (!res.valid) {
+        alert("Bu liste onaylanamaz — katı kural ihlali var:\n\n• " +
+              res.hardViolations.slice(0, 6).join("\n• ") +
+              (res.hardViolations.length > 6 ? `\n\n(+${res.hardViolations.length - 6} ihlal daha)` : "") +
+              "\n\nLütfen Hakem Raporunu inceleyin.");
+        runIndependentValidation();
+        return;
+      }
+
+      if (res.softWarnings.length > 0) {
+        const ok = window.confirm("Katı kural ihlali yok, ancak şu uyarılar var:\n\n• " +
+              res.softWarnings.slice(0, 5).join("\n• ") +
+              (res.softWarnings.length > 5 ? `\n\n(+${res.softWarnings.length - 5} uyarı daha)` : "") +
+              "\n\nYine de onaylayıp kaydedilsin mi?");
+        if (!ok) return;
+      }
+
+      isApproved = true;
+      approvedAtStr = getFormattedTimestamp();
+
+      saveCurrentMonth();   // onay = otomatik kayıt
+      renderApprovalBadge();
+      showToast("Liste onaylandı ve kaydedildi.");
+    }
+
     function markDirty() {
       isDirty = true;
+      revokeApproval();
       const el = document.getElementById('dirtyIndicator');
       if (el) el.classList.remove('hidden');
     }
@@ -623,6 +696,56 @@
       listContainer.appendChild(addBtn);
     }
 
+    // =========================================================================
+    // BÖLÜM KADROSU HAFIZASI
+    // Bir bölüme bir kez eklenen hekimler (id + isim) saklanır. O bölüm için
+    // kaydı olmayan bir ay açıldığında tüm isimler 0 ek mesai hedefiyle gelir.
+    // Kayıtlar id bazlıdır: yeniden adlandırma aynı kişiyi günceller, silme kadrodan çıkarır.
+    // =========================================================================
+    function getDeptRosterKey(srv) {
+      return 'nobet_dept_roster_' + (srv || 'Genel').trim().toLowerCase().replace(/\s+/g, '_');
+    }
+
+    function getDeptRoster(srv) {
+      try {
+        const raw = localStorage.getItem(getDeptRosterKey(srv));
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr.filter(r => r && r.id && r.name && r.name.trim()) : [];
+      } catch (e) { return []; }
+    }
+
+    function saveDeptRoster(srv, arr) {
+      try { localStorage.setItem(getDeptRosterKey(srv), JSON.stringify(arr)); } catch (e) {}
+    }
+
+    // Mevcut hekim listesini bölüm kadrosuna işler (ekler / isim günceller). Silmez.
+    function syncDeptRoster() {
+      const srv = document.getElementById('selectedService').value;
+      if (!srv) return;
+      const roster = getDeptRoster(srv);
+      const byId = {};
+      roster.forEach(r => { byId[r.id] = r; });
+      doctors.forEach(doc => {
+        const nm = (doc.name || '').trim();
+        if (!nm) return;
+        if (byId[doc.id]) {
+          byId[doc.id].name = nm;                      // yeniden adlandırma
+        } else if (!roster.some(r => trNormalize(r.name) === trNormalize(nm))) {
+          const entry = { id: doc.id, name: nm };      // yeni kişi
+          roster.push(entry);
+          byId[doc.id] = entry;
+        }
+      });
+      saveDeptRoster(srv, roster);
+    }
+
+    function removeFromDeptRoster(docId, docName) {
+      const srv = document.getElementById('selectedService').value;
+      if (!srv) return;
+      const nm = trNormalize(docName || '');
+      saveDeptRoster(srv, getDeptRoster(srv).filter(r => r.id !== docId && trNormalize(r.name) !== nm));
+    }
+
     function addNewServicePrompt() {
       const name = (window.prompt('Yeni bölüm adı:') || '').trim();
       if (!name) return;
@@ -706,8 +829,11 @@
     function applyZoom() {
       const container = document.getElementById('tableContainer');
       if (container) {
-        container.style.transform = `scale(${currentZoom})`;
-        container.style.width = `${100 / currentZoom}%`;
+        // CSS zoom (transform: scale DEĞİL): transform, yapışkan başlığı bozuyor ve
+        // tablonun altında boş kaydırma alanı bırakıyordu. zoom yerleşimi gerçekten ölçekler.
+        container.style.transform = '';
+        container.style.width = '';
+        container.style.zoom = currentZoom;
       }
       const label = document.getElementById('zoomLabel');
       if (label) {
@@ -829,6 +955,26 @@
     }
 
     // ---- yardımcılar ----
+
+    // Hedef, 8'in bir üst katına yuvarlanır: 42 -> 48, 48 -> 48, 0 -> 0.
+    // Hekime yazılacak ek mesai TAM OLARAK bu değer olmalıdır (altı da üstü de yasak).
+    function targetCap(doc) {
+      const t = Math.max(0, parseInt(doc.targetOvertime) || 0);
+      return Math.ceil(t / 8) * 8;
+    }
+
+    // Hekimin bu gridde kazandığı ek mesai (hafif sürüm; render istatistiklerine gerek yok)
+    function earnedOf(doc, g) {
+      const row = g[doc.id];
+      if (!row) return 0;
+      let sum = 0;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const st = row[d];
+        if (st === 'N_FIXED' || st === 'N_AUTO') sum += getOvertimeEarned(daysMeta[d - 1], d);
+      }
+      return sum;
+    }
+
     function isShiftCell(g, docId, d) {
       const st = g[docId] ? g[docId][d] : undefined;
       return (st === 'N_FIXED' || st === 'N_AUTO');
@@ -873,6 +1019,10 @@
       // KATI: gün başına azami nöbetçi tavanı
       dailyCeiling(doc, d, g, cfg) {
         return cfg.dailyCeiling > 0 && countAssignedOnDay(d, g) >= cfg.dailyCeiling;
+      },
+      // KATI: hekim, hedefinin 8'in üst katından fazla saat alamaz (42 -> en fazla 48)
+      overCap(doc, d, g, cfg) {
+        return earnedOf(doc, g) + getOvertimeEarned(daysMeta[d - 1], d) > targetCap(doc);
       }
     };
 
@@ -884,6 +1034,7 @@
       if (RULES.maxShifts(doc, d, g, cfg)) return false;
       if (RULES.prevMonth(doc, d, cfg)) return false;
       if (RULES.restGap(doc, d, g, cfg)) return false;
+      if (RULES.overCap(doc, d, g, cfg)) return false;
       return true;
     }
 
@@ -945,6 +1096,8 @@
       
       registerServiceName(srvName);
 
+      syncDeptRoster();
+
       const payload = {
         doctors,
         grid,
@@ -953,6 +1106,8 @@
         lastDayRule: document.getElementById('lastDayShiftRule').value,
         customDailyCeiling: document.getElementById('customDailyCeiling').value,
         seed: currentSeed,
+        approved: isApproved,
+        approvedAtStr: approvedAtStr,
         timestampStr: nowStamp,
         timestamp: Date.now()
       };
@@ -1062,6 +1217,8 @@
           currentSeed = snap.seed;
           document.getElementById('seedInput').value = currentSeed;
         }
+        isApproved = !!snap.approved;
+        approvedAtStr = snap.approvedAtStr || '';
         isGenerated = true;
         
         const monthStr = getSelectedPeriodString();
@@ -1114,7 +1271,7 @@
       if (raw) {
         try {
           const parsed = JSON.parse(raw);
-          doctors = (parsed.doctors && parsed.doctors.length > 0) ? parsed.doctors : createDefaultDoctors(10);
+          doctors = (parsed.doctors && parsed.doctors.length > 0) ? parsed.doctors : [];
           grid = parsed.grid || {};
           if (parsed.maxLimit) document.getElementById('maxShiftLimit').value = parsed.maxLimit;
           if (parsed.lastDayRule) document.getElementById('lastDayShiftRule').value = parsed.lastDayRule;
@@ -1123,29 +1280,40 @@
             currentSeed = parsed.seed;
             document.getElementById('seedInput').value = currentSeed;
           }
+          isApproved = !!parsed.approved;
+          approvedAtStr = parsed.approvedAtStr || '';
           isGenerated = true;
         } catch (e) {
-          doctors = createDefaultDoctors(10);
+          doctors = [];
           grid = {};
+          isApproved = false;
+          approvedAtStr = '';
           isGenerated = false;
         }
       } else {
-        const prevMonth = getPreviousMonthString(monthStr);
-        const prevRaw = localStorage.getItem(getStorageKey(prevMonth, srvName));
-        if (prevRaw) {
-          try {
-            const prevData = JSON.parse(prevRaw);
-            doctors = prevData.doctors.map(d => ({ id: d.id || ('doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)), name: d.name, targetOvertime: d.targetOvertime }));
-            grid = {};
-            doctors.forEach(d => grid[d.id] = {});
-          } catch(e) { 
-            doctors = createDefaultDoctors(10); 
-            grid = {};
-          }
+        // Bu ay için kayıt yok -> bölüm kadrosunu 0 ek mesai hedefiyle getir.
+        const roster = getDeptRoster(srvName);
+        if (roster.length > 0) {
+          doctors = roster.map(r => ({ id: r.id, name: r.name, targetOvertime: 0 }));
         } else {
-          doctors = createDefaultDoctors(10);
-          grid = {};
+          // Eski kayıtlar için geriye dönük uyum: önceki ayın isimleri (yine 0 hedefle)
+          const prevMonth = getPreviousMonthString(monthStr);
+          const prevRaw = localStorage.getItem(getStorageKey(prevMonth, srvName));
+          doctors = [];
+          if (prevRaw) {
+            try {
+              const prevData = JSON.parse(prevRaw);
+              doctors = (prevData.doctors || []).map(d => ({
+                id: d.id || ('doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)),
+                name: d.name, targetOvertime: 0
+              }));
+            } catch (e) { doctors = []; }
+          }
         }
+        grid = {};
+        doctors.forEach(d => grid[d.id] = {});
+        isApproved = false;
+        approvedAtStr = '';
         isGenerated = false;
       }
       buildSimulationCaches();
@@ -1166,18 +1334,11 @@
         doctors = prevData.doctors.map(d => ({ id: d.id || ('doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)), name: d.name, targetOvertime: d.targetOvertime }));
         grid = {};
         doctors.forEach(d => grid[d.id] = {});
+        syncDeptRoster();
         markDirty();
         buildSimulationCaches();
         initCalendar();
       }
-    }
-
-    function createDefaultDoctors(count) {
-      const list = [];
-      for (let i = 1; i <= count; i++) {
-        list.push({ id: 'doc_' + Date.now() + '_' + i, name: `Dr. Hekim ${i}`, targetOvertime: 80 });
-      }
-      return list;
     }
 
     function isHoliday(year, month, day) {
@@ -1222,9 +1383,10 @@
     function addDoctorRow() {
       markDirty();
       const id = 'doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
-      doctors.push({ id, name: `Dr. Hekim ${doctors.length + 1}`, targetOvertime: 80 });
+      doctors.push({ id, name: `Dr. Hekim ${doctors.length + 1}`, targetOvertime: 0 });
       grid[id] = {};
       for (let d = 1; d <= daysInMonth; d++) grid[id][d] = '';
+      syncDeptRoster();
       buildSimulationCaches();
       renderOnly();
       runIndependentValidation();
@@ -1232,6 +1394,8 @@
 
     function deleteDoctor(docId) {
       markDirty();
+      const gone = doctors.find(d => d.id === docId);
+      if (gone) removeFromDeptRoster(gone.id, gone.name);
       doctors = doctors.filter(d => d.id !== docId);
       delete grid[docId];
       buildSimulationCaches();
@@ -1243,6 +1407,7 @@
       markDirty();
       const doc = doctors.find(d => d.id === docId);
       if (doc) doc.name = val;
+      syncDeptRoster();   // id bazlı: aynı kişinin adı güncellenir, yeni kayıt açılmaz
     }
 
     function openPasteModal() { document.getElementById('pasteModal').classList.remove('hidden'); }
@@ -1316,6 +1481,7 @@
 
       closePasteModal();
       document.getElementById('bulkNames').value = '';
+      syncDeptRoster();
       buildSimulationCaches();
       initCalendar();
       runIndependentValidation();
@@ -1386,19 +1552,20 @@
     }
 
     function updateButtons() {
-      const btnInstantText = document.getElementById('btnInstantText');
       const btnDistText = document.getElementById('btnDistributeText');
       const btnClear = document.getElementById('btnClearGenerated');
+      const btnApprove = document.getElementById('btnApprove');
 
       if (isGenerated) {
-        if (btnInstantText) btnInstantText.innerText = "Yeniden Hızlı Üret";
         if (btnDistText) btnDistText.innerText = "Yeniden Optimize Et";
         if (btnClear) btnClear.classList.remove('hidden');
+        if (btnApprove) btnApprove.classList.remove('hidden');
       } else {
-        if (btnInstantText) btnInstantText.innerText = "Hızlı Üret";
         if (btnDistText) btnDistText.innerText = "Nöbetleri Üret";
         if (btnClear) btnClear.classList.add('hidden');
+        if (btnApprove) btnApprove.classList.add('hidden');
       }
+      renderApprovalBadge();
     }
 
     function countDoctorShifts(doc, gridRef = grid) {
@@ -1480,50 +1647,108 @@
     // DÖRT DÖRTLÜK GERÇEKÇİ FİZİBİLİTE ÖN DENETİMİ (3 GÜN ARALIK KONTROLLÜ)
     // =========================================================================
     function checkDoctorFeasibility(maxLimit) {
-      // GERCEK OPTIMUM (Dinamik Programlama)
-      // Eski greedy yontem bazi aylarda mumkun olan hedefi "imkansiz" ilan ediyordu.
-      // Ornek: Mart 2025 / 6 nobet -> greedy 128s diyordu, gercek optimum 136s.
-      const otByDay = [0];
-      for (let d = 1; d <= daysInMonth; d++) otByDay.push(getOvertimeEarned(daysMeta[d - 1], d));
+      // ---------------------------------------------------------------------
+      // TAM TOPLAM FİZİBİLİTESİ (Dinamik Programlama)
+      // Her hekim için: dinlenme aralığı, maks nöbet, izinli (OFF) günler,
+      // kilitli (N_FIXED) günler ve önceki ay kuralı altında TAM OLARAK
+      // hedef tavanına (8'in üst katı) ulaşılabilir mi?
+      // dp[d][k][s] = 1..d günlerinde tam k nöbetle tam s birim (1 birim = 8s) mümkün mü
+      // ---------------------------------------------------------------------
+      const U = 8;
+      const gap = SOLVER_CFG.restGap;
+      const N = daysInMonth;
+      const unit = [0];
+      for (let d = 1; d <= N; d++) unit.push(Math.round(getOvertimeEarned(daysMeta[d - 1], d) / U));
+      const maxU = unit.reduce((a, b) => a + b, 0);
 
-      const NEG = -1;
-      let dp = [];
-      for (let d = 0; d <= daysInMonth; d++) {
-        dp.push(new Array(maxLimit + 1).fill(NEG));
-        dp[d][0] = 0;
-      }
-      for (let d = 1; d <= daysInMonth; d++) {
-        for (let k = 1; k <= maxLimit; k++) {
-          const skip = dp[d - 1][k];
-          // Bu gune nobet yazilirsa, bir onceki nobet en gec (d - restGap). gunde olabilir.
-          const gap = SOLVER_CFG.restGap;
-          const prev = (d - gap >= 0) ? dp[d - gap][k - 1] : ((k - 1 === 0) ? 0 : NEG);
-          const take = (prev === NEG) ? NEG : prev + otByDay[d];
-          dp[d][k] = (take > skip) ? take : skip;
+      for (const doc of doctors) {
+        const row = grid[doc.id] || {};
+        const tail = getPreviousMonthTailShifts(doc);
+        const isOff = d => row[d] === 'OFF' ||
+                           (tail.lastDayShift && d <= gap - 1) ||
+                           (tail.secondLastDayShift && d <= gap - 2);
+        const isFixed = d => row[d] === 'N_FIXED';
+
+        // dp[d][k] = Uint8Array(maxU+1)
+        const dp = [];
+        for (let d = 0; d <= N; d++) {
+          const layer = [];
+          for (let k = 0; k <= maxLimit; k++) layer.push(new Uint8Array(maxU + 1));
+          dp.push(layer);
         }
-      }
-      let theoreticalMaxOt = 0;
-      for (let k = 0; k <= maxLimit; k++) {
-        if (dp[daysInMonth][k] > theoreticalMaxOt) theoreticalMaxOt = dp[daysInMonth][k];
-      }
+        dp[0][0][0] = 1;
 
-      for (let doc of doctors) {
-        if (doc.targetOvertime > theoreticalMaxOt) {
+        for (let d = 1; d <= N; d++) {
+          // d gününe nöbet yazılırsa (d-gap, d) aralığında kilitli gün olmamalı
+          let fixedInWindow = false;
+          for (let j = Math.max(1, d - gap + 1); j < d; j++) if (isFixed(j)) { fixedInWindow = true; break; }
+
+          for (let k = 0; k <= maxLimit; k++) {
+            const cur = dp[d][k];
+            // atla (kilitli gün atlanamaz)
+            if (!isFixed(d)) {
+              const src = dp[d - 1][k];
+              for (let x = 0; x <= maxU; x++) if (src[x]) cur[x] = 1;
+            }
+            // al
+            if (k >= 1 && !isOff(d) && !fixedInWindow) {
+              const u = unit[d];
+              if (d - gap >= 0) {
+                const src = dp[d - gap][k - 1];
+                for (let x = 0; x + u <= maxU; x++) if (src[x]) cur[x + u] = 1;
+              } else if (k - 1 === 0) {
+                // bu ayın ilk nöbeti; öncesinde ay içinde nöbet yok
+                let fixedBefore = false;
+                for (let j = 1; j < d; j++) if (isFixed(j)) { fixedBefore = true; break; }
+                if (!fixedBefore && u <= maxU) cur[u] = 1;
+              }
+            }
+          }
+        }
+
+        const capU = targetCap(doc) / U;
+        let ok = false;
+        const reachable = new Uint8Array(maxU + 1);
+        for (let k = 0; k <= maxLimit; k++) {
+          const last = dp[N][k];
+          for (let x = 0; x <= maxU; x++) if (last[x]) reachable[x] = 1;
+        }
+        if (capU <= maxU && reachable[capU]) ok = true;
+
+        if (!ok) {
+          let below = -1, above = -1;
+          for (let x = Math.min(capU, maxU); x >= 0; x--) if (reachable[x]) { below = x; break; }
+          for (let x = capU; x <= maxU; x++) if (reachable[x]) { above = x; break; }
+          const opts = [];
+          if (below >= 0) opts.push((below * U) + 's');
+          if (above >= 0) opts.push((above * U) + 's');
+          const capTxt = (targetCap(doc) !== doc.targetOvertime) ? ` (→ ${targetCap(doc)}s'e yuvarlanır)` : '';
           return {
             possible: false,
-            message: `${doc.name} için belirlenen ${doc.targetOvertime}s hedefi, bu ayki resmi tatil/hafta sonu takvimi, 3 gün dinlenme kuralı ve azami ${maxLimit} nöbet sınırı altında matematiksel olarak imkansızdır (En fazla ${theoreticalMaxOt}s kazanılabilir). Lütfen hedefi düşürün veya Maks. Nöbet sınırını artırın.`
+            message: `${doc.name}: ${doc.targetOvertime}s hedef${capTxt} bu ay TAM OLARAK tutturulamıyor.\n\n` +
+                     `Sebep: takvim (tatil/hafta sonu saatleri), en az ${gap - 1} gün dinlenme, azami ${maxLimit} nöbet` +
+                     `${Object.values(row).some(v => v === 'OFF' || v === 'N_FIXED') ? ', izinli/kilitli günler' : ''} birlikte bu toplama izin vermiyor.\n\n` +
+                     (opts.length ? `Bu hekim için ulaşılabilir en yakın değerler: ${opts.join(' veya ')}.\n` : '') +
+                     `Lütfen hedefi değiştirin veya Maks. Nöbet sınırını artırın.`
           };
         }
       }
 
-      // KATI KURAL: Gunluk Maks nobetci tavani kapasite kontrolu
+      // KATI KURAL: Her gün en az 1 nöbetçi -> toplam saat ayı kapatmaya yetmeli
+      const monthCover = unit.reduce((a, b) => a + b, 0) * U;
+      const totalDemand = doctors.reduce((acc, d) => acc + targetCap(d), 0);
+      if (totalDemand < monthCover) {
+        return {
+          possible: false,
+          message: `Hekimlerin toplam ek mesai hedefi ${totalDemand}s, ancak ayın her gününe en az 1 nöbetçi yazmak için en az ${monthCover}s gerekiyor.\n\n` +
+                   `Eksik: ${monthCover - totalDemand}s. Lütfen hedef saatleri girin/artırın.`
+        };
+      }
+
+      // KATI KURAL: Günlük Maks nöbetçi tavanı kapasite kontrolü
       const customCeil = SOLVER_CFG.dailyCeiling;
       if (customCeil > 0) {
-        let totalMaxCapacity = 0;
-        for (let d = 1; d <= daysInMonth; d++) {
-          totalMaxCapacity += customCeil * getOvertimeEarned(daysMeta[d - 1], d);
-        }
-        let totalDemand = doctors.reduce((s, d) => s + d.targetOvertime, 0);
+        const totalMaxCapacity = monthCover * customCeil;
         if (totalDemand > totalMaxCapacity) {
           return {
             possible: false,
@@ -1532,12 +1757,13 @@
         }
       }
 
-      // KATI KURAL: Toplam nobet kapasitesi kontrolu (her gun en az 1 nobetci zorunlu)
-      const totalShiftCapacity = doctors.length * maxLimit;
+      // KATI KURAL: Toplam nöbet kapasitesi (her gün en az 1 nöbetçi)
+      const activeDocs = doctors.filter(d => targetCap(d) > 0).length;
+      const totalShiftCapacity = activeDocs * maxLimit;
       if (totalShiftCapacity < daysInMonth) {
         return {
           possible: false,
-          message: `KATI KURAL ÇAKIŞMASI — Maks. Nöbet: ${doctors.length} hekim × ${maxLimit} nöbet = ${totalShiftCapacity} nöbet, ancak ayın ${daysInMonth} gününün her birine en az 1 nöbetçi gerekiyor. Lütfen "Maks. Nöbet" değerini en az ${Math.ceil(daysInMonth / doctors.length)} yapın veya hekim ekleyin.`
+          message: `KATI KURAL ÇAKIŞMASI — Maks. Nöbet: hedefi 0'dan büyük ${activeDocs} hekim × ${maxLimit} nöbet = ${totalShiftCapacity} nöbet, ancak ayın ${daysInMonth} gününün her birine en az 1 nöbetçi gerekiyor.`
         };
       }
 
@@ -1551,7 +1777,7 @@
       let quotas = {};
       for (let d = 1; d <= daysInMonth; d++) quotas[d] = 1;
 
-      let remainingDemand = doctors.reduce((sum, d) => sum + d.targetOvertime, 0);
+      let remainingDemand = doctors.reduce((sum, d) => sum + targetCap(d), 0);
 
       for (let d = 1; d <= daysInMonth; d++) {
         remainingDemand -= getOvertimeEarned(daysMeta[d - 1], d);
@@ -1587,79 +1813,7 @@
     }
 
     // =========================================================================
-    // 1. MOD: HIZLI VE ANINDA ÜRETİM (50ms)
-    // =========================================================================
-    function distributeInstantRoster() {
-      if (isOptimizing) return;
-      if (!doctors || doctors.length === 0) return alert("Lütfen önce hekim ekleyin.");
-
-      if (!daysMeta || daysMeta.length === 0) initCalendar();
-      buildSimulationCaches();
-
-      const maxLimit = SOLVER_CFG.maxShifts;
-      const feas = checkDoctorFeasibility(maxLimit);
-      if (!feas.possible) {
-        return alert(feas.message);
-      }
-
-      if (!isSeedLocked) {
-        currentSeed = Math.floor(Math.random() * 900000) + 100000;
-        document.getElementById('seedInput').value = currentSeed;
-      }
-      randomFunc = mulberry32(currentSeed);
-
-      const quotas = buildDayQuotas();
-
-      let baseGrid = {};
-      doctors.forEach(doc => {
-        baseGrid[doc.id] = {};
-        for (let d = 1; d <= daysInMonth; d++) {
-          const st = grid[doc.id] ? grid[doc.id][d] : '';
-          baseGrid[doc.id][d] = (st === 'N_FIXED' || st === 'OFF') ? st : '';
-        }
-      });
-
-      let trialGrid = JSON.parse(JSON.stringify(baseGrid));
-      let success = constructFeasibleRoster(trialGrid, maxLimit, quotas, randomFunc);
-
-      if (success) {
-        refineRosterLocally(trialGrid, maxLimit, quotas, randomFunc);
-        const val = validateRoster(trialGrid, maxLimit, quotas);
-        if (val.valid) {
-          grid = trialGrid;
-          markDirty();
-          isGenerated = true;
-          updateButtons();
-          renderOnly();
-          runIndependentValidation();
-          showToast("Hızlı liste tüm hekim saatleri eksiksiz tamamlanarak üretildi!");
-          return;
-        }
-      }
-
-      let fallbackGrid = JSON.parse(JSON.stringify(baseGrid));
-      let fbSuccess = constructFeasibleRoster(fallbackGrid, maxLimit, quotas, randomFunc, true);
-      if (fbSuccess) {
-        refineRosterLocally(fallbackGrid, maxLimit, quotas, randomFunc);
-        const valFb = validateRoster(fallbackGrid, maxLimit, quotas);
-        if (valFb.valid) {
-          grid = fallbackGrid;
-          markDirty();
-          isGenerated = true;
-          updateButtons();
-          renderOnly();
-          runIndependentValidation();
-          showToast("Hızlı liste tüm hekim saatleri tamamlanarak üretildi!");
-          return;
-        }
-      }
-
-      runIndependentValidation();
-      alert("Bu parametreler altında tüm hekimlerin saat hedeflerini eksiksiz karşılayan bir liste kurulamadı. Mevcut listeniz bozulmadan korunmuştur. Lütfen Hakem Raporunu inceleyin.");
-    }
-
-    // =========================================================================
-    // 2. MOD: SÜRE AYARLI ASENKRON ÇÖZÜCÜ (ZIPLAYAN TOPLU)
+    // SÜRE AYARLI ASENKRON ÇÖZÜCÜ + LNS (tek üretim modu)
     // =========================================================================
     function startTimedOptimization() {
       if (isOptimizing) return;
@@ -1847,8 +2001,8 @@
 
       // FAZ 2: Normal Hedef Tamamlama (+8 Tavanı ve Kontenjan Önceliği ile)
       let sortedDocs = [...doctors].sort((a, b) => {
-        let diffA = a.targetOvertime - calculateDocStats(a, workGrid).earnedOvertime;
-        let diffB = b.targetOvertime - calculateDocStats(b, workGrid).earnedOvertime;
+        let diffA = targetCap(a) - earnedOf(a, workGrid);
+        let diffB = targetCap(b) - earnedOf(b, workGrid);
         return diffB - diffA;
       });
 
@@ -1857,14 +2011,14 @@
         while (attempts < 30) {
           attempts++;
           let stats = calculateDocStats(doc, workGrid);
-          let missing = doc.targetOvertime - stats.earnedOvertime;
+          let missing = targetCap(doc) - stats.earnedOvertime;
           if (missing <= 0) break;
           if (countDoctorShifts(doc, workGrid) >= maxLimit) break;
 
           let feasibleDays = [];
           for (let d = 1; d <= daysInMonth; d++) {
             const otVal = getOvertimeEarned(daysMeta[d - 1], d);
-            if (stats.earnedOvertime + otVal <= doc.targetOvertime + 8) {
+            if (stats.earnedOvertime + otVal <= targetCap(doc)) {
               let assignedToday = doctors.filter(dc => workGrid[dc.id][d] === 'N_FIXED' || workGrid[dc.id][d] === 'N_AUTO').map(dc => dc.id);
               if (getEligibleCandidates(d, assignedToday, maxLimit, otVal, false, workGrid, quotas, true).some(c => c.id === doc.id)) {
                 feasibleDays.push({ day: d, otVal, assignedCount: assignedToday.length });
@@ -1947,8 +2101,47 @@
         }
       }
 
+      // FAZ 5: TAM OTURTMA
+      // Tavan (8'in üst katı) katı olduğu için "fazla yazıp sonra budama" yok.
+      // Eksik kalan hekim için: (a) tam eksik kadar saatli bir gün ekle,
+      // (b) bir nöbetini daha ağır bir günle değiştir (a saat -> a + eksik saat).
+      {
+        const cfg5 = cfgWithLimit(maxLimit);
+        for (let pass = 0; pass < 3; pass++) {
+          let stillMissing = false;
+          for (const doc of doctors) {
+            const deficit = targetCap(doc) - earnedOf(doc, workGrid);
+            if (deficit <= 0) continue;
+            stillMissing = true;
+
+            // (a) doğrudan ekleme
+            let fixed = false;
+            for (let d = 1; d <= daysInMonth && !fixed; d++) {
+              if (getOvertimeEarned(daysMeta[d - 1], d) !== deficit) continue;
+              if (canAssign(doc, d, workGrid, cfg5)) { workGrid[doc.id][d] = 'N_AUTO'; fixed = true; }
+            }
+            if (fixed) continue;
+
+            // (b) değiştirme
+            for (let x = 1; x <= daysInMonth && !fixed; x++) {
+              if (workGrid[doc.id][x] !== 'N_AUTO') continue;
+              if (countAssignedOnDay(x, workGrid) <= 1) continue;          // gün boş kalamaz
+              const a = getOvertimeEarned(daysMeta[x - 1], x);
+              workGrid[doc.id][x] = '';
+              for (let d = 1; d <= daysInMonth; d++) {
+                if (d === x) continue;
+                if (getOvertimeEarned(daysMeta[d - 1], d) !== a + deficit) continue;
+                if (canAssign(doc, d, workGrid, cfg5)) { workGrid[doc.id][d] = 'N_AUTO'; fixed = true; break; }
+              }
+              if (!fixed) workGrid[doc.id][x] = 'N_AUTO';                    // geri al
+            }
+          }
+          if (!stillMissing) break;
+        }
+      }
+
       // MUTLAK KURAL: Hekim saati eksik kaldıysa çözüm geçersizdir
-      const anyDeficit = doctors.some(d => calculateDocStats(d, workGrid).earnedOvertime < d.targetOvertime);
+      const anyDeficit = doctors.some(d => earnedOf(d, workGrid) < targetCap(d));
       if (anyDeficit) return false;
 
       return true;
@@ -1956,7 +2149,7 @@
 
     function scoreCandidateChoice(doc, day, otVal, workGrid) {
       let stats = calculateDocStats(doc, workGrid);
-      let missing = doc.targetOvertime - stats.earnedOvertime;
+      let missing = targetCap(doc) - stats.earnedOvertime;
       if (missing <= 0) return -100;
 
       let score = missing - Math.abs(missing - otVal);
@@ -2128,89 +2321,126 @@
     }
 
     // =========================================================================
-    // DENGE MOTORU: AĞIR GÜN / HAFTA SONU EŞİTLEME
+    // DENGE MOTORU: AĞIR GÜN / HAFTA SONU EŞİTLEME (SAAT KORUYAN TAKASLAR)
+    // Hekim saatleri tam olarak hedefe oturduğu için denge, saati DEĞİŞTİRMEYEN
+    // takaslarla sağlanır:
+    //   (1) 1'e N takas: ağır günü çok olan A, 24s'lik bir gününü B'ye verir;
+    //       B de A'ya toplamı 24s olan hafif günlerini verir (örn. 8+16).
+    //   (2) 1'e 1 eş-saat takası: A'nın pazarı (16s) ile B'nin cuması (16s)
+    //       yer değiştirir -> saatler aynı, hafta sonu yükü dengelenir.
+    // Her takas tüm katı kurallardan geçer ve sadece maliyeti düşürüyorsa kabul edilir.
     // =========================================================================
-
-    // Hedefin ALTINA düşmeden çıkarılabilecek nöbetleri temizler.
-    function trimSurplusDays(g, doc, preferHeavy) {
-      let guard = 0;
-      while (guard++ < 40) {
-        const stats = calculateDocStats(doc, g);
-        let best = null;
-        for (let d = 1; d <= daysInMonth; d++) {
-          if (g[doc.id][d] !== 'N_AUTO') continue;
-          const ot = getOvertimeEarned(daysMeta[d - 1], d);
-          if (stats.earnedOvertime - ot < doc.targetOvertime) continue;   // KATI: hedefin altina inemez
-          if (countAssignedOnDay(d, g) <= 1) continue;                    // KATI: gun bos kalamaz
-          const isHeavy = ot >= 16 ? 1 : 0;
-          const rank = preferHeavy ? (1 - isHeavy) : isHeavy;
-          if (!best || rank < best.rank || (rank === best.rank && ot < best.ot)) best = { d, rank, ot };
-        }
-        if (!best) break;
-        g[doc.id][best.d] = '';
-      }
+    function cloneGrid(g) {
+      const c = {};
+      for (const doc of doctors) c[doc.id] = Object.assign({}, g[doc.id]);
+      return c;
     }
 
-    // Hedefe ulaşana kadar uygun gün ekler (tüm katı kurallara uyarak).
-    function fillDeficitDays(g, doc, maxLimit, quotas, preferLight) {
-      let guard = 0;
-      while (guard++ < 40) {
-        const stats = calculateDocStats(doc, g);
-        if (stats.earnedOvertime >= doc.targetOvertime) break;
-        if (countDoctorShifts(doc, g) >= maxLimit) break;                 // KATI: maks nobet
-        let cands = [];
-        for (let d = 1; d <= daysInMonth; d++) {
-          const ot = getOvertimeEarned(daysMeta[d - 1], d);
-          const assigned = doctors.filter(dc => g[dc.id][d] === 'N_FIXED' || g[dc.id][d] === 'N_AUTO').map(dc => dc.id);
-          if (!getEligibleCandidates(d, assigned, maxLimit, ot, false, g, quotas, true).some(c => c.id === doc.id)) continue;
-          cands.push({ d, ot, heavy: ot >= 16 ? 1 : 0 });
-        }
-        if (!cands.length) break;
-        cands.sort((a, b) => preferLight ? (a.heavy - b.heavy || a.ot - b.ot) : (b.ot - a.ot));
-        g[doc.id][cands[0].d] = 'N_AUTO';
-      }
+    function copyGridInto(dst, src) {
+      for (const doc of doctors) for (let d = 1; d <= daysInMonth; d++) dst[doc.id][d] = src[doc.id][d];
     }
 
-    // Ağır gün (16s/24s) yükü en fazla olan hekimden, en az olana devreder.
-    // Saatler korunur: veren hekim hafif günlerle tamamlanır, alan hekimin fazlası budanır.
-    // Sadece hem GEÇERLİ hem de DAHA DENGELİ sonuç veren takaslar kabul edilir.
+    // days içinden, ot toplamı tam target olan 1-3 elemanlı alt kümeler
+    function subsetsSumming(days, target, maxSize) {
+      const ot = d => getOvertimeEarned(daysMeta[d - 1], d);
+      const res = [];
+      const n = days.length;
+      for (let a = 0; a < n; a++) {
+        const sa = ot(days[a]);
+        if (sa === target) res.push([days[a]]);
+        if (maxSize < 2 || sa >= target) continue;
+        for (let b = a + 1; b < n; b++) {
+          const sb = sa + ot(days[b]);
+          if (sb === target) res.push([days[a], days[b]]);
+          if (maxSize < 3 || sb >= target) continue;
+          for (let c = b + 1; c < n; c++) {
+            if (sb + ot(days[c]) === target) res.push([days[a], days[b], days[c]]);
+          }
+        }
+      }
+      return res;
+    }
+
+    function isWeekendLike(d) {
+      const m = daysMeta[d - 1] || {};
+      return (m.dayOfWeek === 6 || m.dayOfWeek === 0 || m.isHoliday);
+    }
+
     function balanceHeavyDays(workGrid, maxLimit, quotas) {
-      for (let step = 0; step < 30; step++) {
-        let list = doctors.map(doc => ({ doc, h: calculateDocStats(doc, workGrid).heavyDayCount }));
-        list.sort((a, b) => b.h - a.h);
-        const rich = list[0];
-        const poor = list[list.length - 1];
-        if (!rich || !poor || rich.doc.id === poor.doc.id) break;
-        if (rich.h - poor.h < 2) break;   // zaten dengeli
+      const cfg = cfgWithLimit(maxLimit);
+      const otOf = d => getOvertimeEarned(daysMeta[d - 1], d);
 
+      for (let step = 0; step < 20; step++) {
         const baseCost = evaluateQualityCost(workGrid, quotas);
-        let heavyDays = [];
-        for (let d = 1; d <= daysInMonth; d++) {
-          if (workGrid[rich.doc.id][d] === 'N_AUTO' && getOvertimeEarned(daysMeta[d - 1], d) >= 16) heavyDays.push(d);
-        }
-        heavyDays.sort((a, b) => getOvertimeEarned(daysMeta[b - 1], b) - getOvertimeEarned(daysMeta[a - 1], a));
-
+        const info = doctors.map(doc => {
+          const st = calculateDocStats(doc, workGrid);
+          return { doc, h: st.heavyDayCount, w: st.weekendCount };
+        });
         let accepted = false;
-        for (const X of heavyDays) {
-          const trial = JSON.parse(JSON.stringify(workGrid));
-          trial[rich.doc.id][X] = '';
 
-          const assigned = doctors.filter(dc => trial[dc.id][X] === 'N_FIXED' || trial[dc.id][X] === 'N_AUTO').map(dc => dc.id);
-          const otX = getOvertimeEarned(daysMeta[X - 1], X);
-          if (!getEligibleCandidates(X, assigned, maxLimit, otX, false, trial, quotas, true).some(c => c.id === poor.doc.id)) continue;
-          trial[poor.doc.id][X] = 'N_AUTO';
+        // ---------- (1) 1'e N takas: ağır gün dengesi ----------
+        const byHeavy = info.slice().sort((a, b) => b.h - a.h);
+        outer1:
+        for (let i = 0; i < byHeavy.length; i++) {
+          for (let j = byHeavy.length - 1; j > i; j--) {
+            const rich = byHeavy[i], poor = byHeavy[j];
+            if (rich.h - poor.h < 2) continue;
+            for (let X = 1; X <= daysInMonth; X++) {
+              if (workGrid[rich.doc.id][X] !== 'N_AUTO') continue;
+              const otX = otOf(X);
+              if (otX < 16) continue;
+              const poorLight = [];
+              for (let d = 1; d <= daysInMonth; d++) {
+                if (workGrid[poor.doc.id][d] === 'N_AUTO' && otOf(d) < otX) poorLight.push(d);
+              }
+              for (const S of subsetsSumming(poorLight, otX, 3)) {
+                const trial = cloneGrid(workGrid);
+                trial[rich.doc.id][X] = '';
+                S.forEach(d => { trial[poor.doc.id][d] = ''; });
+                if (!canAssign(poor.doc, X, trial, cfg)) continue;
+                trial[poor.doc.id][X] = 'N_AUTO';
+                let ok = true;
+                for (const d of S) {
+                  if (!canAssign(rich.doc, d, trial, cfg)) { ok = false; break; }
+                  trial[rich.doc.id][d] = 'N_AUTO';
+                }
+                if (!ok) continue;
+                if (evaluateQualityCost(trial, quotas) >= baseCost) continue;
+                copyGridInto(workGrid, trial);
+                accepted = true;
+                break outer1;
+              }
+            }
+          }
+        }
+        if (accepted) continue;
 
-          trimSurplusDays(trial, poor.doc, false);                       // alanin fazla HAFIF gunlerini at
-          fillDeficitDays(trial, rich.doc, maxLimit, quotas, true);      // vereni HAFIF gunlerle tamamla
-          trimSurplusDays(trial, rich.doc, true);
-
-          const val = validateRoster(trial, maxLimit, quotas);
-          if (!val.valid) continue;
-          if (evaluateQualityCost(trial, quotas) >= baseCost) continue;
-
-          for (const doc of doctors) for (let d = 1; d <= daysInMonth; d++) workGrid[doc.id][d] = trial[doc.id][d];
-          accepted = true;
-          break;
+        // ---------- (2) 1'e 1 eş-saat takası: hafta sonu dengesi ----------
+        const byWeekend = info.slice().sort((a, b) => b.w - a.w);
+        outer2:
+        for (let i = 0; i < byWeekend.length; i++) {
+          for (let j = byWeekend.length - 1; j > i; j--) {
+            const A = byWeekend[i], B = byWeekend[j];
+            if (A.w - B.w < 2) continue;
+            for (let X = 1; X <= daysInMonth; X++) {
+              if (workGrid[A.doc.id][X] !== 'N_AUTO' || !isWeekendLike(X)) continue;
+              for (let Y = 1; Y <= daysInMonth; Y++) {
+                if (Y === X || workGrid[B.doc.id][Y] !== 'N_AUTO' || isWeekendLike(Y)) continue;
+                if (otOf(X) !== otOf(Y)) continue;
+                const trial = cloneGrid(workGrid);
+                trial[A.doc.id][X] = '';
+                trial[B.doc.id][Y] = '';
+                if (!canAssign(B.doc, X, trial, cfg)) continue;
+                trial[B.doc.id][X] = 'N_AUTO';
+                if (!canAssign(A.doc, Y, trial, cfg)) continue;
+                trial[A.doc.id][Y] = 'N_AUTO';
+                if (evaluateQualityCost(trial, quotas) >= baseCost) continue;
+                copyGridInto(workGrid, trial);
+                accepted = true;
+                break outer2;
+              }
+            }
+          }
         }
         if (!accepted) break;
       }
@@ -2229,10 +2459,11 @@
 
       doctors.forEach(doc => {
         let stats = calculateDocStats(doc, workGrid);
-        if (stats.diff < 0) {
-          deficitPenalty += Math.pow(Math.abs(stats.diff), 2) * 50000;
-        } else if (stats.diff > 0) {
-          surplusPenalty += stats.diff * 50;
+        const gapToCap = stats.earnedOvertime - targetCap(doc);
+        if (gapToCap < 0) {
+          deficitPenalty += Math.pow(Math.abs(gapToCap), 2) * 50000;
+        } else if (gapToCap > 0) {
+          surplusPenalty += gapToCap * 50000;
         }
         saturdayCounts.push(stats.saturdayCount);
         heavyCounts.push(stats.heavyDayCount);
@@ -2298,11 +2529,9 @@
         // >>> TEK KURAL MOTORU <<<
         if (!canAssign(doc, d, workGrid, cfg)) return false;
 
-        // Yumuşak: hedefi çoktan dolmuş hekime fazladan yazma
+        // Yumuşak: hedefi çoktan dolmuş hekime yazma (tavan zaten canAssign'da katı)
         if (checkTargetCap) {
-          const curStats = calculateDocStats(doc, workGrid);
-          if (curStats.earnedOvertime + otVal > doc.targetOvertime + 8) return false;
-          if (curStats.earnedOvertime >= doc.targetOvertime) return false;
+          if (earnedOf(doc, workGrid) >= targetCap(doc)) return false;
         }
 
         return true;
@@ -2359,9 +2588,10 @@
         if (stats.earnedOvertime < doc.targetOvertime) {
           hardViolations.push(`[KRİTİK İHLAL] ${doc.name}: Hedef ${doc.targetOvertime}s iken ${stats.earnedOvertime}s yazıldı (${doc.targetOvertime - stats.earnedOvertime}s EKSİK).`);
         }
-        // +8 aşımı yumuşak uyarıdır (saat kurtarmak için tolere edilebilir)
-        if (stats.earnedOvertime > doc.targetOvertime + 8) {
-          softWarnings.push(`${doc.name}: Hedef ${doc.targetOvertime}s iken ${stats.earnedOvertime}s yazıldı (+8 tavanı saat kurtarma amacıyla aşıldı).`);
+        // KATI KURAL: hedef 8'in üst katına yuvarlanır; üstü yazılamaz (42 -> en fazla 48)
+        const capV = targetCap(doc);
+        if (stats.earnedOvertime > capV) {
+          hardViolations.push(`[KRİTİK İHLAL] ${doc.name}: Hedef ${doc.targetOvertime}s → en fazla ${capV}s yazılabilir, ${stats.earnedOvertime}s yazıldı (${stats.earnedOvertime - capV}s FAZLA).`);
         }
 
         // KATI KURAL: Maks. Nobet sinirini asmak SERT ihlaldir
@@ -2380,13 +2610,21 @@
 
     function runIndependentValidation() {
       buildSolverConfig();
-      const maxLimit = SOLVER_CFG.maxShifts;
-      const quotas = buildDayQuotas();
-      const res = validateRoster(grid, maxLimit, quotas);
       const panel = document.getElementById('warningPanel');
       const list = document.getElementById('warningList');
       if (!list || !panel) return;
       list.innerHTML = '';
+
+      // Henüz hiç nöbet yazılmamışsa (yeni ay / boş liste) hakem raporunu gösterme
+      const anyShift = doctors.some(doc => {
+        for (let d = 1; d <= daysInMonth; d++) if (isShiftCell(grid, doc.id, d)) return true;
+        return false;
+      });
+      if (!anyShift) { panel.classList.add('hidden'); return; }
+
+      const maxLimit = SOLVER_CFG.maxShifts;
+      const quotas = buildDayQuotas();
+      const res = validateRoster(grid, maxLimit, quotas);
 
       if (res.violations.length > 0) {
         res.hardViolations.forEach(v => {
@@ -2444,7 +2682,7 @@
       const dayNames = ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'];
       const quotas = buildDayQuotas();
 
-      let html = `<thead class="bg-slate-50 sticky top-0 z-20 border-b"><tr>`;
+      let html = `<thead class="bg-slate-50 border-b"><tr>`;
       html += `<th class="p-1 border bg-slate-200 text-slate-600 w-8 min-w-[32px] max-w-[32px]" title="Sıra No">#</th>`;
       html += `<th class="p-2 border text-left bg-slate-100 w-[115px] min-w-[115px] max-w-[115px]">Hekim Adı</th>`;
       html += `<th class="p-1 border bg-amber-50 text-amber-900 w-12 min-w-[48px] max-w-[48px]">Hedef</th>`;
@@ -2510,10 +2748,14 @@
         }
 
         let diffBadge = '';
+        const capR = targetCap(doc);
         if (stats.diff === 0) {
           diffBadge = `<span class="text-emerald-600 font-black ml-0.5">✓(0)</span>`;
-        } else if (stats.diff > 0) {
-          diffBadge = `<span class="text-blue-600 font-bold ml-0.5">(+${stats.diff})</span>`;
+        } else if (stats.earnedOvertime === capR && stats.diff > 0) {
+          // hedef 8'in katı değil; üst kata yuvarlandı (örn. 42 -> 48)
+          diffBadge = `<span class="text-emerald-600 font-black ml-0.5" title="Hedef 8'in üst katına (${capR}s) yuvarlandı">✓(+${stats.diff})</span>`;
+        } else if (stats.earnedOvertime > capR) {
+          diffBadge = `<span class="text-[10px] text-rose-600 font-black ml-0.5" title="Tavan ${capR}s aşıldı">(+${stats.diff}!)</span>`;
         } else {
           diffBadge = `<span class="text-[10px] text-rose-500 font-bold ml-0.5">(${stats.diff})</span>`;
         }
@@ -2730,7 +2972,9 @@
           if (shifts[i + 1] - shifts[i] < cfg.restGap) errs.push(`DİNLENME ${doc.name}: ${shifts[i]}→${shifts[i+1]}`);
         }
         if (shifts.length > cfg.maxShifts) errs.push(`MAKS NÖBET ${doc.name}: ${shifts.length}>${cfg.maxShifts}`);
-        if (calculateDocStats(doc, g).earnedOvertime < doc.targetOvertime) errs.push(`EKSİK SAAT ${doc.name}`);
+        const earnedA = calculateDocStats(doc, g).earnedOvertime;
+        if (earnedA < doc.targetOvertime) errs.push(`EKSİK SAAT ${doc.name}`);
+        if (earnedA > Math.ceil(doc.targetOvertime / 8) * 8) errs.push(`TAVAN AŞIMI ${doc.name}: ${earnedA}s`);
         const tail = getPreviousMonthTailShifts(doc);
         if (tail.lastDayShift && shifts.some(d => d <= cfg.restGap - 1)) errs.push(`ÖNCEKİ AY ${doc.name}`);
       }
