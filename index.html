@@ -4,15 +4,197 @@
   <meta charset="UTF-8">
   <title>AnberTech - Formal Nöbet Çözücü V1.0</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta name="theme-color" content="#0f172a">
+
   <!-- Tarayıcı Sekme Logosu (Favicon) -->
   <link rel="icon" type="image/png" href="anberTech.png">
+
+  <!-- Yazı Tipleri -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Gerçek ve Renkli .xlsx İndirme Kütüphanesi -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    /* =====================================================================
+       TASARIM SİSTEMİ (yalnızca görsel — işlevsellik değiştirilmedi)
+       ===================================================================== */
+    :root {
+      --ink-900: #0b1220;
+      --ink-800: #111a2e;
+      --ink-700: #1e293b;
+      --line: #e3e8ef;
+      --line-strong: #cfd7e3;
+      --surface: #ffffff;
+      --surface-2: #f7f9fc;
+      --brand: #4f46e5;
+      --brand-2: #2563eb;
+      --accent: #f59e0b;
+      --radius: 14px;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, .06), 0 1px 1px rgba(15, 23, 42, .04);
+      --shadow-md: 0 1px 2px rgba(15, 23, 42, .05), 0 6px 20px -8px rgba(15, 23, 42, .18);
+      --shadow-lg: 0 24px 60px -18px rgba(15, 23, 42, .45);
+    }
+
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      font-feature-settings: 'cv11', 'ss01';
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background-color: #eef2f7 !important;
+      background-image:
+        radial-gradient(1200px 500px at 0% -10%, rgba(79, 70, 229, .10), transparent 60%),
+        radial-gradient(900px 420px at 100% -5%, rgba(37, 99, 235, .09), transparent 60%);
+      background-attachment: fixed;
+    }
+    body .font-mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+    ::selection { background: rgba(79, 70, 229, .18); }
+
+    /* İnce kaydırma çubukları */
+    * { scrollbar-width: thin; scrollbar-color: #c3cddb transparent; }
+    *::-webkit-scrollbar { width: 10px; height: 10px; }
+    *::-webkit-scrollbar-track { background: transparent; }
+    *::-webkit-scrollbar-thumb { background: #c9d2df; border-radius: 999px; border: 3px solid transparent; background-clip: content-box; }
+    *::-webkit-scrollbar-thumb:hover { background: #9fadc2; border: 3px solid transparent; background-clip: content-box; }
+
+    /* ---------- Üst Başlık / Uygulama Çubuğu ---------- */
+    .app-header {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow-md);
+      overflow: visible;
+    }
+    .brand-bar {
+      position: relative;
+      background:
+        radial-gradient(600px 120px at 12% 0%, rgba(99, 102, 241, .35), transparent 70%),
+        radial-gradient(500px 120px at 95% 0%, rgba(37, 99, 235, .28), transparent 70%),
+        linear-gradient(135deg, #0b1220 0%, #151d36 55%, #1b1f4b 100%);
+      border-radius: 17px 17px 0 0;
+      color: #e2e8f0;
+    }
+    .brand-bar::after {
+      content: '';
+      position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(129, 140, 248, .55), rgba(96, 165, 250, .55), transparent);
+    }
+    .brand-logo {
+      background: #fff;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 6px 18px -6px rgba(99, 102, 241, .7);
+    }
+    .version-chip {
+      background: rgba(129, 140, 248, .16);
+      border: 1px solid rgba(165, 180, 252, .30);
+      color: #c7d2fe;
+    }
+
+    /* Araç çubuğu grupları */
+    .tb-group {
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+    }
+    .tb-label {
+      font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8;
+    }
+    .tb-btn {
+      height: 28px; padding: 0 10px; border-radius: 8px; font-weight: 600; color: #334155;
+      transition: background-color .15s ease, color .15s ease, box-shadow .15s ease, transform .1s ease;
+    }
+    .tb-btn:hover { background: #fff; color: #0f172a; box-shadow: var(--shadow-sm); }
+    .tb-btn:active { transform: translateY(1px); }
+    .tb-sep { width: 1px; height: 18px; background: var(--line-strong); }
+
+    .btn-base {
+      height: 32px; border-radius: 10px; font-weight: 700;
+      transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .1s ease;
+    }
+    .btn-base:active { transform: translateY(1px); }
+    .btn-ghost { background: #fff; border: 1px solid var(--line); color: #334155; box-shadow: var(--shadow-sm); }
+    .btn-ghost:hover { border-color: var(--line-strong); background: #f8fafc; color: #0f172a; }
+
+    .btn-save {
+      color: #fff;
+      background: linear-gradient(180deg, #10b981, #059669);
+      border: 1px solid #047857;
+      box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 6px 16px -6px rgba(5, 150, 105, .65);
+    }
+    .btn-save:hover { background: linear-gradient(180deg, #0ea371, #047857); }
+
+    .btn-archive { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; box-shadow: var(--shadow-sm); }
+    .btn-archive:hover { background: #fef3c7; border-color: #f59e0b; }
+
+    .btn-primary {
+      height: 34px; border-radius: 11px;
+      background: linear-gradient(135deg, #4f46e5 0%, #2563eb 60%, #1d4ed8 100%);
+      border: 1px solid rgba(165, 180, 252, .45);
+      box-shadow: 0 1px 0 rgba(255,255,255,.28) inset, 0 10px 24px -10px rgba(79, 70, 229, .85);
+      letter-spacing: .01em;
+    }
+    .btn-primary:hover { filter: brightness(1.07); box-shadow: 0 1px 0 rgba(255,255,255,.28) inset, 0 14px 28px -10px rgba(79, 70, 229, .95); }
+
+    .btn-approve {
+      height: 34px; border-radius: 11px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      border: 1px solid rgba(110, 231, 183, .5);
+      box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 10px 24px -10px rgba(5, 150, 105, .8);
+    }
+    .btn-approve:hover { filter: brightness(1.06); }
+
+    .field {
+      background: #fff; border: 1px solid var(--line-strong); border-radius: 7px;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .field:focus { outline: none; border-color: #818cf8; box-shadow: 0 0 0 3px rgba(99, 102, 241, .18); }
+
+    select.clean-select { -webkit-appearance: none; appearance: none; padding-right: 14px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M1 2.5l3 3 3-3' fill='none' stroke='%2394a3b8' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 2px center; }
+
+    /* Sayı alanlarındaki ok tuşlarını sadeleştir */
+    input[type=number].no-spin::-webkit-inner-spin-button,
+    input[type=number].no-spin::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number].no-spin { -moz-appearance: textfield; }
+
+    /* Bölüm açılır menüsü */
+    #serviceCustomMenu {
+      border-radius: 12px !important;
+      border-color: var(--line) !important;
+      box-shadow: 0 18px 40px -12px rgba(15, 23, 42, .35) !important;
+      padding: 4px !important;
+      min-width: 200px;
+    }
+    .service-dropdown-item {
+      color: #1e293b !important;
+      background-color: #ffffff;
+      padding: 7px 10px;
+      cursor: pointer;
+      font-size: 11.5px;
+      font-weight: 600;
+      border-radius: 8px;
+      transition: all 0.15s ease;
+    }
+    .service-dropdown-item:hover {
+      background-color: #eef2ff !important;
+      color: #3730a3 !important;
+    }
+    .service-dropdown-item.border-t { border-radius: 0 0 8px 8px; margin-top: 2px; }
+
+    /* ---------- Tablo ---------- */
+    .table-shell {
+      background: var(--surface);
+      border: 1px solid var(--line) !important;
+      border-radius: var(--radius) !important;
+      box-shadow: var(--shadow-md) !important;
+    }
+
     .day-col {
       width: 32px !important;
       min-width: 32px !important;
@@ -20,19 +202,35 @@
       box-sizing: border-box !important;
     }
 
-    .cell-fixed-n { background-color: #b91c1c !important; color: white !important; font-weight: 800; border: 2px solid #7f1d1d !important; position: relative; }
-    .cell-auto-n { background-color: #ef4444 !important; color: white !important; font-weight: bold; }
-    .cell-ni { background-color: #fef08a !important; color: #854d0e !important; font-weight: 700; }
-    .cell-off { background-color: #1e293b !important; color: #f8fafc !important; font-weight: bold; position: relative; }
+    .cell-fixed-n { background-color: #b91c1c !important; background-image: linear-gradient(180deg, #c62828, #991b1b) !important; color: white !important; font-weight: 800; border: 2px solid #7f1d1d !important; position: relative; }
+    .cell-auto-n { background-color: #ef4444 !important; background-image: linear-gradient(180deg, #f25757, #e53935) !important; color: white !important; font-weight: bold; }
+    .cell-ni { background-color: #fdf0b5 !important; color: #854d0e !important; font-weight: 700; }
+    .cell-off { background-color: #1e293b !important; background-image: linear-gradient(180deg, #273449, #172033) !important; color: #f8fafc !important; font-weight: bold; position: relative; }
     .cell-m { background-color: #ffffff; color: #64748b; }
-    .cell-hs { background-color: #f1f5f9; color: #94a3b8; }
-    .cell-holiday { background-color: #fee2e2; color: #991b1b; }
-    
+    .cell-hs { background-color: #f1f4f9; color: #a0acbf; }
+    .cell-holiday { background-color: #fee2e2; color: #991b1b; font-weight: 700; }
+
     th, td { text-align: center; vertical-align: middle; white-space: nowrap; overflow: hidden; }
-    
+
     #tableContainer {
       zoom: 1;
     }
+
+    #rosterTable {
+      font-variant-numeric: tabular-nums;
+      color: #1e293b;
+    }
+    #rosterTable th,
+    #rosterTable td { border-color: #e5e9f0; }
+
+    #rosterTable thead th {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: .01em;
+      color: #334155;
+    }
+    #rosterTable thead th.day-col { color: #475569; }
+    #rosterTable thead th.day-col.bg-red-100 { color: #b91c1c; }
 
     /* Yapışkan gün başlığı: kaydırınca 1..31 satırı üstte kalır.
        Safari dahil tüm tarayıcılar için sticky, thead yerine th hücrelerine verilir. */
@@ -43,32 +241,89 @@
       box-shadow: inset 0 -1px 0 #cbd5e1;   /* border-collapse'ta kaybolan alt çizgi */
     }
 
+    /* Yapışkan sol sütunlar (# / Hekim Adı / Hedef): yatay kaydırmada isimler görünür kalır */
+    #rosterTable thead th:nth-child(1),
+    #rosterTable tbody td:nth-child(1) { position: sticky; left: 0; }
+    #rosterTable thead th:nth-child(2),
+    #rosterTable tbody td:nth-child(2) { position: sticky; left: 32px; }
+    #rosterTable thead th:nth-child(3),
+    #rosterTable tbody td:nth-child(3) { position: sticky; left: 147px; }
+    #rosterTable tfoot td:first-child { position: sticky; left: 0; z-index: 10; background-color: #eef2f7; }
+    #rosterTable thead th:nth-child(-n+3) { z-index: 30; }
+    #rosterTable tbody td:nth-child(-n+3) { z-index: 10; }
+    #rosterTable tbody td:nth-child(1) { background-color: #f4f6fa; color: #94a3b8; }
+    #rosterTable tbody td:nth-child(2) { background-color: #ffffff; }
+    #rosterTable tbody td:nth-child(3) {
+      background-color: #fffaf0;
+      background-image: linear-gradient(to left, rgba(15, 23, 42, .07), rgba(15, 23, 42, 0) 5px);
+    }
+    #rosterTable thead th:nth-child(3) {
+      background-image: linear-gradient(to left, rgba(15, 23, 42, .07), rgba(15, 23, 42, 0) 5px);
+    }
+
+    /* Hekim adı ve hedef alanları */
+    #rosterTable tbody td:nth-child(2) input {
+      font-weight: 600; color: #0f172a; border-radius: 6px;
+    }
+    #rosterTable tbody td:nth-child(2) input:hover { background: #f5f7fb; }
+    #rosterTable tbody td:nth-child(3) input {
+      border-color: #e2d3ad; border-radius: 6px; color: #78350f;
+    }
+    #rosterTable tbody td:nth-child(3) input:focus { outline: none; border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245, 158, 11, .18); }
+
+    #rosterTable tbody td.day-col { font-weight: 600; transition: filter .12s ease; }
+    #rosterTable tbody td.day-col:hover { filter: brightness(.93) saturate(1.1); }
+
+    #rosterTable tfoot td { background-color: #f1f4f9; font-size: 11px; }
+    #rosterTable tfoot { border-top: 2px solid #cbd5e1 !important; }
+
     /* Zebra: çift satırlara çok hafif gri (nöbet/izin renkli hücreler olduğu gibi kalır) */
     #rosterTable tbody tr:nth-child(even) td:not(:where(.cell-auto-n, .cell-fixed-n, .cell-off, .cell-ni)) {
-      box-shadow: inset 0 0 0 9999px rgba(15, 23, 42, 0.035);
+      box-shadow: inset 0 0 0 9999px rgba(15, 23, 42, 0.03);
     }
 
-    /* Satir uzerine gelince yesil vurgu (hucre renkleri !important oldugu icin box-shadow kullaniyoruz) */
+    /* Satir uzerine gelince vurgu (hucre renkleri !important oldugu icin box-shadow kullaniyoruz) */
     #rosterTable tbody tr:hover td {
-      box-shadow: inset 0 0 0 9999px rgba(16, 185, 129, 0.20) !important;
+      box-shadow: inset 0 0 0 9999px rgba(99, 102, 241, 0.12) !important;
     }
     #rosterTable tbody tr:hover td:first-child {
-      box-shadow: inset 4px 0 0 0 #059669, inset 0 0 0 9999px rgba(16, 185, 129, 0.20) !important;
+      box-shadow: inset 3px 0 0 0 #4f46e5, inset 0 0 0 9999px rgba(99, 102, 241, 0.12) !important;
+      color: #4338ca;
     }
-    #rosterTable tbody tr:hover { outline: 2px solid #10b981; outline-offset: -2px; }
+    #rosterTable tbody tr:hover { outline: 1.5px solid #818cf8; outline-offset: -1.5px; }
 
-    .service-dropdown-item {
-      color: #1e293b !important;
-      background-color: #ffffff;
-      padding: 6px 10px;
-      cursor: pointer;
-      font-size: 11px;
-      font-weight: 600;
-      transition: all 0.15s ease;
+    /* Lejant */
+    .legend-swatch { width: 16px; height: 16px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; box-shadow: inset 0 0 0 1px rgba(15,23,42,.08); }
+
+    /* Modallar */
+    .modal-card {
+      border: 1px solid rgba(226, 232, 240, .9);
+      box-shadow: var(--shadow-lg);
+      border-radius: 20px !important;
     }
-    .service-dropdown-item:hover {
-      background-color: #4f46e5 !important;
-      color: #ffffff !important;
+    .modal-icon {
+      width: 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center;
+    }
+    .modal-close {
+      width: 30px; height: 30px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center;
+      color: #94a3b8; transition: all .15s ease;
+    }
+    .modal-close:hover { background: #f1f5f9; color: #334155; }
+    #archiveListContainer > div { border-radius: 12px; }
+
+    /* Açılış animasyonu */
+    @keyframes riseIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .rise-in { animation: riseIn .45s cubic-bezier(.2, .8, .2, 1) both; }
+    .rise-in-2 { animation-delay: .06s; }
+    .rise-in-3 { animation-delay: .12s; }
+    @keyframes popIn { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+    #archiveModal:not(.hidden) .modal-card,
+    #pasteModal:not(.hidden) .modal-card,
+    #optimizingOverlay:not(.hidden) .modal-card { animation: popIn .22s cubic-bezier(.2, .8, .2, 1) both; }
+    #saveToast:not(.hidden) { animation: popIn .25s cubic-bezier(.2, .8, .2, 1) both; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .rise-in, #archiveModal .modal-card, #pasteModal .modal-card, #optimizingOverlay .modal-card, #saveToast { animation: none !important; }
     }
 
     @keyframes bounceBall {
@@ -101,126 +356,143 @@
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
-      body { background: white !important; padding: 0 !important; font-size: 8px !important; }
+      body { background: white !important; background-image: none !important; padding: 0 !important; font-size: 8px !important; }
       header, .no-print, #warningPanel, #pasteModal, #archiveModal, #optimizingOverlay { display: none !important; }
-      #tableOuterWrapper { max-height: none !important; overflow: visible !important; border: none !important; }
+      #tableOuterWrapper { max-height: none !important; overflow: visible !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; }
       #tableContainer { zoom: 1 !important; transform: none !important; width: 100% !important; }
       table { width: 100% !important; border-collapse: collapse !important; border: 1px solid #94a3b8 !important; }
       thead { display: table-header-group; }
       th, td { border: 1px solid #cbd5e1 !important; padding: 2px !important; font-size: 8px !important; }
+      #rosterTable th, #rosterTable td { position: static !important; box-shadow: none !important; background-image: none !important; filter: none !important; }
+      #rosterTable .cell-fixed-n, #rosterTable .cell-auto-n, #rosterTable .cell-off { background-image: none !important; }
+      .rise-in { animation: none !important; }
       @page { size: landscape; margin: 4mm; }
     }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 p-3 min-h-screen text-xs" onclick="handleGlobalClick(event)">
-  <div class="max-w-[99%] mx-auto space-y-2.5">
-    
+  <div class="max-w-[99%] mx-auto space-y-3">
+
     <!-- Üst Kontrol Bloğu -->
-    <header class="bg-white rounded-xl shadow-sm border border-slate-200 p-2.5 space-y-2.5 no-print">
-      
+    <header class="app-header no-print rise-in">
+
       <!-- 1. Satır: Marka Satırı -->
-      <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-slate-50 border border-slate-200/80 shadow-2xs shrink-0">
+      <div class="brand-bar flex items-center justify-between gap-3 px-3.5 py-2.5">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="brand-logo w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center shrink-0">
             <img src="anberTech.png" alt="AnberTech Logo" class="w-full h-full object-contain" onerror="this.parentElement.innerHTML='<div class=\'w-7 h-7 bg-blue-600 text-white rounded-lg flex items-center justify-center font-black text-sm\'>A</div>'">
           </div>
-          <div class="leading-none">
-            <span class="text-xs font-black text-slate-900 tracking-tight">AnberTech</span>
-            <span class="text-slate-400 font-light mx-1">/</span>
-            <span class="text-xs font-semibold text-blue-600">Formal Nöbet Çözücü V1.0</span>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 leading-none">
+              <span class="text-[13px] font-black text-white tracking-tight">AnberTech</span>
+              <span class="text-slate-500 font-light">/</span>
+              <span class="text-[13px] font-bold text-indigo-200 tracking-tight truncate">Formal Nöbet Çözücü</span>
+              <span class="version-chip text-[9px] font-bold px-1.5 py-0.5 rounded-md">V1.0</span>
+            </div>
+            <div class="hidden sm:block text-[10px] text-slate-400 font-medium mt-1 leading-none">Hekim Çalışma ve Nöbet Optimizasyon Sistemi</div>
           </div>
         </div>
-        <div class="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
-          <span id="approvedIndicator" class="hidden text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded"><i class="fa-solid fa-circle-check text-[9px]"></i> ONAYLANDI</span>
-          <span id="dirtyIndicator" class="hidden text-amber-600 font-bold bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">● Kaydedilmemiş Değişiklikler Var</span>
-          <span class="hidden sm:inline">Hekim Çalışma ve Nöbet Optimizasyon Sistemi</span>
+        <div class="flex items-center gap-2 text-[10px] font-medium shrink-0">
+          <span id="approvedIndicator" class="hidden text-emerald-800 font-bold bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-full shadow-sm"><i class="fa-solid fa-circle-check text-[9px]"></i> ONAYLANDI</span>
+          <span id="dirtyIndicator" class="hidden text-amber-900 font-bold bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-full shadow-sm">● Kaydedilmemiş Değişiklikler Var</span>
         </div>
       </div>
 
+      <div class="px-3 pt-3 pb-3 space-y-3">
+
       <!-- 2. Satır: Kadro Yönetimi Grubu (Sol) & Kaydet / Arşiv / İndirmeler (Sağ) -->
-      <div class="flex flex-wrap justify-between items-center border-b border-slate-100 pb-2 gap-2">
-        
+      <div class="flex flex-wrap justify-between items-center pb-3 gap-2 border-b border-slate-100">
+
         <!-- Sol: Bölüm + Kadro -->
         <div class="flex flex-wrap items-center gap-2">
 
           <!-- Bölüm Seçici: YAZILAMAZ (ekleme/silme listenin içinde) -->
           <div class="relative inline-block" id="serviceDropdownWrapper">
-            <div class="lockable-ui flex items-center gap-1 bg-indigo-50/70 border border-indigo-200 rounded-lg px-2 py-1 cursor-pointer select-none" onclick="toggleServiceDropdown(event)" title="Bölüm seçmek için tıklayın. Ekleme ve silme listenin içindedir.">
-              <i class="fa-solid fa-stethoscope text-indigo-600 text-[10px]"></i>
-              <input type="text" id="selectedService" value="" placeholder="Bölüm seçin..." readonly tabindex="-1" autocomplete="off"
-                class="bg-transparent font-bold text-indigo-950 text-xs w-28 focus:outline-none cursor-pointer select-none pointer-events-none"
-                style="caret-color: transparent; pointer-events: none;">
+            <div class="lockable-ui flex items-center gap-2 h-9 bg-gradient-to-b from-indigo-50 to-indigo-100/60 border border-indigo-200 hover:border-indigo-300 rounded-xl pl-2 pr-2.5 cursor-pointer select-none shadow-sm transition" onclick="toggleServiceDropdown(event)" title="Bölüm seçmek için tıklayın. Ekleme ve silme listenin içindedir.">
+              <span class="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-sm shadow-indigo-500/40">
+                <i class="fa-solid fa-stethoscope text-[10px]"></i>
+              </span>
+              <div class="flex flex-col leading-none">
+                <span class="text-[8.5px] font-bold uppercase tracking-wider text-indigo-400">Bölüm</span>
+                <input type="text" id="selectedService" value="" placeholder="Bölüm seçin..." readonly tabindex="-1" autocomplete="off"
+                  class="bg-transparent font-bold text-indigo-950 text-xs w-28 focus:outline-none cursor-pointer select-none pointer-events-none mt-0.5 placeholder:text-indigo-300"
+                  style="caret-color: transparent; pointer-events: none;">
+              </div>
               <i class="fa-solid fa-chevron-down text-indigo-400 text-[9px] ml-0.5"></i>
             </div>
-            <div id="serviceCustomMenu" class="hidden absolute left-0 mt-1 w-44 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden py-1">
+            <div id="serviceCustomMenu" class="hidden absolute left-0 mt-1.5 w-52 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden py-1">
               <div id="serviceCustomList"></div>
             </div>
           </div>
 
           <!-- Kadro Buton Grubu -->
-        <div class="flex items-center bg-slate-50 border border-slate-300/80 rounded-lg p-0.5 shadow-sm">
-          <span class="text-[9px] font-bold text-slate-400 uppercase px-1.5 hidden md:inline">Kadro:</span>
-          
-          <button type="button" onclick="addDoctorRow()" class="lockable-ui px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1 shadow-2xs" title="Tek yeni hekim satırı ekle">
-            <i class="fa-solid fa-plus text-blue-600"></i>
-            <span>Kişi Ekle</span>
-          </button>
+          <div class="tb-group flex items-center p-0.5 gap-0.5 h-9">
+            <span class="tb-label px-2 hidden md:inline">Kadro</span>
 
-          <button type="button" onclick="copyPreviousMonthStaff()" class="lockable-ui px-2.5 py-1 hover:bg-white text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1" title="Önceki aydan hekim kadrosunu kopyala">
-            <i class="fa-solid fa-users text-indigo-600"></i>
-            <span>Kişileri Aktar</span>
-          </button>
+            <button type="button" onclick="addDoctorRow()" class="lockable-ui tb-btn bg-white text-xs flex items-center gap-1.5 shadow-sm" title="Tek yeni hekim satırı ekle">
+              <i class="fa-solid fa-user-plus text-blue-600 text-[11px]"></i>
+              <span>Kişi Ekle</span>
+            </button>
 
-          <button type="button" onclick="openPasteModal()" class="lockable-ui px-2.5 py-1 hover:bg-white text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1" title="Excel'den isim ve hedef saatleri toplu yapıştır">
-            <i class="fa-solid fa-clipboard-list text-emerald-600"></i>
-            <span>Toplu Gir</span>
-          </button>
-        </div>
+            <button type="button" onclick="copyPreviousMonthStaff()" class="lockable-ui tb-btn text-xs flex items-center gap-1.5" title="Önceki aydan hekim kadrosunu kopyala">
+              <i class="fa-solid fa-users text-indigo-600 text-[11px]"></i>
+              <span>Kişileri Aktar</span>
+            </button>
+
+            <button type="button" onclick="openPasteModal()" class="lockable-ui tb-btn text-xs flex items-center gap-1.5" title="Excel'den isim ve hedef saatleri toplu yapıştır">
+              <i class="fa-solid fa-clipboard-list text-emerald-600 text-[11px]"></i>
+              <span>Toplu Gir</span>
+            </button>
+          </div>
         </div>
 
         <!-- Sağ: Seed, Zoom, Arşiv, Kaydet, Dışa Aktarma -->
-        <div class="flex items-center gap-1.5 ml-auto">
+        <div class="flex flex-wrap items-center gap-1.5 ml-auto">
           <!-- Kilitlenebilir Seed Buton Alanı -->
-          <div class="flex items-center bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5" title="Tohum kodu (Kilit açıkken her üretimde yenilenir)">
-            <span class="text-[10px] font-mono text-slate-500 mr-1 font-bold">Seed:</span>
-            <input type="number" id="seedInput" value="1337" class="w-14 bg-transparent font-mono font-bold text-[10px] text-slate-800 text-center focus:outline-none" onchange="onSeedManuallyChanged(this.value)">
-            <button type="button" id="btnToggleSeedLock" onclick="toggleSeedLock()" class="ml-1 text-slate-400 hover:text-slate-700 text-[10px]" title="Seed kilidini aç/kapat">
+          <div class="tb-group flex items-center h-8 px-2" title="Tohum kodu (Kilit açıkken her üretimde yenilenir)">
+            <i class="fa-solid fa-seedling text-emerald-500 text-[10px] mr-1.5"></i>
+            <span class="tb-label mr-1">Seed</span>
+            <input type="number" id="seedInput" value="1337" class="no-spin w-12 bg-transparent font-mono font-bold text-[11px] text-slate-800 text-center focus:outline-none" onchange="onSeedManuallyChanged(this.value)">
+            <button type="button" id="btnToggleSeedLock" onclick="toggleSeedLock()" class="ml-0.5 w-6 h-6 rounded-md text-slate-400 hover:text-slate-700 hover:bg-white text-[10px] transition" title="Seed kilidini aç/kapat">
               <i id="seedLockIcon" class="fa-solid fa-lock-open"></i>
             </button>
           </div>
 
           <!-- Zoom Araçları -->
-          <div class="flex items-center bg-slate-50 border border-slate-200 rounded-lg p-0.5 text-slate-600 mr-1">
-            <button type="button" onclick="changeZoom(-0.05)" class="lockable-ui w-6 h-6 hover:bg-white rounded flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold transition">-</button>
-            <span id="zoomLabel" class="font-bold text-[10px] min-w-[34px] text-center">100%</span>
-            <button type="button" onclick="changeZoom(0.05)" class="lockable-ui w-6 h-6 hover:bg-white rounded flex items-center justify-center text-slate-500 hover:text-slate-800 font-bold transition">+</button>
-            <button type="button" onclick="autoFitZoom()" class="lockable-ui px-2 py-0.5 hover:bg-white rounded text-[10px] font-bold text-blue-600 transition" title="Ekrana Tam Sığdır">Sığdır</button>
+          <div class="tb-group flex items-center h-8 p-0.5 text-slate-600 mr-1">
+            <button type="button" onclick="changeZoom(-0.05)" class="lockable-ui w-7 h-full hover:bg-white hover:shadow-sm rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-800 transition" title="Uzaklaştır"><i class="fa-solid fa-minus text-[9px]"></i></button>
+            <span id="zoomLabel" class="font-mono font-bold text-[10.5px] min-w-[38px] text-center text-slate-700">100%</span>
+            <button type="button" onclick="changeZoom(0.05)" class="lockable-ui w-7 h-full hover:bg-white hover:shadow-sm rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-800 transition" title="Yakınlaştır"><i class="fa-solid fa-plus text-[9px]"></i></button>
+            <span class="tb-sep mx-0.5"></span>
+            <button type="button" onclick="autoFitZoom()" class="lockable-ui px-2 h-full hover:bg-white hover:shadow-sm rounded-lg text-[10.5px] font-bold text-indigo-600 transition flex items-center gap-1" title="Ekrana Tam Sığdır"><i class="fa-solid fa-expand text-[9px]"></i>Sığdır</button>
           </div>
 
           <!-- ARŞİV BUTONU -->
-          <button type="button" onclick="openArchiveModal()" class="lockable-ui px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 font-bold rounded-lg transition flex items-center gap-1.5 shadow-2xs" title="Geçmiş Kayıtlar & Snapshot Havuzu">
+          <button type="button" onclick="openArchiveModal()" class="lockable-ui btn-base btn-archive px-3 flex items-center gap-1.5" title="Geçmiş Kayıtlar & Snapshot Havuzu">
             <i class="fa-solid fa-box-archive text-amber-600"></i>
             <span>Arşiv</span>
-            <span id="archiveCountBadge" class="bg-amber-200 text-amber-900 text-[10px] px-1 rounded-full font-bold">0</span>
+            <span id="archiveCountBadge" class="bg-amber-500 text-white text-[9.5px] min-w-[18px] h-[18px] px-1 rounded-full font-bold inline-flex items-center justify-center">0</span>
           </button>
 
           <!-- MANUEL KAYDET BUTONU -->
-          <button type="button" onclick="saveCurrentMonth()" class="lockable-ui px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1.5" title="Bu listeyi tarayıcınızın yerel hafızasına kalıcı olarak kaydeder">
+          <button type="button" onclick="saveCurrentMonth()" class="lockable-ui btn-base btn-save px-3.5 flex items-center gap-1.5" title="Bu listeyi tarayıcınızın yerel hafızasına kalıcı olarak kaydeder">
             <i class="fa-solid fa-floppy-disk text-xs"></i>
             <span>Kaydet</span>
           </button>
 
-          <button type="button" onclick="exportStateBackup()" class="lockable-ui px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-medium rounded-lg transition" title="Veritabanı Yedeği Al (JSON İndir)">
+          <span class="tb-sep mx-0.5 hidden sm:inline-block"></span>
+
+          <button type="button" onclick="exportStateBackup()" class="lockable-ui btn-base btn-ghost w-8 flex items-center justify-center" title="Veritabanı Yedeği Al (JSON İndir)">
             <i class="fa-solid fa-download text-slate-500"></i>
           </button>
 
           <!-- GÜVENLİ PDF VE EXCEL ÇIKIŞ BUTONLARI -->
-          <button type="button" onclick="printRosterSafe()" class="lockable-ui px-2.5 py-1.5 bg-slate-50 hover:bg-rose-50 hover:text-rose-600 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Doğrulanmış Renkli PDF Çıktısı Al">
+          <button type="button" onclick="printRosterSafe()" class="lockable-ui btn-base btn-ghost px-2.5 hover:!bg-rose-50 hover:!border-rose-200 hover:!text-rose-700 font-semibold flex items-center gap-1.5" title="Doğrulanmış Renkli PDF Çıktısı Al">
             <i class="fa-solid fa-file-pdf text-rose-500"></i>
             <span class="hidden sm:inline">PDF</span>
           </button>
-          
-          <button type="button" onclick="exportToStyledExcelSafe()" class="lockable-ui px-2.5 py-1.5 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Doğrulanmış Renkli Excel Olarak İndir (.xlsx)">
+
+          <button type="button" onclick="exportToStyledExcelSafe()" class="lockable-ui btn-base btn-ghost px-2.5 hover:!bg-emerald-50 hover:!border-emerald-200 hover:!text-emerald-700 font-semibold flex items-center gap-1.5" title="Doğrulanmış Renkli Excel Olarak İndir (.xlsx)">
             <i class="fa-solid fa-file-excel text-emerald-600"></i>
             <span class="hidden sm:inline">Excel</span>
           </button>
@@ -228,22 +500,22 @@
       </div>
 
       <!-- 3. Satır: Tarih/Servis Parametreleri (Sol) & Hızlı / Süreli Üretim Butonları (Sağ) -->
-      <div class="flex flex-wrap items-center justify-between gap-2 pt-0.5">
-        
+      <div class="flex flex-wrap items-center justify-between gap-2">
+
         <!-- Sol: Parametreler -->
         <div class="flex flex-wrap items-center gap-2">
-          
+
           <!-- Tarih + Gün/Mesai (tek kutu) -->
-          <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
-            <i class="fa-regular fa-calendar text-slate-500 text-[10px]"></i>
-            <select id="selectYear" class="lockable-ui bg-transparent font-bold text-slate-800 text-xs focus:outline-none cursor-pointer" onchange="onFilterChanged('year')">
+          <div class="tb-group flex items-center gap-2 h-9 px-2.5">
+            <i class="fa-regular fa-calendar text-indigo-500 text-[11px]"></i>
+            <select id="selectYear" class="lockable-ui clean-select bg-transparent font-bold text-slate-800 text-xs focus:outline-none cursor-pointer" onchange="onFilterChanged('year')">
               <option value="2025">2025</option>
               <option value="2026" selected>2026</option>
               <option value="2027">2027</option>
               <option value="2028">2028</option>
             </select>
             <span class="text-slate-300">/</span>
-            <select id="selectMonth" class="lockable-ui bg-transparent font-bold text-slate-800 text-xs focus:outline-none cursor-pointer" onchange="onFilterChanged('month')">
+            <select id="selectMonth" class="lockable-ui clean-select bg-transparent font-bold text-slate-800 text-xs focus:outline-none cursor-pointer" onchange="onFilterChanged('month')">
               <option value="01">Ocak</option>
               <option value="02">Şubat</option>
               <option value="03">Mart</option>
@@ -257,46 +529,45 @@
               <option value="11">Kasım</option>
               <option value="12">Aralık</option>
             </select>
-            <span class="w-px h-4 bg-slate-300 mx-1"></span>
-            <span class="text-slate-500 font-medium text-[11px] whitespace-nowrap"><strong id="statWorkdays" class="text-slate-800">--</strong> Gün</span>
-            <span class="text-slate-300">•</span>
-            <span class="text-blue-600 font-bold text-[11px] whitespace-nowrap"><span id="statStandardHours">--</span> Mesai</span>
+            <span class="tb-sep"></span>
+            <span class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-md px-1.5 py-0.5 text-slate-500 font-medium text-[11px] whitespace-nowrap"><strong id="statWorkdays" class="text-slate-900 font-mono">--</strong> Gün</span>
+            <span class="inline-flex items-center gap-1 bg-blue-50 border border-blue-200 rounded-md px-1.5 py-0.5 text-blue-700 font-bold text-[11px] whitespace-nowrap"><span id="statStandardHours" class="font-mono">--</span> Mesai</span>
           </div>
 
           <!-- Kurallar: Ay Sonu + Maks. Nöbet + Günlük Maks (tek kutu) -->
-          <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
-            <div class="flex items-center gap-1" title="Ay sonu nöbet saati katsayısı">
-              <span class="text-[10px] font-bold text-amber-800 whitespace-nowrap">Ay Sonu:</span>
-              <select id="lastDayShiftRule" class="lockable-ui bg-transparent font-bold text-amber-900 text-xs focus:outline-none cursor-pointer" onchange="markDirty(); buildSimulationCaches(); renderOnly();">
+          <div class="tb-group flex items-center gap-2.5 h-9 px-2.5">
+            <div class="flex items-center gap-1.5" title="Ay sonu nöbet saati katsayısı">
+              <span class="text-[10px] font-bold text-amber-800 whitespace-nowrap"><i class="fa-solid fa-hourglass-end text-[9px] text-amber-500 mr-0.5"></i>Ay Sonu</span>
+              <select id="lastDayShiftRule" class="lockable-ui field clean-select font-bold text-amber-900 text-xs cursor-pointer pl-1.5 py-0.5 !border-amber-200" onchange="markDirty(); buildSimulationCaches(); renderOnly();">
               <option value="auto">Oto (8s)</option>
               <option value="16" selected>16s</option>
               <option value="24">24s</option>
               <option value="8">8s</option>
             </select>
             </div>
-            <span class="w-px h-4 bg-slate-300"></span>
-            <div class="flex items-center gap-1" title="KATI KURAL: Bir hekime bu sayıdan fazla nöbet asla yazılamaz">
-              <span class="text-[10px] font-bold text-blue-600 whitespace-nowrap">Maks. Nöbet <i class="fa-solid fa-lock text-[8px]"></i>:</span>
-              <input type="number" id="maxShiftLimit" value="8" min="1" max="15" class="lockable-ui w-8 text-center font-bold bg-white border border-blue-200 rounded text-xs text-blue-700 py-0.5" onchange="markDirty(); renderOnly(); runIndependentValidation();">
+            <span class="tb-sep"></span>
+            <div class="flex items-center gap-1.5" title="KATI KURAL: Bir hekime bu sayıdan fazla nöbet asla yazılamaz">
+              <span class="text-[10px] font-bold text-blue-700 whitespace-nowrap">Maks. Nöbet <i class="fa-solid fa-lock text-[8px] text-blue-400"></i></span>
+              <input type="number" id="maxShiftLimit" value="8" min="1" max="15" class="lockable-ui field w-10 text-center font-bold text-xs text-blue-700 py-0.5 !border-blue-200" onchange="markDirty(); renderOnly(); runIndependentValidation();">
             </div>
-            <span class="w-px h-4 bg-slate-300"></span>
-            <div class="flex items-center gap-1" title="KATI KURAL: Bir güne bu sayıdan fazla nöbetçi asla yazılamaz (boş = sınır yok)">
-              <span class="text-[10px] font-bold text-slate-600 whitespace-nowrap">Günlük Maks <i class="fa-solid fa-lock text-[8px]"></i>:</span>
-              <input type="number" id="customDailyCeiling" placeholder="Yok" min="1" max="25" class="lockable-ui w-9 text-center font-bold bg-white border border-slate-300 rounded text-xs text-slate-700 py-0.5" onchange="markDirty(); buildSimulationCaches(); renderOnly(); runIndependentValidation();">
+            <span class="tb-sep"></span>
+            <div class="flex items-center gap-1.5" title="KATI KURAL: Bir güne bu sayıdan fazla nöbetçi asla yazılamaz (boş = sınır yok)">
+              <span class="text-[10px] font-bold text-slate-600 whitespace-nowrap">Günlük Maks <i class="fa-solid fa-lock text-[8px] text-slate-400"></i></span>
+              <input type="number" id="customDailyCeiling" placeholder="Yok" min="1" max="25" class="lockable-ui field w-11 text-center font-bold text-xs text-slate-700 py-0.5 placeholder:text-slate-300 placeholder:font-medium" onchange="markDirty(); buildSimulationCaches(); renderOnly(); runIndependentValidation();">
             </div>
           </div>
 
         </div>
 
         <!-- Sağ: Hızlı Üret + Süreli Optimizasyon Butonları -->
-        <div class="flex items-center gap-1.5 ml-auto">
-          
+        <div class="flex items-center gap-2 ml-auto">
+
           <!-- HIZLI ÜRET -->
           <!-- OPTİMİZASYON SÜRESİ SEÇİCİ -->
-          <div class="flex items-center gap-1 bg-indigo-50 border border-indigo-200 rounded-lg px-2 py-1" title="Algoritmanın en iyi olasılığı aramak için harcayacağı süre">
+          <div class="flex items-center gap-1.5 h-9 bg-indigo-50 border border-indigo-200 rounded-xl px-2.5" title="Algoritmanın en iyi olasılığı aramak için harcayacağı süre">
             <i class="fa-solid fa-stopwatch text-indigo-600 text-[11px]"></i>
-            <span class="text-[10px] font-bold text-indigo-900">Süre:</span>
-            <select id="selectOptimizationTime" class="lockable-ui bg-transparent font-black text-indigo-700 text-xs focus:outline-none cursor-pointer">
+            <span class="text-[10px] font-bold text-indigo-900">Süre</span>
+            <select id="selectOptimizationTime" class="lockable-ui field clean-select font-black text-indigo-700 text-xs cursor-pointer pl-1.5 py-0.5 !border-indigo-200">
               <option value="5">5 sn</option>
               <option value="10">10 sn</option>
               <option value="15" selected>15 sn</option>
@@ -306,35 +577,36 @@
           </div>
 
           <!-- SÜRELİ DERİN OPTİMİZASYON BUTONU -->
-          <button type="button" id="btnDistribute" onclick="startTimedOptimization()" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-xs rounded-lg shadow-md shadow-blue-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-blue-400/30" title="Hedef saatlerden asla taviz vermeden günler arası simetrisi en adil listeyi arar">
+          <button type="button" id="btnDistribute" onclick="startTimedOptimization()" class="btn-primary px-4 text-white font-black text-xs transition-all transform active:scale-95 flex items-center gap-2" title="Hedef saatlerden asla taviz vermeden günler arası simetrisi en adil listeyi arar">
             <i id="btnDistributeIcon" class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
             <span id="btnDistributeText">Nöbetleri Üret</span>
           </button>
 
-          <button type="button" onclick="approveRoster()" id="btnApprove" class="hidden px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-lg shadow-md shadow-emerald-500/25 transition-all transform active:scale-95 flex items-center gap-1.5 border border-emerald-400/30" title="Listeyi denetleyip onaylar ve otomatik olarak kaydeder">
+          <button type="button" onclick="approveRoster()" id="btnApprove" class="hidden btn-approve px-3.5 text-white font-black text-xs transition-all transform active:scale-95 flex items-center gap-1.5" title="Listeyi denetleyip onaylar ve otomatik olarak kaydeder">
             <i class="fa-solid fa-circle-check"></i>
             <span>Listeyi Onayla</span>
           </button>
 
-          <button type="button" onclick="clearOnlyGenerated()" id="btnClearGenerated" class="lockable-ui hidden px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-medium rounded-lg transition" title="Sadece algoritmanın atadığı nöbetleri geri al">
+          <button type="button" onclick="clearOnlyGenerated()" id="btnClearGenerated" class="lockable-ui hidden btn-base w-9 !h-[34px] bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-medium transition" title="Sadece algoritmanın atadığı nöbetleri geri al">
             <i class="fa-solid fa-rotate-left"></i>
           </button>
         </div>
 
       </div>
 
+      </div>
     </header>
 
     <!-- Bildirim Rozeti -->
-    <div id="saveToast" class="hidden fixed top-4 right-4 bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-xl z-50 text-xs font-bold flex items-center gap-2">
-      <i class="fa-solid fa-circle-check text-sm"></i>
+    <div id="saveToast" class="hidden fixed top-4 right-4 bg-slate-900 text-white pl-3 pr-4 py-2.5 rounded-xl shadow-2xl ring-1 ring-white/10 z-50 text-xs font-semibold flex items-center gap-2.5">
+      <span class="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shadow shadow-emerald-500/50"><i class="fa-solid fa-check text-[11px]"></i></span>
       <span id="toastMessage">Değişiklikler başarıyla kaydedildi!</span>
     </div>
 
     <!-- ZIPLAYAN TOP & OPTİMİZASYON EKRAN MODALI -->
-    <div id="optimizingOverlay" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-2xl p-6 shadow-2xl flex flex-col items-center justify-center space-y-4 max-w-xs w-full text-center border border-slate-100">
-        
+    <div id="optimizingOverlay" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div class="modal-card bg-white rounded-2xl p-6 flex flex-col items-center justify-center space-y-4 max-w-xs w-full text-center">
+
         <div class="h-20 w-24 flex flex-col items-center justify-end relative">
           <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-500 to-amber-300 shadow-md shadow-indigo-300 bouncing-ball flex items-center justify-center text-white text-xs font-black">
             <i class="fa-solid fa-wand-magic-sparkles text-[10px] text-amber-200"></i>
@@ -347,14 +619,14 @@
           <p class="text-[11px] text-slate-500 leading-snug">Hekim mesai saatleri garanti ediliyor, günler arası simetri kuruluyor.</p>
         </div>
 
-        <div class="w-full bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 grid grid-cols-2 gap-2 text-[11px]">
+        <div class="w-full bg-slate-50 border border-slate-200/80 rounded-xl p-3 grid grid-cols-2 gap-2 text-[11px]">
           <div class="text-left border-r border-slate-200 pr-1">
-            <div class="text-slate-400 text-[9px] uppercase font-bold">Kalan Süre</div>
-            <div id="overlayCountdown" class="font-mono font-black text-indigo-700 text-sm">-- sn</div>
+            <div class="text-slate-400 text-[9px] uppercase font-bold tracking-wider">Kalan Süre</div>
+            <div id="overlayCountdown" class="font-mono font-black text-indigo-700 text-base">-- sn</div>
           </div>
-          <div class="text-left pl-1">
-            <div class="text-slate-400 text-[9px] uppercase font-bold">Taranan Liste</div>
-            <div id="overlayListCount" class="font-mono font-black text-emerald-600 text-sm">0</div>
+          <div class="text-left pl-2">
+            <div class="text-slate-400 text-[9px] uppercase font-bold tracking-wider">Taranan Liste</div>
+            <div id="overlayListCount" class="font-mono font-black text-emerald-600 text-base">0</div>
           </div>
         </div>
 
@@ -365,68 +637,75 @@
     </div>
 
     <!-- Tablo Alanı -->
-    <div id="tableOuterWrapper" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto max-h-[74vh] relative">
+    <div id="tableOuterWrapper" class="table-shell bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto max-h-[74vh] relative rise-in rise-in-2">
       <div id="tableContainer">
         <table id="rosterTable" class="w-full border-collapse" style="table-layout: fixed;"></table>
       </div>
     </div>
 
     <!-- Matematiksel Doğrulama Raporu -->
-    <div id="warningPanel" class="hidden bg-amber-50 border-l-4 border-amber-500 p-3 rounded-lg shadow-sm no-print space-y-1">
+    <div id="warningPanel" class="hidden bg-gradient-to-r from-amber-50 to-white border border-amber-200 border-l-4 border-l-amber-500 p-3 rounded-xl shadow-sm no-print space-y-1.5">
       <div class="flex items-center gap-2 font-bold text-amber-900 text-xs">
-        <i class="fa-solid fa-shield-halved text-amber-600 text-sm"></i>
+        <span class="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center"><i class="fa-solid fa-shield-halved text-amber-600 text-[12px]"></i></span>
         <span>Hakem Denetleme Raporu (Validator Engine):</span>
       </div>
-      <ul id="warningList" class="list-disc list-inside text-[11px] text-amber-800 space-y-0.5"></ul>
+      <ul id="warningList" class="list-disc list-inside text-[11px] text-amber-800 space-y-0.5 pl-1"></ul>
     </div>
 
     <!-- Lejant -->
-    <div class="flex flex-wrap gap-4 text-[11px] bg-white p-2.5 rounded-lg border border-slate-200 text-slate-600 no-print">
-      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-800 border border-red-950 inline-block"></span> <strong>🔒 N (Kilitli):</strong> Sabit nöbet</div>
-      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-slate-900 inline-block"></span> <strong>🔒 X (Kilitli):</strong> İzin / Rapor</div>
-      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-500 inline-block"></span> <strong>N (Oto):</strong> Algoritmanın ürettiği nöbet</div>
-      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-yellow-200 border border-yellow-400 inline-block"></span> <strong>N.E.:</strong> Nöbet ertesi dinlenme</div>
-      <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-red-100 border border-red-300 inline-block"></span> <strong>Kırmızı Sütun:</strong> Resmi Tatil (+24 Saat)</div>
+    <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] bg-white/80 backdrop-blur px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-600 shadow-sm no-print rise-in rise-in-3">
+      <span class="tb-label">Lejant</span>
+      <div class="flex items-center gap-1.5"><span class="legend-swatch text-white" style="background:linear-gradient(180deg,#c62828,#991b1b);box-shadow:inset 0 0 0 2px #7f1d1d">N</span> <strong class="text-slate-800">🔒 N (Kilitli):</strong> Sabit nöbet</div>
+      <div class="flex items-center gap-1.5"><span class="legend-swatch text-white" style="background:linear-gradient(180deg,#273449,#172033)">X</span> <strong class="text-slate-800">🔒 X (Kilitli):</strong> İzin / Rapor</div>
+      <div class="flex items-center gap-1.5"><span class="legend-swatch text-white" style="background:linear-gradient(180deg,#f25757,#e53935)">N</span> <strong class="text-slate-800">N (Oto):</strong> Algoritmanın ürettiği nöbet</div>
+      <div class="flex items-center gap-1.5"><span class="legend-swatch" style="background:#fdf0b5;color:#854d0e;box-shadow:inset 0 0 0 1px #facc15">NE</span> <strong class="text-slate-800">N.E.:</strong> Nöbet ertesi dinlenme</div>
+      <div class="flex items-center gap-1.5"><span class="legend-swatch" style="background:#fee2e2;color:#991b1b;box-shadow:inset 0 0 0 1px #fca5a5">T</span> <strong class="text-slate-800">Kırmızı Sütun:</strong> Resmi Tatil (+24 Saat)</div>
+    </div>
+
+    <!-- Alt Bilgi -->
+    <div class="no-print flex items-center justify-center gap-1.5 text-[10px] text-slate-400 pt-1 pb-2">
+      <span class="font-bold text-slate-500">AnberTech</span><span>·</span><span>Formal Nöbet Çözücü V1.0</span>
     </div>
   </div>
 
   <!-- ARŞİV MODAL PENCERESİ -->
-  <div id="archiveModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div class="bg-white w-full max-w-2xl rounded-2xl p-5 shadow-2xl space-y-3.5 flex flex-col max-h-[85vh]">
-      <div class="flex justify-between items-center border-b pb-2">
-        <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
-          <i class="fa-solid fa-box-archive text-amber-600 text-base"></i>
-          <span>Geçmiş Listeler ve Arşiv (<span id="archiveModalTitleInfo">--</span>)</span>
+  <div id="archiveModal" class="hidden fixed inset-0 bg-slate-950/55 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="modal-card bg-white w-full max-w-2xl rounded-2xl p-5 space-y-4 flex flex-col max-h-[85vh]">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2.5">
+          <span class="modal-icon bg-amber-100"><i class="fa-solid fa-box-archive text-amber-600 text-base"></i></span>
+          <span>Geçmiş Listeler ve Arşiv <span class="text-slate-400 font-semibold">(<span id="archiveModalTitleInfo">--</span>)</span></span>
         </h3>
-        <button type="button" onclick="closeArchiveModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
+        <button type="button" onclick="closeArchiveModal()" class="modal-close font-bold text-lg">&times;</button>
       </div>
 
-      <div class="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-[11px] text-amber-900 leading-relaxed">
-        Siz <strong>"Kaydet"</strong> butonuna bastığınızda o anki çizelge tarih damgasıyla buraya arşivlenir. Dilediğiniz eski bir versiyonu tek tıkla geri yükleyebilirsiniz.
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-900 leading-relaxed flex gap-2">
+        <i class="fa-solid fa-circle-info text-amber-500 mt-0.5"></i>
+        <div>Siz <strong>"Kaydet"</strong> butonuna bastığınızda o anki çizelge tarih damgasıyla buraya arşivlenir. Dilediğiniz eski bir versiyonu tek tıkla geri yükleyebilirsiniz.</div>
       </div>
 
       <div class="overflow-y-auto flex-1 pr-1 space-y-2" id="archiveListContainer"></div>
 
-      <div class="flex justify-between items-center pt-2 border-t text-xs">
-        <button type="button" onclick="clearAllArchivesForCurrent()" class="text-rose-600 hover:text-rose-800 font-medium flex items-center gap-1">
+      <div class="flex justify-between items-center pt-3 border-t border-slate-100 text-xs">
+        <button type="button" onclick="clearAllArchivesForCurrent()" class="text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition">
           <i class="fa-solid fa-trash-can"></i> Bu Ayın Arşivini Temizle
         </button>
-        <button type="button" onclick="closeArchiveModal()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition">Kapat</button>
+        <button type="button" onclick="closeArchiveModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition">Kapat</button>
       </div>
     </div>
   </div>
 
   <!-- Toplu İsim Modal -->
-  <div id="pasteModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div class="bg-white w-full max-w-lg rounded-2xl p-5 shadow-2xl space-y-3">
+  <div id="pasteModal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="modal-card bg-white w-full max-w-lg rounded-2xl p-5 space-y-3.5">
       <div class="flex justify-between items-center">
-        <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
-          <i class="fa-solid fa-clipboard-user text-blue-600"></i> Toplu Hekim ve Ek Mesai Saati Yapıştır
+        <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2.5">
+          <span class="modal-icon bg-blue-100"><i class="fa-solid fa-clipboard-user text-blue-600"></i></span> Toplu Hekim ve Ek Mesai Saati Yapıştır
         </h3>
-        <button type="button" onclick="closePasteModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
+        <button type="button" onclick="closePasteModal()" class="modal-close font-bold text-lg">&times;</button>
       </div>
-      
-      <div class="bg-blue-50 border border-blue-200 rounded-lg p-2.5 text-[11px] text-blue-800 space-y-1">
+
+      <div class="bg-blue-50/70 border border-blue-200 rounded-xl p-3 text-[11px] text-blue-800 space-y-1.5">
         <p><strong>Desteklenen Formatlar:</strong></p>
         <div class="font-mono text-[10px] space-y-0.5 text-blue-900">
           <div>• Dr. Ahmet Yılmaz [TAB] 120 (Excel'den 2 sütun kopyalama)</div>
@@ -436,16 +715,16 @@
         </div>
       </div>
 
-      <textarea id="bulkNames" rows="10" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono" placeholder="Dr. Ahmet Yılmaz&#9;120&#10;Dr. Ayşe Kaya - 96&#10;Dr. Mehmet Demir, 80..."></textarea>
-      
-      <div class="flex justify-between items-center pt-1">
+      <textarea id="bulkNames" rows="10" class="field w-full rounded-xl p-2.5 text-xs font-mono leading-relaxed" placeholder="Dr. Ahmet Yılmaz&#9;120&#10;Dr. Ayşe Kaya - 96&#10;Dr. Mehmet Demir, 80..."></textarea>
+
+      <div class="flex justify-between items-center pt-1 gap-2">
         <label class="flex items-center gap-1.5 text-slate-600 text-[11px] cursor-pointer">
           <input type="checkbox" id="chkMergeBulk" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
           <span>Mevcut kilitli izinleri/nöbetleri koru (Birleştir)</span>
         </label>
         <div class="flex gap-2">
-          <button type="button" onclick="closePasteModal()" class="px-3 py-1.5 border rounded-lg text-xs font-medium text-slate-600">İptal</button>
-          <button type="button" onclick="applyBulkNames()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm">Listeyi Aktar</button>
+          <button type="button" onclick="closePasteModal()" class="px-3.5 py-2 border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-600 transition">İptal</button>
+          <button type="button" onclick="applyBulkNames()" class="px-4 py-2 bg-gradient-to-b from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-xs font-bold shadow-md shadow-blue-500/30 transition">Listeyi Aktar</button>
         </div>
       </div>
     </div>
@@ -499,7 +778,7 @@
     let doctors = [];
     let daysInMonth = 30;
     let daysMeta = [];
-    let grid = {}; 
+    let grid = {};
     let currentZoom = 1.0;
     let isUserZoomed = false;
     let isGenerated = false;
@@ -598,7 +877,7 @@
         document.getElementById('selectYear').value = y;
         document.getElementById('selectMonth').value = m;
         activePreviousFilter = { year: y, month: m, service: document.getElementById('selectedService').value };
-        
+
         refreshServiceOptions();
         loadActiveRoster();
         setUILocked(false);
@@ -1093,7 +1372,7 @@
       const monthStr = getSelectedPeriodString();
       const srvName = document.getElementById('selectedService').value;
       const nowStamp = getFormattedTimestamp();
-      
+
       registerServiceName(srvName);
 
       syncDeptRoster();
@@ -1127,7 +1406,7 @@
         });
 
         if (archiveList.length > 30) archiveList = archiveList.slice(0, 30);
-        
+
         try {
           localStorage.setItem(getArchiveStorageKey(monthStr, srvName), JSON.stringify(archiveList));
         } catch (eQuota) {
@@ -1220,7 +1499,7 @@
         isApproved = !!snap.approved;
         approvedAtStr = snap.approvedAtStr || '';
         isGenerated = true;
-        
+
         const monthStr = getSelectedPeriodString();
         const srvName = document.getElementById('selectedService').value;
         try {
@@ -1879,7 +2158,7 @@
       function step() {
         const now = Date.now();
         const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
-        
+
         if (btnText) btnText.innerText = `Aranıyor: ${remaining}s`;
         if (countdownEl) countdownEl.innerText = `${remaining} sn`;
         if (listCountEl) listCountEl.innerText = `${iterationsCount}`;
@@ -2729,16 +3008,16 @@
           if (meta.isHoliday) { cellClass = 'cell-holiday'; label = 'T'; }
 
           let badgeIcon = '';
-          if (st === 'N_FIXED') { 
-            cellClass = 'cell-fixed-n'; 
-            label = 'N'; 
+          if (st === 'N_FIXED') {
+            cellClass = 'cell-fixed-n';
+            label = 'N';
             badgeIcon = '<i class="fa-solid fa-lock absolute top-0.5 right-0.5 text-[7px] opacity-75"></i>';
           }
           else if (st === 'N_AUTO') { cellClass = 'cell-auto-n'; label = 'N'; }
           else if (st === 'N_IZNI') { cellClass = 'cell-ni'; label = 'N.E.'; }
-          else if (st === 'OFF') { 
-            cellClass = 'cell-off'; 
-            label = 'X'; 
+          else if (st === 'OFF') {
+            cellClass = 'cell-off';
+            label = 'X';
             badgeIcon = '<i class="fa-solid fa-lock absolute top-0.5 right-0.5 text-[7px] opacity-75"></i>';
           }
 
@@ -2764,17 +3043,17 @@
         html += `<td class="p-1 border bg-amber-50/60 font-bold text-amber-700 w-[70px]">${stats.earnedOvertime}s ${diffBadge}</td>`;
         html += `<td class="p-1 border bg-emerald-50/40 font-black text-emerald-700 w-[60px]">${stats.totalHours}s</td>`;
         html += `<td class="p-1 border bg-purple-50/50 font-bold text-purple-800 text-center w-[55px]">${shiftCount}</td>`;
-        
+
         html += `<td class="p-1 border bg-white text-center no-print w-6">
           <button type="button" onclick="deleteDoctor('${doc.id}')" class="text-slate-300 hover:text-red-500 font-bold px-1">&times;</button>
         </td>`;
-        
+
         html += `</tr>`;
       });
 
       html += `</tbody><tfoot class="bg-slate-100 font-bold border-t-2"><tr>`;
       html += `<td colspan="3" class="p-2 border text-left text-[10px]"><span class="font-bold">Günlük Nöbetçi</span> <span class="text-slate-500 font-medium">(${doctors.length} hekim)</span></td>`;
-      
+
       let allDayCounts = [];
       for (let d = 1; d <= daysInMonth; d++) {
         let count = 0;
@@ -2794,7 +3073,7 @@
         const count = allDayCounts[d - 1];
         const targetQ = quotas[d] || 1;
         let countClass = 'text-blue-700 font-bold';
-        
+
         if (count === 0) {
           countClass = 'text-red-700 bg-red-200 font-black';
         } else if (count >= targetQ + 2) {
@@ -2804,10 +3083,10 @@
         } else if (count < targetQ) {
           countClass = 'text-slate-500 bg-slate-200 font-medium';
         }
-        
+
         html += `<td class="p-1 border day-col ${countClass}" title="Atanan: ${count} / Hedef Kontenjan: ${targetQ}">${count}</td>`;
       }
-      
+
       html += `<td colspan="4" class="p-1 border text-center text-[10px] text-slate-600">Min: <strong>${minCount}</strong> / Maks: <strong>${maxCount}</strong> (Ort: <strong>${avgFormatted}</strong>)</td><td class="no-print border"></td></tr></tfoot>`;
 
       table.innerHTML = html;
