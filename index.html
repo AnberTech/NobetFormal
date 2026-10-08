@@ -451,6 +451,13 @@
 
         <!-- Sağ: Seed, Zoom, Arşiv, Kaydet, Dışa Aktarma -->
         <div class="flex flex-wrap items-center gap-1.5 ml-auto">
+          <!-- YEDEKTEN İÇE AKTAR (dışa aktarılan JSON'u geri yükler, mevcut kayıtlarla birleştirir) -->
+          <button type="button" onclick="document.getElementById('importFileInput').click()" class="lockable-ui btn-base btn-ghost px-2.5 font-semibold flex items-center gap-1.5" title="Yedekten İçe Aktar (JSON dosyası seç)">
+            <i class="fa-solid fa-upload text-slate-500"></i>
+            <span class="hidden sm:inline">İçe Aktar</span>
+          </button>
+          <input type="file" id="importFileInput" accept=".json,application/json" class="hidden" onchange="importStateBackup(this)">
+
           <!-- Kilitlenebilir Seed Buton Alanı -->
           <div class="tb-group flex items-center h-8 px-2" title="Tohum kodu (Kilit açıkken her üretimde yenilenir)">
             <i class="fa-solid fa-seedling text-emerald-500 text-[10px] mr-1.5"></i>
@@ -488,13 +495,6 @@
           <button type="button" onclick="exportStateBackup()" class="lockable-ui btn-base btn-ghost w-8 flex items-center justify-center" title="Veritabanı Yedeği Al (JSON İndir)">
             <i class="fa-solid fa-download text-slate-500"></i>
           </button>
-
-          <!-- YEDEKTEN İÇE AKTAR (dışa aktarılan JSON'u geri yükler, mevcut kayıtlarla birleştirir) -->
-          <button type="button" onclick="document.getElementById('importFileInput').click()" class="lockable-ui btn-base btn-ghost px-2.5 font-semibold flex items-center gap-1.5" title="Yedekten İçe Aktar (JSON dosyası seç)">
-            <i class="fa-solid fa-upload text-slate-500"></i>
-            <span class="hidden sm:inline">İçe Aktar</span>
-          </button>
-          <input type="file" id="importFileInput" accept=".json,application/json" class="hidden" onchange="importStateBackup(this)">
 
           <!-- GÜVENLİ PDF VE EXCEL ÇIKIŞ BUTONLARI -->
           <button type="button" onclick="printRosterSafe()" class="lockable-ui btn-base btn-ghost px-2.5 hover:!bg-rose-50 hover:!border-rose-200 hover:!text-rose-700 font-semibold flex items-center gap-1.5" title="Doğrulanmış Renkli PDF Çıktısı Al">
