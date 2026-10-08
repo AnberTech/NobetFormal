@@ -489,6 +489,13 @@
             <i class="fa-solid fa-download text-slate-500"></i>
           </button>
 
+          <!-- YEDEKTEN İÇE AKTAR (dışa aktarılan JSON'u geri yükler, mevcut kayıtlarla birleştirir) -->
+          <button type="button" onclick="document.getElementById('importFileInput').click()" class="lockable-ui btn-base btn-ghost px-2.5 font-semibold flex items-center gap-1.5" title="Yedekten İçe Aktar (JSON dosyası seç)">
+            <i class="fa-solid fa-upload text-slate-500"></i>
+            <span class="hidden sm:inline">İçe Aktar</span>
+          </button>
+          <input type="file" id="importFileInput" accept=".json,application/json" class="hidden" onchange="importStateBackup(this)">
+
           <!-- GÜVENLİ PDF VE EXCEL ÇIKIŞ BUTONLARI -->
           <button type="button" onclick="printRosterSafe()" class="lockable-ui btn-base btn-ghost px-2.5 hover:!bg-rose-50 hover:!border-rose-200 hover:!text-rose-700 font-semibold flex items-center gap-1.5" title="Doğrulanmış Renkli PDF Çıktısı Al">
             <i class="fa-solid fa-file-pdf text-rose-500"></i>
@@ -1356,6 +1363,126 @@
       a.href = URL.createObjectURL(blob);
       a.download = `AnberTech_Nobet_Yedek_${new Date().toISOString().slice(0,10)}.json`;
       a.click();
+    }
+
+    // =========================================================================
+    // YEDEKTEN İÇE AKTAR
+    // exportStateBackup() ile indirilen JSON yedeğini (veya aynı formattaki bir
+    // dosyayı) tarayıcı hafızasına BİRLEŞTİREREK yükler. Hiçbir şey sessizce silinmez:
+    //  - bölüm adları ve bölüm kadroları birleştirilir (aynı id veya aynı isim = aynı kişi)
+    //  - arşiv kayıtları id'ye göre birleştirilir
+    //  - aynı ay + bölüm için kayıt zaten varsa üzerine yazmadan önce sorulur
+    // Yalnızca "nobet_" ile başlayan anahtarlar işlenir; dosyadaki hiçbir şey çalıştırılmaz.
+    // =========================================================================
+    function importStateBackup(input) {
+      const file = input && input.files && input.files[0];
+      if (input) input.value = '';              // aynı dosya tekrar seçilebilsin
+      if (!file) return;
+      if (isOptimizing) return alert('Optimizasyon sürerken içe aktarma yapılamaz.');
+
+      const reader = new FileReader();
+      reader.onerror = () => alert('Dosya okunamadı.');
+      reader.onload = () => {
+        let backup;
+        try { backup = JSON.parse(reader.result); }
+        catch (e) { return alert('Bu dosya geçerli bir JSON değil.'); }
+
+        const src = backup && backup.localStorage;
+        if (!src || typeof src !== 'object' || Array.isArray(src)) {
+          return alert('Bu dosya bir nöbet yedeği gibi görünmüyor ("localStorage" alanı yok).');
+        }
+
+        // Geçerli girdileri ayıkla: "nobet_" anahtarı + JSON metni (+ aylık kayıtlarda doğru şekil)
+        const items = {};
+        let skipped = 0;
+        Object.keys(src).forEach(k => {
+          if (!k.startsWith('nobet_') || typeof src[k] !== 'string') { skipped++; return; }
+          let val;
+          try { val = JSON.parse(src[k]); } catch (e) { skipped++; return; }
+          if (k.startsWith('nobet_roster_') &&
+              !(val && Array.isArray(val.doctors) && val.grid && typeof val.grid === 'object')) { skipped++; return; }
+          items[k] = val;
+        });
+        const keys = Object.keys(items);
+        if (keys.length === 0) return alert('Yedekte içe aktarılacak nöbet verisi bulunamadı.');
+
+        if (isDirty && !confirm('Kaydedilmemiş değişiklikleriniz var. İçe aktarmadan sonra ekrandaki liste yeniden yüklenecek ve bu değişiklikler kaybolacak. Devam edilsin mi?')) return;
+
+        // Aynı ay + bölüm için zaten kayıt var mı?
+        const conflicts = keys.filter(k => k.startsWith('nobet_roster_') && localStorage.getItem(k) !== null);
+        let overwrite = false;
+        if (conflicts.length > 0) {
+          const label = k => {
+            const m = k.match(/^nobet_roster_(\d{4}-\d{2})_(.*)$/);
+            return m ? `${m[1]} · ${m[2].replace(/_/g, ' ')}` : k;
+          };
+          overwrite = confirm(
+            `Dosyadaki ${conflicts.length} aylık kayıt bu tarayıcıda zaten var:\n\n• ` +
+            conflicts.slice(0, 8).map(label).join('\n• ') +
+            (conflicts.length > 8 ? `\n(+${conflicts.length - 8} kayıt daha)` : '') +
+            '\n\nTamam = dosyadakiyle ÜZERİNE YAZ\nİptal = mevcut kayıtları KORU (yalnızca yeni olanlar eklenir)'
+          );
+        }
+
+        const readArr = (k) => {
+          try { const v = JSON.parse(localStorage.getItem(k) || '[]'); return Array.isArray(v) ? v : []; }
+          catch (e) { return []; }
+        };
+        const stats = { records: 0, kept: 0, archives: 0, services: 0, people: 0 };
+
+        try {
+          keys.forEach(k => {
+            const incoming = items[k];
+            if (k === 'nobet_known_services') {
+              const cur = readArr(k);
+              (Array.isArray(incoming) ? incoming : []).forEach(s => {
+                if (typeof s === 'string' && s.trim() && !cur.some(c => trNormalize(c) === trNormalize(s))) {
+                  cur.push(s.trim()); stats.services++;
+                }
+              });
+              localStorage.setItem(k, JSON.stringify(cur));
+            } else if (k.startsWith('nobet_dept_roster_')) {
+              const cur = readArr(k);
+              (Array.isArray(incoming) ? incoming : []).forEach(p => {
+                if (!p || !p.id || !p.name) return;
+                const same = cur.some(c => c && (c.id === p.id || trNormalize(c.name) === trNormalize(p.name)));
+                if (!same) { cur.push({ id: p.id, name: p.name }); stats.people++; }
+              });
+              localStorage.setItem(k, JSON.stringify(cur));
+            } else if (k.startsWith('nobet_archive_')) {
+              const cur = readArr(k);
+              const ids = new Set(cur.map(a => a && a.id));
+              (Array.isArray(incoming) ? incoming : []).forEach(a => {
+                if (a && a.id && !ids.has(a.id)) { cur.push(a); ids.add(a.id); stats.archives++; }
+              });
+              cur.sort((a, b) => ((b && b.snapshot && b.snapshot.timestamp) || 0) - ((a && a.snapshot && a.snapshot.timestamp) || 0));
+              localStorage.setItem(k, JSON.stringify(cur.slice(0, 30)));
+            } else {
+              // aylık kayıtlar (nobet_roster_*) ve diğer nobet_ anahtarları
+              if (localStorage.getItem(k) !== null && !overwrite) { stats.kept++; return; }
+              localStorage.setItem(k, src[k]);
+              stats.records++;
+            }
+          });
+        } catch (e) {
+          alert('Tarayıcı depolama alanı dolu ya da yazılamadı: ' + e.message + '\nEski arşivleri temizleyip tekrar deneyin.');
+        }
+
+        refreshServiceOptions();
+        clearDirty();
+        loadActiveRoster();
+
+        const lines = [];
+        if (stats.records)  lines.push(`${stats.records} aylık kayıt yazıldı`);
+        if (stats.kept)     lines.push(`${stats.kept} mevcut kayıt korundu`);
+        if (stats.archives) lines.push(`${stats.archives} arşiv kaydı eklendi`);
+        if (stats.services) lines.push(`${stats.services} yeni bölüm adı eklendi`);
+        if (stats.people)   lines.push(`${stats.people} kişi bölüm kadrosuna eklendi`);
+        if (skipped)        lines.push(`${skipped} geçersiz girdi atlandı`);
+        alert('İçe aktarma tamamlandı:\n\n• ' + (lines.length ? lines.join('\n• ') : 'Yeni bir şey eklenmedi (hepsi zaten vardı)') +
+              '\n\nListeyi görmek için bölümü ve ayı seçin.');
+      };
+      reader.readAsText(file);
     }
 
     function getArchiveList() {
