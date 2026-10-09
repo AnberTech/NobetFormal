@@ -372,6 +372,7 @@
       @page { size: landscape; margin: 4mm; }
     }
   </style>
+  <script data-goatcounter="https://anbertech.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body class="bg-slate-100 text-slate-800 p-3 min-h-screen text-xs" onclick="handleGlobalClick(event)">
   <div class="max-w-[99%] mx-auto space-y-3">
@@ -485,7 +486,7 @@
           </button>
 
           <!-- MANUEL KAYDET BUTONU -->
-          <button type="button" onclick="saveCurrentMonth()" class="lockable-ui btn-base btn-save px-3.5 flex items-center gap-1.5" title="Bu listeyi tarayıcınızın yerel hafızasına kalıcı olarak kaydeder">
+          <button data-goatcounter-click="nobetformal-kaydet" type="button" onclick="saveCurrentMonth()" class="lockable-ui btn-base btn-save px-3.5 flex items-center gap-1.5" title="Bu listeyi tarayıcınızın yerel hafızasına kalıcı olarak kaydeder">
             <i class="fa-solid fa-floppy-disk text-xs"></i>
             <span>Kaydet</span>
           </button>
@@ -497,12 +498,12 @@
           </button>
 
           <!-- GÜVENLİ PDF VE EXCEL ÇIKIŞ BUTONLARI -->
-          <button type="button" onclick="printRosterSafe()" class="lockable-ui btn-base btn-ghost px-2.5 hover:!bg-rose-50 hover:!border-rose-200 hover:!text-rose-700 font-semibold flex items-center gap-1.5" title="Doğrulanmış Renkli PDF Çıktısı Al">
+          <button data-goatcounter-click="nobetformal-pdf" type="button" onclick="printRosterSafe()" class="lockable-ui btn-base btn-ghost px-2.5 hover:!bg-rose-50 hover:!border-rose-200 hover:!text-rose-700 font-semibold flex items-center gap-1.5" title="Doğrulanmış Renkli PDF Çıktısı Al">
             <i class="fa-solid fa-file-pdf text-rose-500"></i>
             <span class="hidden sm:inline">PDF</span>
           </button>
 
-          <button type="button" onclick="exportToStyledExcelSafe()" class="lockable-ui btn-base btn-ghost px-2.5 hover:!bg-emerald-50 hover:!border-emerald-200 hover:!text-emerald-700 font-semibold flex items-center gap-1.5" title="Doğrulanmış Renkli Excel Olarak İndir (.xlsx)">
+          <button data-goatcounter-click="nobetformal-excel" type="button" onclick="exportToStyledExcelSafe()" class="lockable-ui btn-base btn-ghost px-2.5 hover:!bg-emerald-50 hover:!border-emerald-200 hover:!text-emerald-700 font-semibold flex items-center gap-1.5" title="Doğrulanmış Renkli Excel Olarak İndir (.xlsx)">
             <i class="fa-solid fa-file-excel text-emerald-600"></i>
             <span class="hidden sm:inline">Excel</span>
           </button>
@@ -587,12 +588,12 @@
           </div>
 
           <!-- SÜRELİ DERİN OPTİMİZASYON BUTONU -->
-          <button type="button" id="btnDistribute" onclick="startTimedOptimization()" class="btn-primary px-4 text-white font-black text-xs transition-all transform active:scale-95 flex items-center gap-2" title="Hedef saatlerden asla taviz vermeden günler arası simetrisi en adil listeyi arar">
+          <button data-goatcounter-click="nobetformal-dagit" type="button" id="btnDistribute" onclick="startTimedOptimization()" class="btn-primary px-4 text-white font-black text-xs transition-all transform active:scale-95 flex items-center gap-2" title="Hedef saatlerden asla taviz vermeden günler arası simetrisi en adil listeyi arar">
             <i id="btnDistributeIcon" class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
             <span id="btnDistributeText">Nöbetleri Üret</span>
           </button>
 
-          <button type="button" onclick="approveRoster()" id="btnApprove" class="hidden btn-approve px-3.5 text-white font-black text-xs transition-all transform active:scale-95 flex items-center gap-1.5" title="Listeyi denetleyip onaylar ve otomatik olarak kaydeder">
+          <button data-goatcounter-click="nobetformal-onayla" type="button" onclick="approveRoster()" id="btnApprove" class="hidden btn-approve px-3.5 text-white font-black text-xs transition-all transform active:scale-95 flex items-center gap-1.5" title="Listeyi denetleyip onaylar ve otomatik olarak kaydeder">
             <i class="fa-solid fa-circle-check"></i>
             <span>Listeyi Onayla</span>
           </button>
