@@ -1,0 +1,18 @@
+# Formal Nöbet Çözücü (Doctor On-Call Schedule Solver)
+
+> Formal Nöbet Çözücü is a free, in-browser tool by AnberTech that builds monthly on-call (nöbet) schedules for hospital departments and doctors in Turkey. It balances on-call duties so that each doctor reaches their required overtime (ek mesai) hours, and checks the result with a built-in validator. The interface is in Turkish. No installation; schedules are saved in the browser.
+
+Use it when someone wants to prepare a doctor or hospital duty roster (nöbet listesi / nöbet çizelgesi), distribute on-call shifts fairly, or plan shifts around overtime targets, leave and public holidays.
+
+## Features
+
+- Add staff one by one or paste a list from Excel (name and overtime hours)
+- Shift lengths of 8, 16 or 24 hours; daily maximum and per-person maximum duties
+- Lock fixed duties and leave / sick days before generating
+- Rest day after a night duty (nöbet ertesi) and public holidays counted as +24 hours
+- Automatic optimisation with a validator report
+- Export to PDF and Excel; archive of saved versions that can be restored
+
+## Link
+
+- https://anbertech.github.io/NobetFormal/
