@@ -16,3 +16,8 @@ Use it when someone wants to prepare a doctor or hospital duty roster (nöbet li
 ## Link
 
 - https://anbertech.github.io/NobetFormal/
+
+## Guides (Turkish)
+
+- [Nöbet listesi hazırlama](https://anbertech.github.io/NobetFormal/nobet-listesi-hazirlama/): Gerekli bilgiler, elle hazırlamanın zorlukları ve kontrol listesi.
+- [Adil nöbet dağılımı](https://anbertech.github.io/NobetFormal/adil-nobet-dagilimi/): Ek mesai hedefi, hafta sonu ve bayram yükü, dinlenme ve şeffaflık.

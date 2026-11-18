@@ -1,0 +1,149 @@
+{
+ "g_steps_h2": "Adım adım",
+ "g_faq_h2": "Sık sorulan sorular",
+ "g_cta_h2": "Nöbet listenizi şimdi kurun",
+ "g_cta_p": "Formal Nöbet Çözücü tarayıcıda çalışan bir aylık nöbet planlama aracıdır. Hekimlerinizi ekleyin, izinleri işaretleyin ve seçtiğiniz süre içinde kurallara uyan bir liste aratın.",
+ "g_cta_btn": "Nöbet Çözücü'yü aç",
+ "g_contact": "Soru ve öneriler:",
+ "g_other_h2": "Diğer rehberler",
+ "g_lang": "Dil",
+ "g_home": "Ana sayfa",
+ "liste_slug": "nobet-listesi-hazirlama",
+ "liste_name": "Nöbet listesi hazırlama",
+ "liste_title": "Aylık Nöbet Listesi Nasıl Hazırlanır? | Nöbet Çözücü",
+ "liste_desc": "Hastane bölümleri için aylık nöbet listesi nasıl hazırlanır? Gerekli bilgiler, elle hazırlamanın zorlukları, kontrol listesi ve Nöbet Çözücü ile adımlar.",
+ "liste_h1": "Aylık nöbet listesi nasıl hazırlanır?",
+ "liste_lead": "Aylık nöbet listesi; izinleri, dinlenme günlerini ve herkesin ek mesai hedefini aynı anda gözetmeyi gerektirir. Hangi bilgilerin gerektiğini ve listeyi nasıl denetleyeceğinizi anlatıyoruz.",
+ "liste_card": "Gerekli bilgiler, elle hazırlamanın zorlukları ve kontrol listesi.",
+ "liste_body": [
+  [
+   "Nöbet listesi hazırlamak neden zordur?",
+   "Bir bölümün aylık nöbet listesi ilk bakışta basit bir tablo gibi görünür: satırlarda hekimler, sütunlarda günler. Zorluk, kuralların birbirini etkilemesindedir. Her güne en az bir nöbetçi yazılmalı, iki nöbet arasında dinlenme bırakılmalı, izinli hekime nöbet yazılmamalı ve herkesin yükü makul olmalıdır. Bir hücreyi değiştirmek başka üç hücreyi bozabilir. Elle hazırlanan listelerde bu yüzden <b>son dakika takasları</b> ve gözden kaçan çakışmalar sık görülür; listeyi hazırlayan kişi de her ay saatlerini bu bulmacaya ayırır."
+  ],
+  [
+   "Başlamadan önce gereken bilgiler",
+   "Listeye başlamadan önce eksiksiz veri toplamak işin yarısıdır. Gerekenler: o ay nöbet tutacak <b>hekimlerin listesi</b>, her hekimin ek mesai hedefi, yıllık izin, rapor ve kongre gibi nöbet yazılamayacak günler, önceden kararlaştırılmış sabit nöbetler ve önceki ayın son günlerinde tutulan nöbetler. Ayın resmî tatil ve dinî bayram günlerini de baştan belirleyin. Bu bilgileri hekimlerden belirli bir tarihe kadar toplamak, liste yayımlandıktan sonra gelen değişiklik taleplerini azaltır ve herkese aynı süreyi tanır."
+  ],
+  [
+   "Dinlenme ve ay geçişleri",
+   "Nöbet sonrası dinlenme, hem hekim sağlığı hem hasta güvenliği için listenin en önemli kısıtlarından biridir. Kaç gün dinlenme bırakılacağı kurumdan kuruma değişebilir; hastanenizin kurallarına bakın. Nöbet Çözücü iki nöbet arasında en az 2 tam gün dinlenme bırakır. Sık atlanan bir nokta <b>ay geçişidir</b>: önceki ayın son günlerinde nöbet tutan hekime yeni ayın ilk günlerinde nöbet yazılırsa dinlenme bozulur. Aynı bölümün önceki ay listesi bu tarayıcıda kayıtlıysa ve hekim eşleşirse, Nöbet Çözücü son iki gündeki nöbetleri yeni ayın başında hesaba katar."
+  ],
+  [
+   "Yayımlamadan önce kontrol listesi",
+   "Liste bittiğinde yayımlamadan önce şu soruları sorun: Her güne en az bir nöbetçi yazıldı mı? İki nöbet arasında yeterli dinlenme var mı? İzinli ya da raporlu bir hekime nöbet yazılmış mı? Hekim başına nöbet sayısı belirlenen üst sınırı aşıyor mu? Herkesin ek mesai saati hedefiyle örtüşüyor mu? Hafta sonları ve bayramlar birkaç kişide toplanmış mı? Bu kontrolü mümkünse <b>listeyi hazırlayandan başka biri</b> yapsın; insan kendi hazırladığı tablodaki hatayı kolay görmez. Kuralları her ay aynı sırayla denetlemek de işi hızlandırır."
+  ],
+  [
+   "Nöbet Çözücü ne yapar?",
+   "Formal Nöbet Çözücü, hastane bölümleri ve hekimler için aylık nöbet listesi kuran, tarayıcıda çalışan bir araçtır. Hekimleri tek tek ya da Excel'den yapıştırarak eklersiniz, ayı seçer, izinleri ve sabit nöbetleri işaretlersiniz. <b>Nöbetleri Üret</b> düğmesi seçtiğiniz sürede (5-30 saniye) kurallara uyan bir çözüm arar. Hakem raporu katı kural ihlallerini ve yumuşak uyarıları ayrı gösterir. Liste PDF ve Excel olarak alınabilir. Hekim ve nöbet kayıtları ile arşiv tarayıcınızda tutulur."
+  ]
+ ],
+ "liste_steps": [
+  [
+   "Hekimleri ve ayı girin",
+   "Hekimleri adları ve ek mesai hedefleriyle tek tek ya da Excel'den yapıştırarak ekleyin, ardından ayı seçin."
+  ],
+  [
+   "İzinleri ve sabit nöbetleri işaretleyin",
+   "İzin ve rapor günlerini, önceden kararlaştırılmış sabit nöbetleri üretimden önce işaretleyin; araç bunlara dokunmaz."
+  ],
+  [
+   "Nöbetleri üretin",
+   "Nöbetleri Üret ile 5-30 saniyelik bir arama başlatın. Araç önce her hekimin hedefini ve toplam kapasiteyi kontrol eder, bulduğu engelleri açıklar; ön kontrolden geçen bir ayda da seçilen sürede çözüm bulunamayabilir."
+  ],
+  [
+   "Denetleyin ve dışa aktarın",
+   "Hakem raporunu inceleyin, Listeyi Onayla ile denetleyip kaydedin ve listeyi PDF ya da Excel olarak alın."
+  ]
+ ],
+ "liste_faq": [
+  [
+   "Nöbet listesi Excel'de hazırlanabilir mi?",
+   "Hazırlanabilir, ancak Excel kuralları sizin yerinize denetlemez: dinlenme sürelerini, izinleri ve nöbet sayılarını elle kontrol etmeniz gerekir. Nöbet Çözücü'ye hekim listenizi Excel'den yapıştırabilir, biten listeyi yine Excel olarak alabilirsiniz."
+  ],
+  [
+   "Nöbet listesi nerede saklanır?",
+   "Hekim ve nöbet listesi kayıtları ile arşiv kendi tarayıcınızda tutulur; araç bu kayıtları bir sunucuya yüklemez. Bu yüzden listeyi hazırladığınız tarayıcıdan açmanız gerekir. Başka bir bilgisayara geçerken listeyi dışa aktarıp orada içe aktarabilirsiniz."
+  ],
+  [
+   "Önceki ayın nöbetleri yeni listeyi etkiler mi?",
+   "Evet. Önceki ayın son günlerinde nöbet tutan hekim, yeni ayın ilk günlerinde dinlenmeye ihtiyaç duyar. Aynı bölümün önceki ay listesi bu tarayıcıda kayıtlıysa ve hekim eşleşirse, Nöbet Çözücü son iki gündeki nöbetleri hesaba katar ve en az 2 tam gün dinlenme kuralını ay geçişinde de uygular."
+  ],
+  [
+   "İzinli bir hekime yanlışlıkla nöbet yazılır mı?",
+   "İzin ve rapor günleri üretimden önce işaretlenir ve araç bu günlere nöbet yazmaz; sabit nöbetler de olduğu gibi korunur. Hakem raporu katı kural ihlallerini ayrıca listeler ve katı ihlal varken PDF ve Excel çıktısı alınamaz."
+  ],
+  [
+   "Eski nöbet listelerine geri dönebilir miyim?",
+   "Evet. Nöbet Çözücü listeleri tarayıcınızda kaydeder ve arşivler; eski sürümleri arşivden geri yükleyebilirsiniz. Kayıt tarayıcıda tutulduğu için tarayıcı verilerini silmeden önce listelerinizi PDF ya da Excel olarak almanız iyi olur."
+  ]
+ ],
+ "adil_slug": "adil-nobet-dagilimi",
+ "adil_name": "Adil nöbet dağılımı",
+ "adil_title": "Adil Nöbet Dağılımı Nasıl Yapılır? | Nöbet Çözücü",
+ "adil_desc": "Nöbetler adil nasıl dağıtılır? Ek mesai hedefi, izinler, hafta sonu ve bayram yükünün dengelenmesi, dinlenme ve şeffaflık için pratik bir rehber.",
+ "adil_h1": "Adil nöbet dağılımı nasıl yapılır?",
+ "adil_lead": "Adil bir nöbet listesi yalnız nöbet sayısını eşitlemek değildir; hafta sonu, bayram ve ağır günlerin yükü de dengelenmelidir. Neleri gözetmeniz gerektiğini anlatıyoruz.",
+ "adil_card": "Ek mesai hedefi, hafta sonu ve bayram yükü, dinlenme ve şeffaflık.",
+ "adil_body": [
+  [
+   "Adalet yalnız nöbet sayısı değildir",
+   "İki hekim aynı sayıda nöbet tutup çok farklı bir ay geçirebilir. Biri hafta içi nöbetler tutarken diğeri cumartesi, pazar ve bayram günlerine denk gelirse, kâğıt üzerinde eşit görünen liste pratikte adil değildir. Adil dağılım birkaç ölçüyü birlikte gözetir: <b>nöbet sayısı</b>, ağır günlerin sayısı, hafta sonu nöbetleri ve ek mesai saati. Birini dengelemek çoğu zaman diğerini bozar. Nöbet Çözücü, saatleri koruyan takaslarla ağır günleri (16 ve 24 saatlik), hafta sonlarını ve nöbet sayılarını hekimler arasında dengelemeye çalışır."
+  ],
+  [
+   "Ek mesai hedefi ve gün türleri",
+   "Nöbet Çözücü her nöbetin kazandırdığı ek mesai saatini gün türüne göre hesaplar: hafta içi 8, cuma ve pazar 16, cumartesi ile resmî ve dinî bayram günleri 24 saat. Bu değerler yasal bir kural değil, <b>aracın hesap biçimidir</b>. Ayın son günü tatil olmayan bir pazartesi-perşembeye denk gelirse varsayılan 16 saattir; bu değer 8, 16, 24 ya da Oto (8) olarak ayarlanabilir. Diğer katsayılar sabittir. Her hekimin hedefi 8'in üst katına yuvarlanır (42 saat 48 olur) ve hekime tam olarak bu saat yazılır; altı da üstü de katı ihlaldir."
+  ],
+  [
+   "İzinler ve kişisel kısıtlar",
+   "Adil bir liste, hekimlerin izin, rapor ve önceden planlanmış günlerini baştan hesaba katar. Bu günler liste kurulduktan sonra eklenirse her değişiklik başka birinin yükünü artırır. Nöbet Çözücü'de izin ve rapor günleri ile <b>sabit (kilitli) nöbetler</b> üretimden önce işaretlenir ve araç bunlara dokunmaz. Üretimden önce her hekimin hedefinin bu ay ulaşılabilir olup olmadığını ve toplam kapasiteyi kontrol eder; bulduğu engeli (takvim, dinlenme kuralı, azami nöbet sayısı, izinler) açıklar. Böylece sorun, liste yayımlanmadan önce ekiple konuşulabilir."
+  ],
+  [
+   "Dinlenme ve üst sınırlar",
+   "Yükü adil dağıtmak, kimsenin art arda nöbetlerle yıpranmamasını da kapsar. Nöbet Çözücü iki nöbet arasında <b>en az 2 tam gün</b> dinlenme bırakır; nöbet ertesi dinlenme takvimde N.E. olarak görünür. Hekim başına azami nöbet sayısı varsayılan olarak 8'dir ve ayarlanabilir. İsterseniz Günlük Maks ile bir güne yazılabilecek en fazla nöbetçi sayısını da sınırlayabilirsiniz; her güne en az bir nöbetçi yazılır. Bu sınırları bölümünüzün ve kurumunuzun kurallarına göre belirleyin."
+  ],
+  [
+   "Şeffaflık güveni artırır",
+   "Liste ne kadar dengeli olursa olsun, nasıl hazırlandığı görünmüyorsa itirazlar eksik olmaz. Kuralların baştan yazılı olması, herkesin aynı ölçütlere tabi olduğunu gösterir. Nöbet Çözücü'nün <b>hakem raporu</b> katı kural ihlallerini ve yumuşak uyarıları ayrı ayrı gösterir; Listeyi Onayla, listeyi denetleyip kaydeder. Katı bir ihlal varken PDF ve Excel çıktısı alınamaz. Listeyi paylaşırken her hekimin ağır gün ve hafta sonu sayısını da açıklamak, dağılımın neden böyle olduğunu anlatmanın en kolay yoludur."
+  ]
+ ],
+ "adil_steps": [
+  [
+   "Hedefleri girin",
+   "Her hekimi ek mesai hedefiyle ekleyin; hedef 8'in üst katına yuvarlanır ve hekime tam olarak bu saat yazılır."
+  ],
+  [
+   "Kısıtları işaretleyin",
+   "İzin, rapor ve sabit nöbetleri işaretleyin; azami nöbet, Günlük Maks ve ayın son günü ayarlarını bölümünüze göre seçin."
+  ],
+  [
+   "Dengeli listeyi üretin",
+   "Nöbetleri Üret'e basın; araç ağır günleri, hafta sonlarını ve nöbet sayılarını saatleri koruyan takaslarla dengelemeye çalışır."
+  ],
+  [
+   "Raporu inceleyip paylaşın",
+   "Hakem raporunu inceleyin, Listeyi Onayla ile kaydedin ve listeyi PDF ya da Excel olarak ekibinizle paylaşın."
+  ]
+ ],
+ "adil_faq": [
+  [
+   "Nöbetler adil olarak nasıl dağıtılır?",
+   "Yalnız nöbet sayısına değil; hafta sonu, bayram ve ağır günlerin dağılımına, ek mesai saatine ve dinlenme sürelerine birlikte bakılarak. Kuralları baştan yazılı hale getirmek ve herkese aynı ölçütleri uygulamak, dağılımı savunulabilir kılar."
+  ],
+  [
+   "Ek mesai hedefi neden 8'in katına yuvarlanıyor?",
+   "Nöbet Çözücü'de her nöbet 8, 16 ya da 24 saat kazandırdığı için toplam saat 8'in katı olur. Bu yüzden hedef 8'in üst katına yuvarlanır (örneğin 42 saat 48 olur) ve hekime tam olarak bu saat yazılır; altı da üstü de katı kural ihlali sayılır."
+  ],
+  [
+   "Resmî tatil ve bayram nöbetleri nasıl hesaplanıyor?",
+   "Resmî tatiller (1 Ocak, 23 Nisan, 1 Mayıs, 19 Mayıs, 15 Temmuz, 30 Ağustos, 29 Ekim) ve dinî bayram günleri takvimde kırmızı sütunla gösterilir; araç bu günlerdeki nöbete 24 saat ek mesai sayar. Bu aracın hesap biçimidir; bölümünüzün uygulamasıyla karşılaştırın."
+  ],
+  [
+   "Hedef saat bu ay tutturulamazsa ne olur?",
+   "Nöbet Çözücü üretmeden önce her hekimin hedefinin ulaşılabilir olup olmadığını ve toplam kapasiteyi kontrol eder; bulduğu engeli açıklar. Bu ön kontrol her durumu yakalamaz: kontrolden geçen bir ayda da seçilen sürede çözüm bulunamazsa araç bunu bildirir ve mevcut listeyi bozmaz. Hedefleri, izinleri ya da azami nöbet ayarını gözden geçirip yeniden deneyebilirsiniz."
+  ],
+  [
+   "8, 16 ve 24 saat değerlerini değiştirebilir miyim?",
+   "Ayın son günü için değer 8, 16, 24 ya da Oto (8) olarak ayarlanabilir; bu ayar yalnız son gün tatil olmayan bir pazartesi-perşembeye denk geldiğinde etkilidir. Hafta içi 8, cuma ve pazar 16, cumartesi ve bayram 24 saat katsayıları sabittir. Bölümünüzün uygulaması farklıysa sonuçları buna göre değerlendirin."
+  ]
+ ]
+}
